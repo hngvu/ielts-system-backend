@@ -1,3 +1,28 @@
 spring:
   application:
     name: moni
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://ep-purple-mountain-ah918pfk.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+    username: neondb_owner
+    password: npg_Lh8S1dtzMNpK
+
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+server:
+  port: 8080
+
+outbound:
+  identity:
+    client-id: 1010429030946-7rpjhtpauni9gim1ihfrbjeh79d21ddc.apps.googleusercontent.com
+    client-secret: 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
+    redirect-uri: http://localhost:5173
+
+
+jwt:
+  signerKey: 1TjXchw5FloESb63Kc+DFhTARvpWL4jUGCwfGWxuG5SIf/1y/LgJxHnMqaF6A/ij
