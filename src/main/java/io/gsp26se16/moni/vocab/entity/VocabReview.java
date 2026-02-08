@@ -1,12 +1,11 @@
-package io.gsp26se16.moni.content.entity;
-
+package io.gsp26se16.moni.vocab.entity;
 
 import io.gsp26se16.moni.authentication.entity.Users;
-import io.gsp26se16.moni.common.enumeration.Skill;
-import io.gsp26se16.moni.common.enumeration.TestType;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -14,20 +13,18 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Stimulus {
+public class VocabReview {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
 
-    String title;
-    @Enumerated(EnumType.STRING)
-    TestType testType;
-    Skill skill;
-    int section;
-    String content;
-    String mediaUrl;
+    LocalDateTime reviewedAt;
+
+    @OneToOne
+    @JoinColumn(name = "vocab_id")
+    Vocab vocab;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    Users createdBy;
+    Users user;
 }

@@ -10,17 +10,17 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class TestStructure {
+public class QuestionGroup {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
-
-    @ManyToOne
-    @JoinColumn(name = "test_id")
-    Test test;
+    String instruction;
 
     @ManyToOne
     @JoinColumn(name = "stimulus_id")
     Stimulus stimulus;
 
+    @ManyToOne
+    @JoinColumn(name = "question_type_id")
+    QuestionType questionType;
 }
