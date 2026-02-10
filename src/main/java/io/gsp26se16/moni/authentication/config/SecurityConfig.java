@@ -44,6 +44,12 @@ public class SecurityConfig {
                 // Allow POST to public endpoints
                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS)
                 .permitAll()
+                // Allow SWAGGER UI
+                .requestMatchers(
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html"
+                ).permitAll()
                 .anyRequest()
                 .authenticated());
 
