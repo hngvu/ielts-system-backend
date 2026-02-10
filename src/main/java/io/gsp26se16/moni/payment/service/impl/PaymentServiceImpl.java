@@ -14,12 +14,17 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final PackagePricingRepository packagePricingRepository;
+    private final String txnCodePrefix = "MN";
+    private final String txnCodeCharset = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"; // exclude 0,1,I,L,O
+    private final int txnCodeLength = 6 - txnCodePrefix.length();
 
     @Override
     public PaymentInitResponse initPayment(PaymentInitRequest paymentInitRequest) {
@@ -34,7 +39,7 @@ public class PaymentServiceImpl implements PaymentService {
                 Payment.builder()
                         .packagePricing(packagePricing)
                         .amount(paymentInitRequest.amount())
-                        .txnCode(generateTxnCode())
+                        .txnCode(generateTxnCode()) // check unique later
                         .createdAt(LocalDateTime.now())
                         .expiredAt(LocalDateTime.now().plusMinutes(5))
                         .status(PaymentStatus.PENDING)
@@ -43,16 +48,30 @@ public class PaymentServiceImpl implements PaymentService {
         );
 
         return PaymentInitResponse.builder()
-
+                .id(payment.getId())
+                .amount(payment.getAmount())
+                .txnCode(payment.getTxnCode())
+                .qrCodeUrl("https://qr.sepay.vn/img?") // add acc, bank, amount, des
+                .expiredAt(payment.getExpiredAt())
                 .build();
     }
 
     @Override
     public PaymentResponse handleSePayCallback(SePayWebhookRequest sePayWebhookRequest) {
+
+        Pattern pattern = Pattern.compile(Pattern.quote(txnCodePrefix) + "[" + txnCodeCharset + "]{" + txnCodeLength + "}");
+        Matcher matcher = pattern.matcher(sePayWebhookRequest.content());
+        String txnCode = matcher.find() ? matcher.group() : null;
+
+        // repo find by txnCode
+
+        // update payment status
+
+
         return null;
     }
 
     private String generateTxnCode() {
-        return "MN" + RandomStringUtils.randomAlphanumeric(4).toUpperCase();
+        return txnCodePrefix + RandomStringUtils.random(txnCodeLength, txnCodeCharset);
     }
 }
