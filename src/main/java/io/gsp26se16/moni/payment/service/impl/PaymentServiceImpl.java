@@ -64,11 +64,24 @@ public class PaymentServiceImpl implements PaymentService {
         String txnCode = matcher.find() ? matcher.group() : null;
 
         // repo find by txnCode
+        var payment = paymentRepository.findAll(
+                (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("txnCode"), txnCode)).stream().findFirst().orElse(null);
 
         // update payment status
+        if (payment != null) {
+            payment.setGatewayTxnId(sePayWebhookRequest.code());
+            payment.setWebhookResponse(sePayWebhookRequest.toString());
+            payment.setStatus(PaymentStatus.SUCCESS);
+            payment.setUpdatedAt(LocalDateTime.now());
+            paymentRepository.save(payment);
+        }
 
-
-        return null;
+        return PaymentResponse.builder()
+                .id(payment.getId())
+                .txnCode(txnCode)
+                .amount( payment.getAmount())
+                .status(payment.getStatus().toString())
+                .build();
     }
 
     private String generateTxnCode() {
