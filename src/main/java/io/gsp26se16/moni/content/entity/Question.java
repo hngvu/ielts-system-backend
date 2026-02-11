@@ -6,6 +6,8 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.Type;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @Entity
@@ -28,7 +30,11 @@ public class Question {
     @Column(columnDefinition = "jsonb")
     Map<String, Object> explanation;
 
-    @ManyToOne
-    @JoinColumn(name = "question_groud_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "question_group_id")
     QuestionGroup questionGroup;
+
+    // 🔥 THÊM: Để lưu Question là tự lưu luôn Options (A, B, C, D)
+    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<QuestionOption> options = new ArrayList<>();
 }

@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -16,11 +19,14 @@ public class QuestionGroup {
     Integer id;
     String instruction;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "stimulus_id")
     Stimulus stimulus;
 
     @ManyToOne
     @JoinColumn(name = "question_type_id")
     QuestionType questionType;
+
+    @OneToMany(mappedBy = "questionGroup", cascade = CascadeType.ALL)
+    List<Question> questions = new ArrayList<>();
 }

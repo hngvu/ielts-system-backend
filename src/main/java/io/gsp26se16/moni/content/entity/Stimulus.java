@@ -8,6 +8,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -30,4 +33,7 @@ public class Stimulus {
     @ManyToOne
     @JoinColumn(name = "user_id")
     Users createdBy;
+
+    @OneToMany(mappedBy = "stimulus", cascade = CascadeType.ALL)
+    List<QuestionGroup> questionGroups = new ArrayList<>();
 }

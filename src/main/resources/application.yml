@@ -1,6 +1,10 @@
 spring:
   application:
     name: moni
+  servlet:
+    multipart:
+      max-file-size: 50MB       # Tăng giới hạn để upload được file Audio dài
+      max-request-size: 50MB
 
   datasource:
     driver-class-name: org.postgresql.Driver
@@ -16,6 +20,11 @@ spring:
 
 server:
   port: 8080
+
+cloudinary:
+  cloud-name: dolegf6uh
+  api-key: 979879863595552
+  api-secret: flFglJwtGbWERpADuhpz8oUPA04
 
 outbound:
   identity:

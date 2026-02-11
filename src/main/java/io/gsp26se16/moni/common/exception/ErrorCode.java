@@ -52,6 +52,10 @@ public enum ErrorCode {
     ROADMAP_NOT_FOUND(1040, "Study roadmap not found", HttpStatus.NOT_FOUND),
     TEST_NOT_FOUND(1041, "IELTS test not found", HttpStatus.NOT_FOUND),
     VOCAB_COLLECTION_NOT_FOUND(1042, "Vocabulary collection not found", HttpStatus.NOT_FOUND),
+
+    // --- TAG MODULE ---
+    TAG_EXISTED(1043, "Tag code or name already exists", HttpStatus.BAD_REQUEST),
+    TAG_NOT_FOUND(1044, "Tag not found", HttpStatus.NOT_FOUND),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
