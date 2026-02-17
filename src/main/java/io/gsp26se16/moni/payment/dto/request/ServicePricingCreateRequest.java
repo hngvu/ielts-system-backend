@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
-public record ServicePricingRequest(
+public record ServicePricingCreateRequest(
     @NotBlank(message = "Service code is required") String serviceCode,
     
     @NotBlank(message = "Name is required") String name,

@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.payment.service.impl;
 
-import io.gsp26se16.moni.payment.dto.request.ServicePricingRequest;
+import io.gsp26se16.moni.payment.dto.request.ServicePricingCreateRequest;
+import io.gsp26se16.moni.payment.dto.request.ServicePricingUpdateRequest;
 import io.gsp26se16.moni.payment.dto.response.ServicePricingResponse;
 import io.gsp26se16.moni.payment.entity.ServicePricing;
 import io.gsp26se16.moni.payment.repository.ServicePricingRepository;
@@ -20,11 +21,53 @@ public class ServicePricingImpl implements ServicePricingService {
     private final ServicePricingRepository servicePricingRepository;
 
     @Override
-    public List<ServicePricingResponse> getAllServicePricings() {
-        log.info("Fetching all service pricings");
-        return servicePricingRepository.findAll().stream()
+    public List<ServicePricingResponse> searchServicePricings(String name, String serviceCode, Integer minCreditCost, Integer maxCreditCost, String sortBy, String sortDir) {
+        log.info("Searching service pricings with filters: name={}, serviceCode={}, minCreditCost={}, maxCreditCost={}, sortBy={}, sortDir={}", 
+                name, serviceCode, minCreditCost, maxCreditCost, sortBy, sortDir);
+        
+        List<ServicePricingResponse> pricings = servicePricingRepository.findAll().stream()
                 .map(this::convertToResponse)
-                .collect(Collectors.toList());
+                .toList();
+        
+        // Apply filters
+        if (name != null) {
+            pricings = pricings.stream()
+                    .filter(p -> p.name().toLowerCase().contains(name.toLowerCase()))
+                    .toList();
+        }
+        if (serviceCode != null) {
+            pricings = pricings.stream()
+                    .filter(p -> p.serviceCode().toLowerCase().contains(serviceCode.toLowerCase()))
+                    .toList();
+        }
+        if (minCreditCost != null) {
+            pricings = pricings.stream()
+                    .filter(p -> p.creditCost() >= minCreditCost)
+                    .toList();
+        }
+        if (maxCreditCost != null) {
+            pricings = pricings.stream()
+                    .filter(p -> p.creditCost() <= maxCreditCost)
+                    .toList();
+        }
+        
+        // Apply sorting
+        pricings = switch (sortBy.toLowerCase()) {
+            case "name" -> sortDir.equalsIgnoreCase("desc") 
+                    ? pricings.stream().sorted((a, b) -> b.name().compareToIgnoreCase(a.name())).toList()
+                    : pricings.stream().sorted((a, b) -> a.name().compareToIgnoreCase(b.name())).toList();
+            case "servicecode" -> sortDir.equalsIgnoreCase("desc")
+                    ? pricings.stream().sorted((a, b) -> b.serviceCode().compareToIgnoreCase(a.serviceCode())).toList()
+                    : pricings.stream().sorted((a, b) -> a.serviceCode().compareToIgnoreCase(b.serviceCode())).toList();
+            case "creditcost" -> sortDir.equalsIgnoreCase("desc")
+                    ? pricings.stream().sorted((a, b) -> b.creditCost().compareTo(a.creditCost())).toList()
+                    : pricings.stream().sorted((a, b) -> a.creditCost().compareTo(b.creditCost())).toList();
+            default -> sortDir.equalsIgnoreCase("desc")
+                    ? pricings.stream().sorted((a, b) -> b.id().compareTo(a.id())).toList()
+                    : pricings.stream().sorted((a, b) -> a.id().compareTo(b.id())).toList();
+        };
+        
+        return pricings;
     }
 
     @Override
@@ -36,26 +79,18 @@ public class ServicePricingImpl implements ServicePricingService {
     }
 
     @Override
-    public ServicePricingResponse getServicePricingByServiceCode(String serviceCode) {
-        log.info("Fetching service pricing by service code: {}", serviceCode);
-        ServicePricing servicePricing = servicePricingRepository.findByServiceCode(serviceCode)
-                .orElseThrow(() -> new RuntimeException("Service pricing not found with service code: " + serviceCode));
-        return convertToResponse(servicePricing);
-    }
-
-    @Override
-    public ServicePricingResponse createServicePricing(ServicePricingRequest request) {
-        log.info("Creating new service pricing with service code: {}", request.getServiceCode());
+    public ServicePricingResponse createServicePricing(ServicePricingCreateRequest request) {
+        log.info("Creating new service pricing with service code: {}", request.serviceCode());
         
-        if (servicePricingRepository.existsByServiceCode(request.getServiceCode())) {
-            throw new RuntimeException("Service pricing already exists with service code: " + request.getServiceCode());
+        if (servicePricingRepository.existsByServiceCode(request.serviceCode())) {
+            throw new RuntimeException("Service pricing already exists with service code: " + request.serviceCode());
         }
 
         ServicePricing servicePricing = new ServicePricing();
-        servicePricing.setServiceCode(request.getServiceCode());
-        servicePricing.setName(request.getName());
-        servicePricing.setDescription(request.getDescription());
-        servicePricing.setCreditCost(request.getCreditCost());
+        servicePricing.setServiceCode(request.serviceCode());
+        servicePricing.setName(request.name());
+        servicePricing.setDescription(request.description());
+        servicePricing.setCreditCost(request.creditCost());
 
         ServicePricing savedServicePricing = servicePricingRepository.save(servicePricing);
         log.info("Successfully created service pricing with id: {}", savedServicePricing.getId());
@@ -64,76 +99,26 @@ public class ServicePricingImpl implements ServicePricingService {
     }
 
     @Override
-    public ServicePricingResponse updateServicePricing(Integer id, ServicePricingRequest request) {
+    public ServicePricingResponse updateServicePricing(Integer id, ServicePricingUpdateRequest request) {
         log.info("Updating service pricing with id: {}", id);
         
         ServicePricing servicePricing = servicePricingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service pricing not found with id: " + id));
 
-        if (!servicePricing.getServiceCode().equals(request.getServiceCode()) && 
-            servicePricingRepository.existsByServiceCode(request.getServiceCode())) {
-            throw new RuntimeException("Service pricing already exists with service code: " + request.getServiceCode());
+        if (!servicePricing.getServiceCode().equals(request.serviceCode()) && 
+            servicePricingRepository.existsByServiceCode(request.serviceCode())) {
+            throw new RuntimeException("Service pricing already exists with service code: " + request.serviceCode());
         }
 
-        servicePricing.setServiceCode(request.getServiceCode());
-        servicePricing.setName(request.getName());
-        servicePricing.setDescription(request.getDescription());
-        servicePricing.setCreditCost(request.getCreditCost());
+        servicePricing.setServiceCode(request.serviceCode());
+        servicePricing.setName(request.name());
+        servicePricing.setDescription(request.description());
+        servicePricing.setCreditCost(request.creditCost());
 
         ServicePricing updatedServicePricing = servicePricingRepository.save(servicePricing);
         log.info("Successfully updated service pricing with id: {}", updatedServicePricing.getId());
         
         return convertToResponse(updatedServicePricing);
-    }
-
-    @Override
-    public List<ServicePricingResponse> getServicePricingsWithFilters(String name, String serviceCode, Integer minCreditCost, Integer maxCreditCost, String sortBy, String sortDir) {
-        log.info("Fetching service pricings with filters: name={}, serviceCode={}, minCreditCost={}, maxCreditCost={}, sortBy={}, sortDir={}", 
-                name, serviceCode, minCreditCost, maxCreditCost, sortBy, sortDir);
-        
-        List<ServicePricingResponse> pricings = servicePricingRepository.findAll().stream()
-                .map(this::convertToResponse)
-                .toList();
-        
-        // Apply filters
-        if (name != null) {
-            pricings = pricings.stream()
-                    .filter(p -> p.getName().toLowerCase().contains(name.toLowerCase()))
-                    .toList();
-        }
-        if (serviceCode != null) {
-            pricings = pricings.stream()
-                    .filter(p -> p.getServiceCode().toLowerCase().contains(serviceCode.toLowerCase()))
-                    .toList();
-        }
-        if (minCreditCost != null) {
-            pricings = pricings.stream()
-                    .filter(p -> p.getCreditCost() >= minCreditCost)
-                    .toList();
-        }
-        if (maxCreditCost != null) {
-            pricings = pricings.stream()
-                    .filter(p -> p.getCreditCost() <= maxCreditCost)
-                    .toList();
-        }
-        
-        // Apply sorting
-        pricings = switch (sortBy.toLowerCase()) {
-            case "name" -> sortDir.equalsIgnoreCase("desc") 
-                    ? pricings.stream().sorted((a, b) -> b.getName().compareToIgnoreCase(a.getName())).toList()
-                    : pricings.stream().sorted((a, b) -> a.getName().compareToIgnoreCase(b.getName())).toList();
-            case "servicecode" -> sortDir.equalsIgnoreCase("desc")
-                    ? pricings.stream().sorted((a, b) -> b.getServiceCode().compareToIgnoreCase(a.getServiceCode())).toList()
-                    : pricings.stream().sorted((a, b) -> a.getServiceCode().compareToIgnoreCase(b.getServiceCode())).toList();
-            case "creditcost" -> sortDir.equalsIgnoreCase("desc")
-                    ? pricings.stream().sorted((a, b) -> b.getCreditCost().compareTo(a.getCreditCost())).toList()
-                    : pricings.stream().sorted((a, b) -> a.getCreditCost().compareTo(b.getCreditCost())).toList();
-            default -> sortDir.equalsIgnoreCase("desc")
-                    ? pricings.stream().sorted((a, b) -> b.getId().compareTo(a.getId())).toList()
-                    : pricings.stream().sorted((a, b) -> a.getId().compareTo(b.getId())).toList();
-        };
-        
-        return pricings;
     }
 
     @Override
