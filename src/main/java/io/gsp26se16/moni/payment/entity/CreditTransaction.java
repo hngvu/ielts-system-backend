@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Builder
 public class CreditTransaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

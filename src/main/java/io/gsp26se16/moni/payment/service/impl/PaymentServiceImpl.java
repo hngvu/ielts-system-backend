@@ -58,7 +58,7 @@ public class PaymentServiceImpl implements PaymentService {
         var packagePricing = packagePricingRepository.findById(paymentInitRequest.packageId())
                 .orElseThrow(() -> new RuntimeException("Package pricing not found"));
 
-        if (!packagePricing.getPrice().equals(paymentInitRequest.amount())) {
+        if (packagePricing.getPrice() != paymentInitRequest.amount()) {
             throw new RuntimeException("Amount does not match package pricing. Expected: " + packagePricing.getPrice() + ", Provided: " + paymentInitRequest.amount());
         }
 
@@ -152,7 +152,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         // Validate amount matches
-        if (!payment.getAmount().equals(sePayWebhookRequest.transferAmount().intValue())) {
+        if (payment.getAmount() != sePayWebhookRequest.transferAmount().intValue()) {
             payment.setStatus(PaymentStatus.FAILED);
             payment.setUpdatedAt(LocalDateTime.now());
             paymentRepository.save(payment);
