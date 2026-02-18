@@ -1,10 +1,17 @@
 package io.gsp26se16.moni.payment.controller;
 
+import io.gsp26se16.moni.payment.dto.request.PaymentInitRequest;
+import io.gsp26se16.moni.payment.dto.request.SePayWebhookRequest;
+import io.gsp26se16.moni.payment.dto.response.PaymentInitResponse;
+import io.gsp26se16.moni.payment.dto.response.PaymentResponse;
 import io.gsp26se16.moni.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -12,11 +19,25 @@ import org.springframework.web.bind.annotation.RestController;
 public class PaymentController {
     private final PaymentService paymentService;
 
-    // webhook for sepay callback
+    @PostMapping("/sepay")
+    public ResponseEntity<PaymentResponse> handleSePayWebhook(@RequestBody SePayWebhookRequest sePayWebhookRequest) {
+        PaymentResponse response = paymentService.handleSePayCallback(sePayWebhookRequest);
+        return ResponseEntity.ok(response);
+    }
 
-    // init payment record
+    @PostMapping("/init")
+    public ResponseEntity<PaymentInitResponse> initPayment(@RequestBody PaymentInitRequest paymentInitRequest) {
+        PaymentInitResponse response = paymentService.initPayment(paymentInitRequest);
+        return ResponseEntity.ok(response);
+    }
 
-    // get payment list by user, status, date range
-
-    // get payment detail
+    @GetMapping
+    public ResponseEntity<List<PaymentResponse>> searchPayments(
+            @RequestParam(required = false) Integer userId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        List<PaymentResponse> payments = paymentService.searchPayments(userId, status, startDate, endDate);
+        return ResponseEntity.ok(payments);
+    }
 }
