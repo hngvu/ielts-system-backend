@@ -56,7 +56,7 @@ public class TagServiceImpl implements TagService{
     }
 
     @Override
-    public TagResponse getTagById(Long id) {
+    public TagResponse getTagById(Integer id) {
         Tag tag = tagRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TAG_NOT_FOUND));
         return tagMapper.toResponse(tag);
@@ -64,7 +64,7 @@ public class TagServiceImpl implements TagService{
 
     @Override
     @Transactional
-    public TagResponse updateTag(Long id, TagRequest request) {
+    public TagResponse updateTag(Integer id, TagRequest request) {
         Tag tag = tagRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TAG_NOT_FOUND));
 
@@ -80,7 +80,7 @@ public class TagServiceImpl implements TagService{
 
     @Override
     @Transactional
-    public void deleteTag(Long id) {
+    public void deleteTag(Integer id) {
         if (!tagRepository.existsById(id)) {
             throw new AppException(ErrorCode.TAG_NOT_FOUND);
         }

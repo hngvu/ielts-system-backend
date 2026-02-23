@@ -9,7 +9,7 @@ import java.util.List;
 public interface TagService {
     TagResponse createTag(TagRequest request);
     List<TagResponse> getTags(TagType type, String keyword);
-    TagResponse getTagById(Long id);
-    TagResponse updateTag(Long id, TagRequest request);
-    void deleteTag(Long id);
+    TagResponse getTagById(Integer id);
+    TagResponse updateTag(Integer id, TagRequest request);
+    void deleteTag(Integer id);
 }
