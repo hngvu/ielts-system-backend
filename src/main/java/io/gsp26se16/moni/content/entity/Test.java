@@ -2,9 +2,13 @@ package io.gsp26se16.moni.content.entity;
 
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestType;
+import io.gsp26se16.moni.tag.entity.Tag;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -24,4 +28,12 @@ public class Test {
     Skill skill;
     @Enumerated(EnumType.STRING)
     TestType testType;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "test_tags", // Tên bảng trung gian
+            joinColumns = @JoinColumn(name = "test_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    Set<Tag> tags = new HashSet<>();
 }

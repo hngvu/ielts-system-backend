@@ -42,7 +42,7 @@ public class TagController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<TagResponse>> getTag(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<TagResponse>> getTag(@PathVariable Integer id) {
         ApiResponse<TagResponse> apiResponse = ApiResponse.<TagResponse>builder()
                 .result(tagService.getTagById(id))
                 .build();
@@ -52,7 +52,7 @@ public class TagController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<TagResponse>> updateTag(
-            @PathVariable Long id,
+            @PathVariable Integer id,
             @RequestBody @Valid TagRequest request) {
         ApiResponse<TagResponse> apiResponse = ApiResponse.<TagResponse>builder()
                 .result(tagService.updateTag(id, request))
@@ -62,7 +62,7 @@ public class TagController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteTag(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteTag(@PathVariable Integer id) {
         tagService.deleteTag(id);
 
         ApiResponse<Void> apiResponse = ApiResponse.<Void>builder()

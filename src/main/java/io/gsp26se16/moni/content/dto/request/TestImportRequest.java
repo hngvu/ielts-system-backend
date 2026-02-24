@@ -23,6 +23,7 @@ public class TestImportRequest {
     @NotNull(message = "Test Type is required")
     private TestType testType;     // FULL_TEST, PRACTICE
 
+    private List<Integer> tagIds; // Danh sách ID của Tag (VD: [1, 5, 8])
     // Danh sách các bài đọc/nghe (Stimulus) trong đề này
     private List<StimulusRequest> stimuli;
 
