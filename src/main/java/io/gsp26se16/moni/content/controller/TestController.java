@@ -3,6 +3,7 @@ package io.gsp26se16.moni.content.controller;
 import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.content.dto.request.TestImportRequest;
+import io.gsp26se16.moni.content.dto.request.TestUpdateRequest;
 import io.gsp26se16.moni.content.dto.response.TestDetailResponse;
 import io.gsp26se16.moni.content.dto.response.TestResponse;
 import io.gsp26se16.moni.content.service.TestService;
@@ -77,6 +78,20 @@ public class TestController {
         return ResponseEntity.ok(ApiResponse.<TestDetailResponse>builder()
                 .result(result)
                 .message("Get test detail successfully")
+                .build());
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Update Test Info", description = "Cập nhật Tên, Mô tả, Loại đề thi và Tags")
+    public ResponseEntity<ApiResponse<TestDetailResponse>> updateTest(
+            @PathVariable Integer id,
+            @RequestBody TestUpdateRequest request
+    ) {
+        TestDetailResponse updatedTest = testService.updateTest(id, request);
+
+        return ResponseEntity.ok(ApiResponse.<TestDetailResponse>builder()
+                .result(updatedTest)
+                .message("Update test successfully")
                 .build());
     }
 }

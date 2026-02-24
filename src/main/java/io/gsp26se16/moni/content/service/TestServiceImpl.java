@@ -4,6 +4,7 @@ import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.dto.request.TestImportRequest;
+import io.gsp26se16.moni.content.dto.request.TestUpdateRequest;
 import io.gsp26se16.moni.content.dto.response.TestDetailResponse;
 import io.gsp26se16.moni.content.dto.response.TestResponse;
 import io.gsp26se16.moni.content.entity.*;
@@ -226,4 +227,39 @@ public class TestServiceImpl implements TestService {
                 .stimuli(stimulusDTOs)
                 .build();
     }
+
+    @Override
+    @Transactional
+    public TestDetailResponse updateTest(Integer id, TestUpdateRequest request) {
+        // 1. Tìm Test xem có tồn tại không
+        Test test = testRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_FOUND));
+
+        // 2. Cập nhật các trường thông tin cơ bản (Nếu request có truyền lên)
+        if (request.getTitle() != null) {
+            test.setTitle(request.getTitle());
+        }
+        if (request.getDescription() != null) {
+            test.setDescription(request.getDescription());
+        }
+        if (request.getTestType() != null) {
+            test.setTestType(request.getTestType());
+        }
+
+        // 3. Xử lý cập nhật Tags (Xóa tag cũ, đắp tag mới vào)
+        if (request.getTagIds() != null) {
+            List<Tag> newTags = tagRepository.findAllById(request.getTagIds());
+
+            // Xóa sạch tag cũ và set tag mới (Hibernate sẽ tự lo bảng trung gian)
+            test.getTags().clear();
+            test.getTags().addAll(newTags);
+        }
+
+        // 4. Lưu lại
+        testRepository.save(test);
+
+        // 5. Tái sử dụng hàm getTestDetail để trả về cục data mới nhất cho FE cập nhật UI
+        return getTestDetail(test.getId());
+    }
+
 }
