@@ -6,11 +6,9 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication
 @EnableFeignClients
-
 public class IeltsSystemBackendApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(IeltsSystemBackendApplication.class, args);
     }
-
 }

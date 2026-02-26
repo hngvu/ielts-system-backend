@@ -1,8 +1,9 @@
 package io.gsp26se16.moni.tag.dto.request;
 
-import io.gsp26se16.moni.tag.entity.TagType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+
+import io.gsp26se16.moni.tag.entity.TagType;
 import lombok.Data;
 
 @Data

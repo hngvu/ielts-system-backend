@@ -1,12 +1,12 @@
 package io.gsp26se16.moni.content.dto.response;
 
+import java.util.List;
+import java.util.Map;
+
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestType;
 import lombok.Builder;
 import lombok.Data;
-
-import java.util.List;
-import java.util.Map;
 
 @Data
 @Builder
@@ -29,9 +29,9 @@ public class TestDetailResponse {
     public static class StimulusDetail {
         private Integer id;
         private String title;
-        private String content;     // Nội dung bài đọc
-        private String mediaUrl;    // Audio/Ảnh
-        private Integer section;    // Thứ tự (Part 1, 2...)
+        private String content; // Nội dung bài đọc
+        private String mediaUrl; // Audio/Ảnh
+        private Integer section; // Thứ tự (Part 1, 2...)
 
         private List<QuestionGroupDetail> questionGroups;
     }
@@ -62,7 +62,7 @@ public class TestDetailResponse {
     @Builder
     public static class OptionDetail {
         private Integer id;
-        private String label;     // A, B, C, D
+        private String label; // A, B, C, D
         private String content;
         private Boolean isCorrect; // Admin được xem đáp án đúng
     }

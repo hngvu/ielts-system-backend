@@ -1,11 +1,12 @@
 package io.gsp26se16.moni.tag.repository;
 
-import io.gsp26se16.moni.tag.entity.Tag;
-import io.gsp26se16.moni.tag.entity.TagType;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import io.gsp26se16.moni.tag.entity.Tag;
+import io.gsp26se16.moni.tag.entity.TagType;
 
 @Repository
 public interface TagRepository extends JpaRepository<Tag, Integer> {

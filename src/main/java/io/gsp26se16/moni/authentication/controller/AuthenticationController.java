@@ -1,5 +1,10 @@
 package io.gsp26se16.moni.authentication.controller;
 
+import java.text.ParseException;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
 import com.nimbusds.jose.JOSEException;
 
 import io.gsp26se16.moni.authentication.dto.request.AuthenticationRequest;
@@ -10,10 +15,6 @@ import io.gsp26se16.moni.authentication.service.AuthenticationService;
 import io.gsp26se16.moni.common.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.text.ParseException;
 
 @RequiredArgsConstructor
 @RestController

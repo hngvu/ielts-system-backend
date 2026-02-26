@@ -1,17 +1,19 @@
 package io.gsp26se16.moni.tag.controller;
 
+import java.util.List;
+
+import jakarta.validation.Valid;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
 import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.tag.dto.request.TagRequest;
 import io.gsp26se16.moni.tag.dto.response.TagResponse;
 import io.gsp26se16.moni.tag.entity.TagType;
 import io.gsp26se16.moni.tag.service.TagService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/tags")
@@ -31,9 +33,7 @@ public class TagController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<TagResponse>>> getTags(
-            @RequestParam(required = false) TagType type,
-            @RequestParam(required = false) String keyword
-    ) {
+            @RequestParam(required = false) TagType type, @RequestParam(required = false) String keyword) {
         ApiResponse<List<TagResponse>> apiResponse = ApiResponse.<List<TagResponse>>builder()
                 .result(tagService.getTags(type, keyword))
                 .build();
@@ -52,8 +52,7 @@ public class TagController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<TagResponse>> updateTag(
-            @PathVariable Integer id,
-            @RequestBody @Valid TagRequest request) {
+            @PathVariable Integer id, @RequestBody @Valid TagRequest request) {
         ApiResponse<TagResponse> apiResponse = ApiResponse.<TagResponse>builder()
                 .result(tagService.updateTag(id, request))
                 .build();

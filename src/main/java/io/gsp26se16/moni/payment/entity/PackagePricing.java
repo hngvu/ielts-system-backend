@@ -2,6 +2,7 @@ package io.gsp26se16.moni.payment.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -19,5 +20,4 @@ public class PackagePricing {
     int price;
     int creditAmount;
     boolean isActive;
-
 }

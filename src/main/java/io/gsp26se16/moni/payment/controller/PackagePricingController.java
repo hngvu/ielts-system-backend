@@ -1,17 +1,19 @@
 package io.gsp26se16.moni.payment.controller;
 
-import io.gsp26se16.moni.payment.dto.request.PackagePricingCreateRequest;
-import io.gsp26se16.moni.payment.dto.request.PackagePricingUpdateRequest;
-import io.gsp26se16.moni.payment.dto.response.PackagePricingResponse;
-import io.gsp26se16.moni.payment.service.PackagePricingService;
+import java.util.List;
+
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import io.gsp26se16.moni.payment.dto.request.PackagePricingCreateRequest;
+import io.gsp26se16.moni.payment.dto.request.PackagePricingUpdateRequest;
+import io.gsp26se16.moni.payment.dto.response.PackagePricingResponse;
+import io.gsp26se16.moni.payment.service.PackagePricingService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/packages")
@@ -45,7 +47,8 @@ public class PackagePricingController {
     }
 
     @PostMapping
-    public ResponseEntity<PackagePricingResponse> createPackagePricing(@Valid @RequestBody PackagePricingCreateRequest request) {
+    public ResponseEntity<PackagePricingResponse> createPackagePricing(
+            @Valid @RequestBody PackagePricingCreateRequest request) {
         log.info("POST /packages - Creating new package pricing");
         PackagePricingResponse pricing = packagePricingService.createPackagePricing(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(pricing);
@@ -53,8 +56,7 @@ public class PackagePricingController {
 
     @PutMapping("/{id}")
     public ResponseEntity<PackagePricingResponse> updatePackagePricing(
-            @PathVariable Integer id,
-            @Valid @RequestBody PackagePricingUpdateRequest request) {
+            @PathVariable Integer id, @Valid @RequestBody PackagePricingUpdateRequest request) {
         log.info("PUT /packages/{} - Updating package pricing", id);
         PackagePricingResponse pricing = packagePricingService.updatePackagePricing(id, request);
         return ResponseEntity.ok(pricing);

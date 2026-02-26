@@ -1,5 +1,22 @@
 package io.gsp26se16.moni.payment.service.impl;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import jakarta.persistence.criteria.Predicate;
+
+import org.apache.commons.lang3.RandomStringUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.payment.dto.request.PaymentInitRequest;
 import io.gsp26se16.moni.payment.dto.request.SePayWebhookRequest;
 import io.gsp26se16.moni.payment.dto.response.PaymentInitResponse;
@@ -12,23 +29,7 @@ import io.gsp26se16.moni.payment.repository.CreditTransactionRepository;
 import io.gsp26se16.moni.payment.repository.PackagePricingRepository;
 import io.gsp26se16.moni.payment.repository.PaymentRepository;
 import io.gsp26se16.moni.payment.service.PaymentService;
-import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import io.gsp26se16.moni.authentication.entity.Users;
 
 @Service
 @RequiredArgsConstructor
@@ -39,27 +40,33 @@ public class PaymentServiceImpl implements PaymentService {
     private final String txnCodePrefix = "MN";
     private final String txnCodeCharset = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"; // exclude 0,1,I,L,O
     private final int txnCodeLength = 6 - txnCodePrefix.length();
+
     @Value("${sepay.acc}")
     private String sepayAcc;
+
     @Value("${sepay.bank}")
     private String sepayBank;
 
     @Override
     @Transactional
     public PaymentInitResponse initPayment(PaymentInitRequest paymentInitRequest) {
-        if (paymentInitRequest == null || paymentInitRequest.packageId() == null || paymentInitRequest.amount() == null) {
+        if (paymentInitRequest == null
+                || paymentInitRequest.packageId() == null
+                || paymentInitRequest.amount() == null) {
             throw new IllegalArgumentException("Invalid payment request");
         }
-        
+
         if (paymentInitRequest.amount() <= 0) {
             throw new IllegalArgumentException("Amount must be greater than 0");
         }
 
-        var packagePricing = packagePricingRepository.findById(paymentInitRequest.packageId())
+        var packagePricing = packagePricingRepository
+                .findById(paymentInitRequest.packageId())
                 .orElseThrow(() -> new RuntimeException("Package pricing not found"));
 
         if (packagePricing.getPrice() != paymentInitRequest.amount()) {
-            throw new RuntimeException("Amount does not match package pricing. Expected: " + packagePricing.getPrice() + ", Provided: " + paymentInitRequest.amount());
+            throw new RuntimeException("Amount does not match package pricing. Expected: " + packagePricing.getPrice()
+                    + ", Provided: " + paymentInitRequest.amount());
         }
 
         // Generate unique transaction code
@@ -79,23 +86,22 @@ public class PaymentServiceImpl implements PaymentService {
             currentUser = (Users) authentication.getPrincipal();
         }
 
-        var payment = paymentRepository.save(
-                Payment.builder()
-                        .packagePricing(packagePricing)
-                        .amount(paymentInitRequest.amount())
-                        .txnCode(txnCode)
-                        .createdAt(LocalDateTime.now())
-                        .expiredAt(LocalDateTime.now().plusMinutes(5))
-                        .status(PaymentStatus.PENDING)
-                        .user(currentUser)
-                        .build()
-        );
+        var payment = paymentRepository.save(Payment.builder()
+                .packagePricing(packagePricing)
+                .amount(paymentInitRequest.amount())
+                .txnCode(txnCode)
+                .createdAt(LocalDateTime.now())
+                .expiredAt(LocalDateTime.now().plusMinutes(5))
+                .status(PaymentStatus.PENDING)
+                .user(currentUser)
+                .build());
 
         return PaymentInitResponse.builder()
                 .id(payment.getId())
                 .amount(payment.getAmount())
                 .txnCode(payment.getTxnCode())
-                .qrCodeUrl("https://qr.sepay.vn/img?" + "acc=" + sepayAcc + "&bank=" + sepayBank + "&amount=" + payment.getAmount() + "&des=" + payment.getTxnCode())
+                .qrCodeUrl("https://qr.sepay.vn/img?" + "acc=" + sepayAcc + "&bank=" + sepayBank + "&amount="
+                        + payment.getAmount() + "&des=" + payment.getTxnCode())
                 .expiredAt(payment.getExpiredAt())
                 .build();
     }
@@ -107,7 +113,8 @@ public class PaymentServiceImpl implements PaymentService {
             throw new IllegalArgumentException("Invalid webhook request");
         }
 
-        Pattern pattern = Pattern.compile(Pattern.quote(txnCodePrefix) + "[" + txnCodeCharset + "]{" + txnCodeLength + "}");
+        Pattern pattern =
+                Pattern.compile(Pattern.quote(txnCodePrefix) + "[" + txnCodeCharset + "]{" + txnCodeLength + "}");
         Matcher matcher = pattern.matcher(sePayWebhookRequest.content());
         String txnCode = matcher.find() ? matcher.group() : null;
 
@@ -116,8 +123,12 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         // repo find by txnCode
-        var payment = paymentRepository.findAll(
-                (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("txnCode"), txnCode)).stream().findFirst().orElse(null);
+        var payment =
+                paymentRepository
+                        .findAll((root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("txnCode"), txnCode))
+                        .stream()
+                        .findFirst()
+                        .orElse(null);
 
         if (payment == null) {
             throw new RuntimeException("Payment not found for transaction code: " + txnCode);
@@ -127,7 +138,10 @@ public class PaymentServiceImpl implements PaymentService {
         if (payment.getStatus() != PaymentStatus.PENDING) {
             return PaymentResponse.builder()
                     .id(payment.getId())
-                    .packageId(payment.getPackagePricing() != null ? payment.getPackagePricing().getId() : null)
+                    .packageId(
+                            payment.getPackagePricing() != null
+                                    ? payment.getPackagePricing().getId()
+                                    : null)
                     .txnCode(payment.getTxnCode())
                     .amount(payment.getAmount())
                     .updatedAt(payment.getUpdatedAt())
@@ -140,10 +154,13 @@ public class PaymentServiceImpl implements PaymentService {
             payment.setStatus(PaymentStatus.CANCELLED);
             payment.setUpdatedAt(LocalDateTime.now());
             paymentRepository.save(payment);
-            
+
             return PaymentResponse.builder()
                     .id(payment.getId())
-                    .packageId(payment.getPackagePricing() != null ? payment.getPackagePricing().getId() : null)
+                    .packageId(
+                            payment.getPackagePricing() != null
+                                    ? payment.getPackagePricing().getId()
+                                    : null)
                     .txnCode(payment.getTxnCode())
                     .amount(payment.getAmount())
                     .updatedAt(payment.getUpdatedAt())
@@ -156,13 +173,16 @@ public class PaymentServiceImpl implements PaymentService {
             payment.setStatus(PaymentStatus.FAILED);
             payment.setUpdatedAt(LocalDateTime.now());
             paymentRepository.save(payment);
-            
+
             // Create refund credit transaction for failed payment
             createRefundCreditTransaction(payment);
-            
+
             return PaymentResponse.builder()
                     .id(payment.getId())
-                    .packageId(payment.getPackagePricing() != null ? payment.getPackagePricing().getId() : null)
+                    .packageId(
+                            payment.getPackagePricing() != null
+                                    ? payment.getPackagePricing().getId()
+                                    : null)
                     .txnCode(payment.getTxnCode())
                     .amount(payment.getAmount())
                     .updatedAt(payment.getUpdatedAt())
@@ -182,7 +202,10 @@ public class PaymentServiceImpl implements PaymentService {
 
         return PaymentResponse.builder()
                 .id(payment.getId())
-                .packageId(payment.getPackagePricing() != null ? payment.getPackagePricing().getId() : null)
+                .packageId(
+                        payment.getPackagePricing() != null
+                                ? payment.getPackagePricing().getId()
+                                : null)
                 .txnCode(payment.getTxnCode())
                 .amount(payment.getAmount())
                 .updatedAt(payment.getUpdatedAt())
@@ -191,20 +214,21 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public List<PaymentResponse> searchPayments(Integer userId, String status, LocalDateTime startDate, LocalDateTime endDate) {
+    public List<PaymentResponse> searchPayments(
+            Integer userId, String status, LocalDateTime startDate, LocalDateTime endDate) {
         Specification<Payment> spec = (root, query, criteriaBuilder) -> {
             Predicate predicate = criteriaBuilder.conjunction();
-            
+
             if (userId != null) {
-                predicate = criteriaBuilder.and(predicate, 
-                    criteriaBuilder.equal(root.get("user").get("id"), userId));
+                predicate = criteriaBuilder.and(
+                        predicate, criteriaBuilder.equal(root.get("user").get("id"), userId));
             }
 
             if (status != null) {
                 try {
                     PaymentStatus paymentStatus = PaymentStatus.valueOf(status.toUpperCase());
-                    predicate = criteriaBuilder.and(predicate, 
-                        criteriaBuilder.equal(root.get("status"), paymentStatus));
+                    predicate =
+                            criteriaBuilder.and(predicate, criteriaBuilder.equal(root.get("status"), paymentStatus));
                 } catch (IllegalArgumentException e) {
                     // Invalid status, return empty list
                     return criteriaBuilder.disjunction();
@@ -212,24 +236,27 @@ public class PaymentServiceImpl implements PaymentService {
             }
 
             if (startDate != null) {
-                predicate = criteriaBuilder.and(predicate, 
-                    criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), startDate));
+                predicate = criteriaBuilder.and(
+                        predicate, criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), startDate));
             }
 
             if (endDate != null) {
-                predicate = criteriaBuilder.and(predicate, 
-                    criteriaBuilder.lessThanOrEqualTo(root.get("createdAt"), endDate));
+                predicate = criteriaBuilder.and(
+                        predicate, criteriaBuilder.lessThanOrEqualTo(root.get("createdAt"), endDate));
             }
-            
+
             return predicate;
         };
 
         List<Payment> payments = paymentRepository.findAll(spec);
-        
+
         return payments.stream()
                 .map(payment -> PaymentResponse.builder()
                         .id(payment.getId())
-                        .packageId(payment.getPackagePricing() != null ? payment.getPackagePricing().getId() : null)
+                        .packageId(
+                                payment.getPackagePricing() != null
+                                        ? payment.getPackagePricing().getId()
+                                        : null)
                         .txnCode(payment.getTxnCode())
                         .amount(payment.getAmount())
                         .updatedAt(payment.getUpdatedAt())
@@ -249,10 +276,10 @@ public class PaymentServiceImpl implements PaymentService {
 
         // Calculate credits based on package pricing
         int creditAmount = payment.getPackagePricing().getCreditAmount();
-        
+
         // Get current user balance (simplified - in real implementation, you'd track this properly)
         int currentBalance = 0; // This should come from user's credit balance
-        
+
         // Create credit transaction
         CreditTransaction creditTransaction = CreditTransaction.builder()
                 .delta(creditAmount)
@@ -274,7 +301,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         // For failed payments, create a zero-delta transaction for tracking
         int currentBalance = 0; // This should come from user's credit balance
-        
+
         CreditTransaction creditTransaction = CreditTransaction.builder()
                 .delta(0) // No credit change for failed payments
                 .balanceBefore(currentBalance)

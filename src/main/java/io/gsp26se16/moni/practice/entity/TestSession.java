@@ -1,12 +1,13 @@
 package io.gsp26se16.moni.practice.entity;
 
+import java.time.LocalDateTime;
+
+import jakarta.persistence.*;
+
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.content.entity.Test;
-import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
