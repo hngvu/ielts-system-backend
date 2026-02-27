@@ -1,10 +1,11 @@
 package io.gsp26se16.moni.tag.mapper;
 
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
+
 import io.gsp26se16.moni.tag.dto.request.TagRequest;
 import io.gsp26se16.moni.tag.dto.response.TagResponse;
 import io.gsp26se16.moni.tag.entity.Tag;
-import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
 public interface TagMapper {

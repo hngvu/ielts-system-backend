@@ -1,5 +1,17 @@
 package io.gsp26se16.moni.content.service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
@@ -15,17 +27,6 @@ import io.gsp26se16.moni.content.repository.TestStructureRepository;
 import io.gsp26se16.moni.tag.entity.Tag;
 import io.gsp26se16.moni.tag.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -86,8 +87,10 @@ public class TestServiceImpl implements TestService {
                         group.setStimulus(stimulus); // 🔥 Gán cha (Quan trọng)
 
                         // Tìm QuestionType trong DB (Bắt buộc phải có từ DataInitializer)
-                        QuestionType type = questionTypeRepository.findByCode(groupReq.getQuestionTypeCode())
-                                .orElseThrow(() -> new RuntimeException("Question Type not found: " + groupReq.getQuestionTypeCode()));
+                        QuestionType type = questionTypeRepository
+                                .findByCode(groupReq.getQuestionTypeCode())
+                                .orElseThrow(() -> new RuntimeException(
+                                        "Question Type not found: " + groupReq.getQuestionTypeCode()));
                         group.setQuestionType(type);
 
                         // 2.3 Map Questions (Câu hỏi)
@@ -97,7 +100,7 @@ public class TestServiceImpl implements TestService {
                                 Question question = new Question();
                                 question.setContent(qReq.getContent());
                                 question.setPosition(qReq.getPosition());
-                                question.setMetadata(qReq.getMetadata());       // Map JSONB
+                                question.setMetadata(qReq.getMetadata()); // Map JSONB
                                 question.setExplanation(qReq.getExplanation()); // Map JSONB
                                 question.setQuestionGroup(group); // 🔥 Gán cha
 
@@ -156,9 +159,7 @@ public class TestServiceImpl implements TestService {
                 .createdAt(LocalDateTime.now()) // Tạm thời để now, sau này lấy test.getCreatedAt()
 
                 // Map Tags: Lấy tên tag từ Set<Tag>
-                .tags(test.getTags().stream()
-                        .map(Tag::getName)
-                        .toList())
+                .tags(test.getTags().stream().map(Tag::getName).toList())
                 .build());
     }
 
@@ -166,7 +167,8 @@ public class TestServiceImpl implements TestService {
     @Transactional(readOnly = true) // Tối ưu hiệu năng cho thao tác đọc
     public TestDetailResponse getTestDetail(Integer id) {
         // 1. Tìm Test
-        Test test = testRepository.findById(id)
+        Test test = testRepository
+                .findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_FOUND)); // Nhớ định nghĩa ErrorCode này
 
         // 2. Tìm danh sách Stimulus thông qua bảng TestStructure
@@ -187,34 +189,36 @@ public class TestServiceImpl implements TestService {
                             .mediaUrl(s.getMediaUrl())
                             .section(s.getSection()) // Hoặc lấy section từ TestStructure nếu bạn lưu ở đó
                             // Map Question Groups
-                            .questionGroups(s.getQuestionGroups().stream().map(g ->
-                                    TestDetailResponse.QuestionGroupDetail.builder()
+                            .questionGroups(s.getQuestionGroups().stream()
+                                    .map(g -> TestDetailResponse.QuestionGroupDetail.builder()
                                             .id(g.getId())
                                             .instruction(g.getInstruction())
-                                            .questionTypeCode(g.getQuestionType().getCode())
+                                            .questionTypeCode(
+                                                    g.getQuestionType().getCode())
                                             // Map Questions
-                                            .questions(g.getQuestions().stream().map(q ->
-                                                    TestDetailResponse.QuestionDetail.builder()
+                                            .questions(g.getQuestions().stream()
+                                                    .map(q -> TestDetailResponse.QuestionDetail.builder()
                                                             .id(q.getId())
                                                             .content(q.getContent())
                                                             .position(q.getPosition())
                                                             .metadata(q.getMetadata())
                                                             .explanation(q.getExplanation())
                                                             // Map Options
-                                                            .options(q.getOptions().stream().map(o ->
-                                                                    TestDetailResponse.OptionDetail.builder()
+                                                            .options(q.getOptions().stream()
+                                                                    .map(o -> TestDetailResponse.OptionDetail.builder()
                                                                             .id(o.getId())
                                                                             .label(o.getLabel())
                                                                             .content(o.getContent())
                                                                             .isCorrect(o.isCorrect())
-                                                                            .build()
-                                                            ).collect(Collectors.toList()))
-                                                            .build()
-                                            ).collect(Collectors.toList()))
-                                            .build()
-                            ).collect(Collectors.toList()))
+                                                                            .build())
+                                                                    .collect(Collectors.toList()))
+                                                            .build())
+                                                    .collect(Collectors.toList()))
+                                            .build())
+                                    .collect(Collectors.toList()))
                             .build();
-                }).collect(Collectors.toList());
+                })
+                .collect(Collectors.toList());
 
         // 4. Trả về kết quả cuối cùng
         return TestDetailResponse.builder()
@@ -232,8 +236,7 @@ public class TestServiceImpl implements TestService {
     @Transactional
     public TestDetailResponse updateTest(Integer id, TestUpdateRequest request) {
         // 1. Tìm Test xem có tồn tại không
-        Test test = testRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_FOUND));
+        Test test = testRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_FOUND));
 
         // 2. Cập nhật các trường thông tin cơ bản (Nếu request có truyền lên)
         if (request.getTitle() != null) {
@@ -261,5 +264,4 @@ public class TestServiceImpl implements TestService {
         // 5. Tái sử dụng hàm getTestDetail để trả về cục data mới nhất cho FE cập nhật UI
         return getTestDetail(test.getId());
     }
-
 }

@@ -1,19 +1,19 @@
 package io.gsp26se16.moni.content.service;
 
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -31,8 +31,7 @@ public class CloudinaryStorageService implements StorageService {
             Map params = ObjectUtils.asMap(
                     "public_id", fileName,
                     "folder", "ielts-content",
-                    "resource_type", "auto"
-            );
+                    "resource_type", "auto");
 
             Map uploadResult = cloudinary.uploader().upload(file.getBytes(), params);
 
@@ -54,10 +53,16 @@ public class CloudinaryStorageService implements StorageService {
             String resourceType = getResourceType(fileUrl); // Xác định là image hay video (audio)
 
             // Gọi API xóa của Cloudinary
-            cloudinary.uploader().destroy(publicId, ObjectUtils.asMap(
-                    "resource_type", resourceType,
-                    "invalidate", true // Xóa cả cache trên CDN để user không nhìn thấy ảnh cũ
-            ));
+            cloudinary
+                    .uploader()
+                    .destroy(
+                            publicId,
+                            ObjectUtils.asMap(
+                                    "resource_type",
+                                    resourceType,
+                                    "invalidate",
+                                    true // Xóa cả cache trên CDN để user không nhìn thấy ảnh cũ
+                                    ));
 
             log.info("Deleted file on Cloudinary: {}", publicId);
         } catch (Exception e) {

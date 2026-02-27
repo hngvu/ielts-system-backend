@@ -1,18 +1,19 @@
 package io.gsp26se16.moni.authentication.controller;
 
+import java.util.List;
+
+import jakarta.validation.Valid;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 import io.gsp26se16.moni.authentication.dto.request.UpdateProfileRequest;
 import io.gsp26se16.moni.authentication.dto.response.UserProfileResponse;
 import io.gsp26se16.moni.authentication.service.UserService;
 import io.gsp26se16.moni.common.dto.ApiResponse;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor

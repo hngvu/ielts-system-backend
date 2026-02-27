@@ -1,17 +1,19 @@
 package io.gsp26se16.moni.payment.controller;
 
-import io.gsp26se16.moni.payment.dto.request.ServicePricingCreateRequest;
-import io.gsp26se16.moni.payment.dto.request.ServicePricingUpdateRequest;
-import io.gsp26se16.moni.payment.dto.response.ServicePricingResponse;
-import io.gsp26se16.moni.payment.service.ServicePricingService;
+import java.util.List;
+
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import io.gsp26se16.moni.payment.dto.request.ServicePricingCreateRequest;
+import io.gsp26se16.moni.payment.dto.request.ServicePricingUpdateRequest;
+import io.gsp26se16.moni.payment.dto.response.ServicePricingResponse;
+import io.gsp26se16.moni.payment.service.ServicePricingService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/services")
@@ -43,7 +45,8 @@ public class ServicePricingController {
     }
 
     @PostMapping
-    public ResponseEntity<ServicePricingResponse> createServicePricing(@Valid @RequestBody ServicePricingCreateRequest request) {
+    public ResponseEntity<ServicePricingResponse> createServicePricing(
+            @Valid @RequestBody ServicePricingCreateRequest request) {
         log.info("POST /services - Creating new service pricing");
         ServicePricingResponse pricing = servicePricingService.createServicePricing(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(pricing);
@@ -51,8 +54,7 @@ public class ServicePricingController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ServicePricingResponse> updateServicePricing(
-            @PathVariable Integer id,
-            @Valid @RequestBody ServicePricingUpdateRequest request) {
+            @PathVariable Integer id, @Valid @RequestBody ServicePricingUpdateRequest request) {
         log.info("PUT /services/{} - Updating service pricing", id);
         ServicePricingResponse pricing = servicePricingService.updateServicePricing(id, request);
         return ResponseEntity.ok(pricing);

@@ -1,5 +1,8 @@
 package io.gsp26se16.moni.authentication.service;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import io.gsp26se16.moni.authentication.dto.request.ChangePassWordRequest;
 import io.gsp26se16.moni.authentication.dto.request.RegisterRequest;
 import io.gsp26se16.moni.authentication.dto.response.UserProfileResponse;
@@ -13,8 +16,6 @@ import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j

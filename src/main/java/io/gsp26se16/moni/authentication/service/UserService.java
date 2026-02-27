@@ -1,11 +1,9 @@
 package io.gsp26se16.moni.authentication.service;
 
-
+import java.util.List;
 
 import io.gsp26se16.moni.authentication.dto.request.UpdateProfileRequest;
 import io.gsp26se16.moni.authentication.dto.response.UserProfileResponse;
-
-import java.util.List;
 
 public interface UserService {
 

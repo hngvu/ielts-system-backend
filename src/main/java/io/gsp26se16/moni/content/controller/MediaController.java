@@ -1,14 +1,15 @@
 package io.gsp26se16.moni.content.controller;
 
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.content.service.StorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/admin/media")
@@ -34,9 +35,7 @@ public class MediaController {
 
         storageService.deleteFile(fileUrl);
 
-        return ResponseEntity.ok(ApiResponse.<Void>builder()
-                .message("File deleted successfully")
-                .build());
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder().message("File deleted successfully").build());
     }
-
 }

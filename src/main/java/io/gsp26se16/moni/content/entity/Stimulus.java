@@ -1,15 +1,15 @@
 package io.gsp26se16.moni.content.entity;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.persistence.*;
 
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestType;
-import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Getter
@@ -23,8 +23,10 @@ public class Stimulus {
     Integer id;
 
     String title;
+
     @Enumerated(EnumType.STRING)
     TestType testType;
+
     Skill skill;
     int section;
     String content;

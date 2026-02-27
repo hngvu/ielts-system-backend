@@ -1,12 +1,14 @@
 package io.gsp26se16.moni.authentication.entity;
 
+import java.sql.Timestamp;
+
 import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.sql.Timestamp;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 @Getter
 @Setter

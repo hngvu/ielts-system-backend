@@ -1,12 +1,13 @@
 package io.gsp26se16.moni.payment.entity;
 
+import java.time.LocalDateTime;
+
+import jakarta.persistence.*;
+
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.payment.enumeration.PaymentType;
-import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -23,8 +24,10 @@ public class CreditTransaction {
     int delta;
     int balanceBefore;
     int balanceAfter;
+
     @Enumerated(EnumType.STRING)
     PaymentType paymentType;
+
     LocalDateTime createdAt;
 
     @ManyToOne

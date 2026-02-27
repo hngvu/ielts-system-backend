@@ -1,14 +1,16 @@
 package io.gsp26se16.moni.content.entity;
 
-import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
-import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.Type;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import jakarta.persistence.*;
+
+import org.hibernate.annotations.Type;
+
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 @Entity
 @Getter
@@ -20,8 +22,10 @@ public class Question {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
+
     String content;
     int position;
+
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     Map<String, Object> metadata;
