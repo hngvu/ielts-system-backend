@@ -19,10 +19,6 @@ public class QuestionOption {
     boolean isCorrect;
 
     @ManyToOne
-    @JoinColumn(name = "question_group_id")
-    QuestionGroup questionGroup;
-
-    @ManyToOne
     @JoinColumn(name = "question_id")
     Question question;
 }

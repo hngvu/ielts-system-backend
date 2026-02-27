@@ -1,6 +1,8 @@
 package io.gsp26se16.moni.content.entity;
 
+import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
+import io.gsp26se16.moni.common.enumeration.TestMode;
 import io.gsp26se16.moni.common.enumeration.TestType;
 import io.gsp26se16.moni.tag.entity.Tag;
 import jakarta.persistence.*;
@@ -28,6 +30,16 @@ public class Test {
     Skill skill;
     @Enumerated(EnumType.STRING)
     TestType testType;
+    @Column(name = "duration")
+    Integer duration; // Thời gian làm bài (phút)
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "test_mode")
+    TestMode testMode; // Enum: FULL_TEST, PRACTICE
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    PublishStatus status; // Enum: DRAFT, PUBLISHED, HIDDEN
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

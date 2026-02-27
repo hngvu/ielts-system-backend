@@ -15,8 +15,7 @@ public interface TestService {
      * @return ID của Test vừa tạo
      */
     Integer importTest(TestImportRequest request);
-    public Page<TestResponse> getTests(String keyword, Skill skill, Pageable pageable);
-
+    public Page<TestResponse> getAllTests(String keyword, Skill skill, Pageable pageable);
     public TestDetailResponse getTestDetail(Integer id);
-    TestDetailResponse updateTest(Integer id, TestUpdateRequest request);
+    public void updateTest(Integer id, TestUpdateRequest request);
 }
