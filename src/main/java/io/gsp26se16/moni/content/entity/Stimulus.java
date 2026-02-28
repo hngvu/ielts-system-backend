@@ -6,6 +6,7 @@ import java.util.List;
 import jakarta.persistence.*;
 
 import io.gsp26se16.moni.authentication.entity.Users;
+import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestType;
 import lombok.*;
@@ -28,11 +29,15 @@ public class Stimulus {
     TestType testType;
 
     Skill skill;
-    int section;
+    @Column(columnDefinition = "TEXT")
     String content;
     String mediaUrl;
+    @Enumerated(EnumType.STRING)
+    PublishStatus status;
+    @Column(columnDefinition = "TEXT")
+    String metadata;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     Users createdBy;
 

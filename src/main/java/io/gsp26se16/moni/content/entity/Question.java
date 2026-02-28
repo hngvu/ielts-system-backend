@@ -1,16 +1,16 @@
 package io.gsp26se16.moni.content.entity;
 
+import io.gsp26se16.moni.tag.entity.Tag;
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.Type;
+
+import java.util.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import jakarta.persistence.*;
-
-import org.hibernate.annotations.Type;
-
-import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 @Entity
 @Getter
@@ -41,4 +41,12 @@ public class Question {
     // 🔥 THÊM: Để lưu Question là tự lưu luôn Options (A, B, C, D)
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     List<QuestionOption> options = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "question_tag",
+            joinColumns = @JoinColumn(name = "question_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<Tag> tags = new HashSet<>();
 }
