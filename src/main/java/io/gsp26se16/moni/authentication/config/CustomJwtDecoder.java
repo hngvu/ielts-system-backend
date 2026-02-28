@@ -1,5 +1,16 @@
 package io.gsp26se16.moni.authentication.config;
 
+import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
+import java.time.Instant;
+import java.util.Date;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtException;
+import org.springframework.stereotype.Component;
+
 import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.SignedJWT;
@@ -37,7 +48,8 @@ public class CustomJwtDecoder implements JwtDecoder {
             SignedJWT signedJWT = SignedJWT.parse(token);
 
             // Verify signature
-            JWSVerifier verifier = new MACVerifier(signerKey);
+            byte[] secretBytes = signerKey.getBytes(StandardCharsets.UTF_8);
+            JWSVerifier verifier = new MACVerifier(secretBytes);
             if (!signedJWT.verify(verifier)) {
                 throw new JwtException("Invalid JWT signature");
             }

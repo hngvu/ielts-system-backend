@@ -1,17 +1,18 @@
 package io.gsp26se16.moni.ai.service;
 
-import java.util.List;
-import java.util.Map;
-
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
-import org.springframework.stereotype.Service;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.gsp26se16.moni.ai.model.request.WritingRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
+import org.springframework.stereotype.Service;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -21,164 +22,165 @@ public class WritingTask2Service {
     private final ChatClient.Builder chatClientBuilder;
     private final ObjectMapper objectMapper;
     private final PromptLoader promptLoader;
-    private final RuleEngine ruleEngine;
+    private final Helper helper;
+    // RuleEngine is used exclusively through Helper — no direct dependency here.
 
-    public Map<String, Object> score(WritingRequest request) {
-        ChatClient chatClient =
-                chatClientBuilder.defaultAdvisors(new SimpleLoggerAdvisor()).build();
+    // =========================================================================
+    // PUBLIC ENTRY POINT
+    // =========================================================================
 
-        // 1. Parse Essay with Task Type Detection
-        Map<String, Object> parsedEssay = phase1ParseTask2(chatClient, request.getQuestion(), request.getAnswer());
-        String taskType = (String) parsedEssay.get("task_type");
+    public Map<String, Object> score(WritingRequest request) throws JsonProcessingException {
 
-        // 2. Task Response Evaluation
-        Map<String, Object> trOutput = phase2TaskResponse(chatClient, request.getQuestion(), parsedEssay, taskType);
-        double trBand = ((Number) trOutput.get("band")).doubleValue();
-        Map<String, RuleEngine.Violation> violations = extractViolations(trOutput);
+        ChatClient chatClient = chatClientBuilder
+                .defaultAdvisors(new SimpleLoggerAdvisor())
+                .build();
 
-        // 3-5. Parallel Scoring (CC, LR, GRA)
-        Map<String, Object> cc = phase3Coherence(chatClient, parsedEssay);
-        Map<String, Object> lr = phase4Lexical(chatClient, parsedEssay);
-        Map<String, Object> gra = phase5Grammar(chatClient, parsedEssay);
+        String question = request.getQuestion();
+        String essay    = request.getAnswer();
 
-        // 6. Raw Bands
-        Map<String, Double> rawBands = Map.of(
-                "TR", trBand,
-                "CC", ((Number) cc.get("band")).doubleValue(),
-                "LR", ((Number) lr.get("band")).doubleValue(),
-                "GRA", ((Number) gra.get("band")).doubleValue());
+        // ── Phase 1: Structural parse + task-type detection ───────────────────
+        Map<String, Object> parsedEssay = phase1Parse(chatClient, question, essay);
 
-        // 7. Apply Rule Engine
-        RuleEngine.RuleResult ruleResult = ruleEngine.applyAllRules(rawBands, violations);
-        Map<String, Double> cappedBands = ruleResult.cappedBands();
+        // ── Phase 2–5: Criterion scoring ──────────────────────────────────────
+        Map<String, Object> tr  = phase2TaskResponse(chatClient, question, essay, parsedEssay);
+        Map<String, Object> cc  = phase3Coherence(chatClient, essay, parsedEssay);
+        Map<String, Object> lr  = phase4Lexical(chatClient, essay);
+        Map<String, Object> gra = phase5Grammar(chatClient, essay);
 
-        // 8. Apply GRA Ceiling
-        @SuppressWarnings("unchecked")
-        List<String> graViolations = (List<String>) gra.getOrDefault("violations", List.of());
-        double graCeiledBand = ruleEngine.applyGraCeiling(cappedBands.get("GRA"), graViolations);
+        // ── Phase 6: Rule Engine + band calculation ───────────────────────────
+        Map<String, Object> finalResult = helper.calculateBands(tr, cc, lr, gra);
 
-        // 9. Calculate Final Band
-        double avgBand = (cappedBands.get("TR") + cappedBands.get("CC") + cappedBands.get("LR") + graCeiledBand) / 4.0;
+        // ── Phase 7: Feedback ─────────────────────────────────────────────────
+        Map<String, Object> feedback = phase7Feedback(chatClient, essay, finalResult);
 
-        // Apply TR Overall Ceiling
-        double cappedAvg = avgBand;
-        String note = "";
-        if (cappedBands.get("TR") < 6.0) {
-            cappedAvg = Math.min(avgBand, 6.5);
-            note = "TR < 6.0 ceiling";
-        } else if (cappedBands.get("TR") <= 6.5) {
-            cappedAvg = Math.min(avgBand, 7.0);
-            note = "TR ceiling at 7.0";
-        }
-
-        if (ruleResult.overallCap() != null) {
-            cappedAvg = Math.min(cappedAvg, ruleResult.overallCap());
-            note += " + HARD overall cap";
-        }
-
-        double finalBand = ruleEngine.ieltsRounding(cappedAvg);
-
-        // 10. Generate Feedback
-        Map<String, Object> feedback =
-                phase7FeedbackTask2(chatClient, request.getQuestion(), request.getAnswer(), cappedBands, finalBand);
-
-        return Map.of(
-                "task",
-                "IELTS Writing Task 2",
-                "overall",
-                Map.of("band", finalBand, "note", note, "hard_caps", ruleResult.appliedHard()),
-                "bands",
-                Map.of(
-                        "TR", Map.of("band", cappedBands.get("TR"), "base_band", trBand),
-                        "CC", Map.of("band", cappedBands.get("CC")),
-                        "LR", Map.of("band", cappedBands.get("LR")),
-                        "GRA", Map.of("band", graCeiledBand)),
-                "feedback",
-                feedback);
+        Map<String, Object> response = new HashMap<>();
+        response.put("assessment",       finalResult);
+        response.put("feedback",         feedback);
+        response.put("parsed_structure", parsedEssay);
+        return response;
     }
 
-    private Map<String, Object> phase1ParseTask2(ChatClient chatClient, String question, String essay) {
+    // =========================================================================
+    // PHASES
+    // =========================================================================
+
+    /**
+     * Phase 1 — Structural parse.
+     * Prompt vars: {question}, {essay}
+     */
+    private Map<String, Object> phase1Parse(
+            ChatClient chatClient, String question, String essay) {
+
         String prompt = promptLoader.loadPrompt(
                 "phase1_parse_task2.txt",
-                Map.of(
-                        "question", question,
-                        "essay", essay));
-        return callLlmAndParseJson(chatClient, prompt, "");
+                Map.of("question", question, "essay", essay));
+        return callEvaluation(chatClient, prompt);
     }
 
+    /**
+     * Phase 2 — Task Response (strict band-gating model).
+     * Prompt vars: {question}, {essay}, {phase2_json}
+     * Uses phase2_ta.txt (STRICT BAND GATING VERSION).
+     * Violations: no_clear_position, partial_task_addressing,
+     * insufficient_development, unclear_position_progression,
+     * irrelevant_content, weak_argument_depth.
+     */
     private Map<String, Object> phase2TaskResponse(
-            ChatClient chatClient, String question, Map<String, Object> parsed, String taskType) {
+            ChatClient chatClient,
+            String question,
+            String essay,
+            Map<String, Object> parsedEssay) throws JsonProcessingException {
+
         String prompt = promptLoader.loadPrompt(
                 "phase2_tr.txt",
                 Map.of(
-                        "question", question,
-                        "task_type", taskType,
-                        "essay_text", parsed.get("sentences").toString()));
-        return callLlmAndParseJson(chatClient, prompt, "");
+                        "question",    question,
+                        "essay",       essay,
+                        "phase2_json", objectMapper.writeValueAsString(parsedEssay)
+                ));
+        return callEvaluation(chatClient, prompt);
     }
 
-    private Map<String, Object> phase3Coherence(ChatClient chatClient, Map<String, Object> parsed) {
-        String prompt = promptLoader.loadPrompt("phase3_cc.txt");
-        return callLlmAndParseJson(chatClient, prompt, parsed.toString());
+    /**
+     * Phase 3 — Coherence and Cohesion.
+     * Prompt vars: {essay}, {phase1_json}
+     */
+    private Map<String, Object> phase3Coherence(
+            ChatClient chatClient,
+            String essay,
+            Map<String, Object> parsedEssay) throws JsonProcessingException {
+
+        String prompt = promptLoader.loadPrompt(
+                "phase3_cc.txt",
+                Map.of(
+                        "essay",       essay,
+                        "phase1_json", objectMapper.writeValueAsString(parsedEssay)
+                ));
+        return callEvaluation(chatClient, prompt);
     }
 
-    private Map<String, Object> phase4Lexical(ChatClient chatClient, Map<String, Object> parsed) {
-        String prompt = promptLoader.loadPrompt("phase4_lr.txt");
-        return callLlmAndParseJson(chatClient, prompt, parsed.toString());
+    /**
+     * Phase 4 — Lexical Resource.
+     * Prompt vars: {essay}
+     *
+     * Note: the LR rubric is now fully inlined in phase4_lr.txt.
+     * No {LR_RUBRIC} placeholder exists in the current prompt version.
+     */
+    private Map<String, Object> phase4Lexical(ChatClient chatClient, String essay) {
+        String prompt = promptLoader.loadPrompt(
+                "phase4_lr.txt",
+                Map.of("essay", essay));
+        return callEvaluation(chatClient, prompt);
     }
 
-    private Map<String, Object> phase5Grammar(ChatClient chatClient, Map<String, Object> parsed) {
-        String prompt = promptLoader.loadPrompt("phase5_gra.txt");
-        return callLlmAndParseJson(chatClient, prompt, parsed.toString());
+    /**
+     * Phase 5 — Grammatical Range and Accuracy.
+     * Prompt vars: {essay}
+     */
+    private Map<String, Object> phase5Grammar(ChatClient chatClient, String essay) {
+        String prompt = promptLoader.loadPrompt(
+                "phase5_gra.txt",
+                Map.of("essay", essay));
+        return callEvaluation(chatClient, prompt);
     }
 
-    private Map<String, Object> phase7FeedbackTask2(
-            ChatClient chatClient, String question, String essay, Map<String, Double> bands, double finalBand) {
+    /**
+     * Phase 7 — Post-marking feedback.
+     * Prompt vars: {all_phase_results}, {essay}
+     */
+    private Map<String, Object> phase7Feedback(
+            ChatClient chatClient,
+            String essay,
+            Map<String, Object> finalResult) throws JsonProcessingException {
+
         String prompt = promptLoader.loadPrompt(
                 "phase7_feedback_task2.txt",
                 Map.of(
-                        "question", question,
-                        "essay", essay,
-                        "bands", bands.toString()));
-        Map<String, Object> result = callLlmAndParseJson(chatClient, prompt, "");
-        result.put("type", "tutor_feedback");
-        return result;
+                        "all_phase_results", objectMapper.writeValueAsString(finalResult),
+                        "essay",             essay
+                ));
+        return callFeedback(chatClient, prompt);
     }
 
-    private Map<String, Object> callLlmAndParseJson(ChatClient chatClient, String system, String user) {
-        String response = chatClient
-                .prompt()
-                .system(system)
-                .user(user.isEmpty() ? system : user)
+    // =========================================================================
+    // LLM CALL HELPERS
+    // =========================================================================
+
+    private Map<String, Object> callEvaluation(ChatClient chatClient, String systemPrompt) {
+        String response = chatClient.prompt()
+                .system(systemPrompt)
+                .user("Return ONLY raw JSON.")
                 .call()
                 .content();
-
-        try {
-            if (response.contains("{")) {
-                response = response.substring(response.indexOf("{"), response.lastIndexOf("}") + 1);
-            }
-            return objectMapper.readValue(response, Map.class);
-        } catch (Exception e) {
-            return Map.of("error", "Failed to parse JSON", "raw", response, "band", 5.0);
-        }
+        return helper.parseJson(response);
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, RuleEngine.Violation> extractViolations(Map<String, Object> trOutput) {
-        Map<String, Object> violationsMap = (Map<String, Object>) trOutput.getOrDefault("violations", Map.of());
-        var result = new java.util.HashMap<String, RuleEngine.Violation>();
-
-        for (Map.Entry<String, Object> entry : violationsMap.entrySet()) {
-            Map<String, Object> v = (Map<String, Object>) entry.getValue();
-            result.put(
-                    entry.getKey(),
-                    new RuleEngine.Violation(
-                            (Boolean) v.getOrDefault("active", false),
-                            (String) v.getOrDefault("location", ""),
-                            (String) v.getOrDefault("evidence", ""),
-                            (String) v.getOrDefault("reason", "")));
-        }
-
-        return result;
+    private Map<String, Object> callFeedback(ChatClient chatClient, String systemPrompt) {
+        String response = chatClient.prompt()
+                .system(systemPrompt)
+                .user("Explain strictly based on evaluation results. Return ONLY raw JSON.")
+                .call()
+                .content();
+        return helper.parseJson(response);
     }
 }

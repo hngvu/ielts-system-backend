@@ -1,21 +1,27 @@
 package io.gsp26se16.moni.authentication.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.gsp26se16.moni.common.dto.ApiResponse;
-import io.gsp26se16.moni.common.exception.ErrorCode;
+import java.io.IOException;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 
-import java.io.IOException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.gsp26se16.moni.common.dto.ApiResponse;
+import io.gsp26se16.moni.common.exception.ErrorCode;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     @Override
     public void commence(
             HttpServletRequest request, HttpServletResponse response, AuthenticationException authException)
             throws IOException {
+        log.error("Unauthorized error at path: {} - {}", request.getRequestURI(), authException.getMessage());
         ErrorCode errorCode = ErrorCode.UNAUTHENTICATED;
 
         response.setStatus(errorCode.getStatusCode().value());

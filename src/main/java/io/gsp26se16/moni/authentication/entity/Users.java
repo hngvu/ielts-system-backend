@@ -30,6 +30,8 @@ public class Users {
 
     LocalDate dateOfBirth;
 
+    Double credit;
+
     @OneToOne(mappedBy = "user")
     UserCredentials credential;
 

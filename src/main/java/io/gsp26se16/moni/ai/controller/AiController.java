@@ -25,7 +25,7 @@ public class AiController {
     @PostMapping(value = "/writing/score", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> scoreWriting(@ModelAttribute WritingRequest request) throws JsonProcessingException {
         boolean isTask1 =
-                (request.getChartImage() != null && !request.getChartImage().isEmpty());
+                (request.getChartImage() != null && !request.getChartImage().isEmpty()&& request.getChartImage().getSize() > 0);
 
         if (isTask1) {
             return ResponseEntity.ok(task1Service.score(request));

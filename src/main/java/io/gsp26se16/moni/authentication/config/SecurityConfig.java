@@ -26,7 +26,8 @@ public class SecurityConfig {
         "/auth/token",
         "/auth/refresh",
         "/auth/logout",
-        "/auth/outbound/authentication"
+        "/auth/outbound/authentication",
+        "/api/v1/ai/writing/score"
     };
 
     private final CustomJwtDecoder customJwtDecoder;

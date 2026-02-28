@@ -28,15 +28,20 @@ public class WritingTask1Service {
     private final GeminiVisionClient visionClient;
     private final QuestionGroupRepository questionGroupRepository;
     private final PromptLoader promptLoader;
+    private final RuleEngine ruleEngine;
+    private final Helper helper;
+
+
+    // =====================================================
+    // MAIN ENTRY
+    // =====================================================
 
     public Map<String, Object> score(WritingRequest request) throws JsonProcessingException {
+
         ChatClient chatClient =
                 chatClientBuilder.defaultAdvisors(new SimpleLoggerAdvisor()).build();
 
-
-        // 1. Chart Understanding (if Task 1) - WITH CACHING
-//        Map<String, Object> chartData = getOrCacheVisionAnalysis(request.getQuestionGroupId(), request.getChartImage());
-        boolean isTask1 = (request.getChartImage() != null && !request.getChartImage().isEmpty());
+        boolean isTask1 = request.getChartImage() != null && !request.getChartImage().isEmpty();
         Map<String, Object> chartData = null;
 
         if (isTask1 && request.getQuestionGroupId() != null) {
@@ -45,48 +50,272 @@ public class WritingTask1Service {
                     request.getChartImage());
         }
 
-        Map<String, Object> parsedEssay = phase1Parse(chatClient, request.getAnswer());
+        // ================= PHASE 1 =================
+        Map<String, Object> parsedEssay =
+                phase1Parse(chatClient, request.getAnswer());
 
-        // Phase 2–5: Evaluation
-        Map<String, Object> bandTA = phase2TaskAchievement(chatClient, request.getQuestion(), parsedEssay, chartData);
-        Map<String, Object> bandCC = phase3Coherence(chatClient, parsedEssay);
-        Map<String, Object> bandLR = phase4Lexical(chatClient, parsedEssay);
-        Map<String, Object> bandGRA = phase5Grammar(chatClient, parsedEssay);
+        // ================= PHASE 2–5 =================
+        Map<String, Object> ta = phase2TaskAchievement(chatClient, request.getAnswer(), parsedEssay, chartData);
 
-        // Phase 6: Final Band
-        Map<String, Object> finalResult = phase6Calculate(bandTA, bandCC, bandLR, bandGRA);
 
-        // Phase 7: Feedback (STRICT explanation only)
+        Map<String, Object> cc =
+                phase3Coherence(chatClient,request.getAnswer(),parsedEssay);
+
+        Map<String, Object> lr =
+                phase4Lexical(chatClient, request.getAnswer());
+
+        Map<String, Object> gra =
+                phase5Grammar(chatClient, request.getAnswer());
+
+        // ================= RULE ENGINE =================
+        Map<String, Object> finalResult =
+                phase6Calculate(ta, cc, lr, gra);
+
+        // ================= FEEDBACK =================
         Map<String, Object> feedback =
-                phase7Feedback(chatClient, request.getQuestion(), request.getAnswer(), finalResult);
+                phase7Feedback(
+                        chatClient,
+                        request.getQuestion(),
+                        request.getAnswer(),
+                        finalResult
+                );
 
-        return Map.of(
-                "assessment", finalResult,
-                "feedback", feedback,
-                "parsed_structure", parsedEssay);
+        Map<String, Object> response = new HashMap<>();
+        response.put("assessment", finalResult);
+        response.put("feedback", feedback);
+        response.put("parsed_structure", parsedEssay);
+        return response;
     }
 
-    // ==============================
-    // VISION CACHE
-    // ==============================
+    // =====================================================
+    // PHASES
+    // =====================================================
 
-    private Map<String, Object> getOrCacheVisionAnalysis(Integer questionGroupId, MultipartFile chartImage) {
+    private Map<String, Object> phase1Parse(ChatClient chatClient, String essay) {
+        String prompt = promptLoader.loadPrompt(
+                "phase1_parse.txt",
+                Map.of("essay", essay));
+        return callEvaluation(chatClient, prompt);
+    }
 
-        QuestionGroup questionGroup = questionGroupRepository
-                .findById(questionGroupId)
-                .orElseThrow(() -> new RuntimeException("QuestionGroup not found: " + questionGroupId));
+    private Map<String, Object> phase2TaskAchievement(
+            ChatClient chatClient,
+            String essay,                           // rename: question → essay
+            Map<String, Object> parsed,
+            Map<String, Object> chartData
+    ) throws JsonProcessingException {
 
-        if (questionGroup.getVisonAnalysisResult() != null
-                && !questionGroup.getVisonAnalysisResult().isEmpty()) {
+        String prompt = promptLoader.loadPrompt(
+                "phase2_ta.txt",
+                Map.of(
+                        "essay", essay,
+                        "phase1_json", objectMapper.writeValueAsString(parsed),
+                        "chart_entities", chartData != null
+                                ? objectMapper.writeValueAsString(chartData)
+                                : "[]"
+                )
+        );
+        return callEvaluation(chatClient, prompt);
+    }
+
+    private Map<String, Object> phase3Coherence(ChatClient chatClient,
+                                                String essay,              // add essay param
+                                                Map<String, Object> parsed)
+            throws JsonProcessingException {
+        String prompt = promptLoader.loadPrompt(
+                "phase3_cc.txt",
+                Map.of(
+                        "essay", essay,
+                        "phase1_json", objectMapper.writeValueAsString(parsed)
+                ));
+        return callEvaluation(chatClient, prompt);
+    }
+
+    private Map<String, Object> phase4Lexical(ChatClient chatClient,
+                                              String essay) {
+
+        String prompt = promptLoader.loadPrompt(
+                "phase4_lr.txt",
+                Map.of("essay", essay));
+
+        return callEvaluation(chatClient, prompt);
+    }
+
+    private Map<String, Object> phase5Grammar(ChatClient chatClient,
+                                              String essay) {
+
+        String prompt = promptLoader.loadPrompt(
+                "phase5_gra.txt",
+                Map.of("essay", essay));
+
+        return callEvaluation(chatClient, prompt);
+    }
+
+    // =====================================================
+    // FINAL CALCULATION
+    // =====================================================
+
+    private Map<String, Object> phase6Calculate(
+            Map<String, Object> ta,
+            Map<String, Object> cc,
+            Map<String, Object> lr,
+            Map<String, Object> gra
+    ) {
+
+        // ================= RAW BANDS =================
+        Map<String, Double> rawBands = Map.of(
+                "TA", getBand(ta),
+                "CC", getBand(cc),
+                "LR", getBand(lr),
+                "GRA", getBand(gra)
+        );
+
+        // ================= COLLECT VIOLATIONS =================
+        Map<String, RuleEngine.Violation> violations =
+                helper.collectViolations(ta, cc, lr, gra);
+
+        // ================= APPLY RULE ENGINE =================
+        RuleEngine.RuleResult ruleResult =
+                ruleEngine.applyAllRules(rawBands, violations);
+
+        double finalBand =
+                ruleEngine.calculateFinalBand(
+                        ruleResult.adjustedBands(),
+                        ruleResult.overallCap()
+                );
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("final_band", finalBand);
+        result.put("overall_cap", ruleResult.overallCap());        // null-safe
+        result.put("applied_hard_rules", ruleResult.appliedHardRules());
+        result.put("criteria", Map.of(
+                "TA", helper.mergeCriterion(ta, ruleResult.adjustedBands()),
+                "CC", helper.mergeCriterion(cc, ruleResult.adjustedBands()),
+                "LR", helper.mergeCriterion(lr, ruleResult.adjustedBands()),
+                "GRA", helper.mergeCriterion(gra, ruleResult.adjustedBands())
+        ));
+        return result;
+
+    }
+    // =====================================================
+    // FEEDBACK
+    // =====================================================
+
+    private Map<String, Object> phase7Feedback(
+            ChatClient chatClient,
+            String question,
+            String essay,
+            Map<String, Object> finalResult)
+            throws JsonProcessingException {
+
+        String prompt = promptLoader.loadPrompt(
+                "phase7_feedback.txt",
+                Map.of(
+                        "question", question,
+                        "essay", essay,
+                        "all_phase_results",
+                        objectMapper.writeValueAsString(finalResult)
+                )
+        );
+
+        return callFeedback(chatClient, prompt);
+    }
+
+    // =====================================================
+    // LLM CALLS
+    // =====================================================
+
+    private Map<String, Object> callEvaluation(
+            ChatClient chatClient,
+            String systemPrompt) {
+
+        String response = chatClient.prompt()
+                .system(systemPrompt)
+                .user("Return ONLY raw JSON.")
+                .call()
+                .content();
+
+        return helper.parseJson(response);
+    }
+
+    private Map<String, Object> callFeedback(
+            ChatClient chatClient,
+            String systemPrompt) {
+
+        String response = chatClient.prompt()
+                .system(systemPrompt)
+                .user("Explain strictly based on evaluation results. Return ONLY raw JSON.")
+                .call()
+                .content();
+
+        return helper.parseJson(response);
+    }
+
+    // =====================================================
+    // UTILITIES
+    // =====================================================
+
+    private double getBand(Object obj) {
+        if (obj instanceof Map<?, ?> map) {
+            // Handle error case first
+            if (map.containsKey("error")) {
+                log.warn("Criterion contains error, defaulting to band 5.0: {}", map.get("error"));
+                return 5.0;
+            }
+
+            Object val = map.get("band");
+            if (val instanceof Number n) {
+                return n.doubleValue();
+            }
+
+            // Try to parse as string (in case LLM returns "7" instead of 7)
+            if (val instanceof String) {
+                try {
+                    return Double.parseDouble((String) val);
+                } catch (NumberFormatException e) {
+                    log.warn("Could not parse band value as number: {}", val);
+                }
+            }
+        }
+
+        log.warn("Invalid band value, defaulting to 5.0: {}", obj);
+        return 5.0;
+    }
+    // =====================================================
+    // VISION CACHE (unchanged)
+    // =====================================================
+
+    private Map<String, Object> getOrCacheVisionAnalysis(
+            Integer questionGroupId,
+            MultipartFile chartImage) {
+
+        QuestionGroup questionGroup =
+                questionGroupRepository
+                        .findById(questionGroupId)
+                        .orElseThrow(() ->
+                                new RuntimeException("QuestionGroup not found: " + questionGroupId));
+
+        if (questionGroup.getVisonAnalysisResult() != null &&
+                !questionGroup.getVisonAnalysisResult().isEmpty()) {
             log.info("Using cached vision analysis for QuestionGroup: {}", questionGroupId);
             return questionGroup.getVisonAnalysisResult();
         }
 
         try {
-            byte[] imageBytes = chartImage.getBytes();
-            String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+            if (chartImage == null || chartImage.isEmpty() || chartImage.getSize() <= 0) {
+                log.warn("Chart image is empty or unreadable for QuestionGroup: {}", questionGroupId);
+                return Map.of();
+            }
 
-            log.info("Calling Gemini Vision for QuestionGroup: {}", questionGroupId);
+            byte[] imageBytes = chartImage.getBytes();
+
+            // ✅ Double-check bytes actually loaded
+            if (imageBytes == null || imageBytes.length == 0) {
+                log.warn("Chart image bytes are empty for QuestionGroup: {}", questionGroupId);
+                return Map.of();
+            }
+
+            String base64Image = Base64.getEncoder().encodeToString(imageBytes);
             Map<String, Object> analysis = visionClient.analyzeChart(base64Image);
 
             questionGroup.setVisonAnalysisResult(analysis);
@@ -95,206 +324,7 @@ public class WritingTask1Service {
             return analysis;
 
         } catch (Exception e) {
-            log.error("Failed to process chart image", e);
             throw new RuntimeException("Failed to process chart image", e);
         }
-    }
-
-    // ==============================
-    // PHASES
-    // ==============================
-
-    private Map<String, Object> phase1Parse(ChatClient chatClient, String essay) {
-        String systemPrompt = promptLoader.loadPrompt("phase1_parse.txt", Map.of("essay", essay));
-        return callEvaluation(chatClient, systemPrompt);
-    }
-
-    private Map<String, Object> phase2TaskAchievement(
-            ChatClient chatClient,
-            String question,
-            Map<String, Object> parsed,
-            Map<String, Object> chartData) throws JsonProcessingException {
-
-        String systemPrompt = promptLoader.loadPrompt(
-                "phase2_ta.txt",
-                Map.of(
-                        "question", question,
-                        "parsed", objectMapper.writeValueAsString(parsed),
-                        "chart_data", chartData != null
-                                ? objectMapper.writeValueAsString(chartData)
-                                : "{}"
-                ));
-
-        return callEvaluation(chatClient, systemPrompt);
-    }
-
-    private Map<String, Object> phase3Coherence(ChatClient chatClient, Map<String, Object> parsed)
-            throws JsonProcessingException {
-
-        String systemPrompt = promptLoader.loadPrompt(
-                "phase3_cc.txt",
-                Map.of("parsed", objectMapper.writeValueAsString(parsed)));
-
-        return callEvaluation(chatClient, systemPrompt);
-    }
-
-    private Map<String, Object> phase4Lexical(ChatClient chatClient, Map<String, Object> parsed)
-            throws JsonProcessingException {
-
-        String systemPrompt = promptLoader.loadPrompt(
-                "phase4_lr.txt",
-                Map.of("parsed", objectMapper.writeValueAsString(parsed)));
-
-        return callEvaluation(chatClient, systemPrompt);
-    }
-
-    private Map<String, Object> phase5Grammar(ChatClient chatClient, Map<String, Object> parsed)
-            throws JsonProcessingException {
-
-        String systemPrompt = promptLoader.loadPrompt(
-                "phase5_gra.txt",
-                Map.of("parsed", objectMapper.writeValueAsString(parsed)));
-
-        return callEvaluation(chatClient, systemPrompt);
-    }
-
-    private Map<String, Object> phase6Calculate(
-            Map<String, Object> ta,
-            Map<String, Object> cc,
-            Map<String, Object> lr,
-            Map<String, Object> gra) {
-
-        double avg = (getBand(ta) + getBand(cc) + getBand(lr) + getBand(gra)) / 4.0;
-        double finalBand = Math.round(avg * 2) / 2.0;
-
-        return Map.of(
-                "band", finalBand,
-                "details", Map.of(
-                        "TA", ta,
-                        "CC", cc,
-                        "LR", lr,
-                        "GRA", gra));
-    }
-
-    private Map<String, Object> phase7Feedback(
-            ChatClient chatClient,
-            String question,
-            String essay,
-            Map<String, Object> finalResult) throws JsonProcessingException {
-
-        Map<String, Object> activeViolations = extractActiveViolations(finalResult);
-        String bandValue = String.valueOf(finalResult.get("band"));
-        String systemPrompt = promptLoader.loadPrompt(
-                "phase7_feedback.txt",
-                Map.of(
-                        "question", question,
-                        "essay", essay,
-                        "band", bandValue,
-                        "violations", objectMapper.writeValueAsString(activeViolations)
-                ));
-
-        return callFeedback(chatClient, systemPrompt);
-    }
-
-    // ==============================
-    // LLM CALL TYPES
-    // ==============================
-
-    private Map<String, Object> callEvaluation(ChatClient chatClient, String systemPrompt) {
-        String response = chatClient.prompt()
-                .system(systemPrompt)
-                .user("Evaluate strictly according to IELTS rubric. Return ONLY raw JSON without markdown formatting or code fences.")
-                .call()
-                .content();
-
-        return parseJson(response);
-    }
-
-    private Map<String, Object> callFeedback(ChatClient chatClient, String systemPrompt) {
-        String response = chatClient.prompt()
-                .system(systemPrompt)
-                .user("Explain strictly based on provided evaluation results. Do NOT re-evaluate. Return ONLY raw JSON without markdown formatting or code fences.")
-                .call()
-                .content();
-
-        return parseJson(response);
-    }
-
-    // ==============================
-    // UTILITIES
-    // ==============================
-
-    private Map<String, Object> extractActiveViolations(Map<String, Object> finalResult) {
-
-        Map<String, Object> details = (Map<String, Object>) finalResult.get("details");
-        Map<String, Object> active = new HashMap<>();
-
-        for (String criterion : details.keySet()) {
-
-            Map<String, Object> criterionData =
-                    (Map<String, Object>) details.get(criterion);
-
-            Map<String, Object> violations =
-                    (Map<String, Object>) criterionData.get("violations");
-
-            if (violations == null) continue;
-
-            Map<String, Object> activeViolations = new HashMap<>();
-
-            for (String key : violations.keySet()) {
-
-                Map<String, Object> v =
-                        (Map<String, Object>) violations.get(key);
-
-                if (Boolean.TRUE.equals(v.get("active"))) {
-                    activeViolations.put(key, v);
-                }
-            }
-
-            if (!activeViolations.isEmpty()) {
-                active.put(criterion, activeViolations);
-            }
-        }
-
-        return active;
-    }
-
-    private Map<String, Object> parseJson(String response) {
-        try {
-            String cleaned = cleanJsonResponse(response);
-            return objectMapper.readValue(cleaned, Map.class);
-        } catch (Exception e) {
-            log.error("Invalid JSON from LLM: {}", response);
-            return Map.of(
-                    "error", "Invalid JSON",
-                    "raw", response);
-        }
-    }
-
-    private double getBand(Map<String, Object> map) {
-        Object val = map.get("band");
-        if (val instanceof Number) {
-            return ((Number) val).doubleValue();
-        }
-        return 5.0;
-    }
-
-    private String cleanJsonResponse(String response) {
-        if (response == null) {
-            return "{}";
-        }
-
-        String cleaned = response.trim();
-        if (cleaned.startsWith("```json")) {
-            cleaned = cleaned.substring(7); // Remove ```json
-        } else if (cleaned.startsWith("```")) {
-            cleaned = cleaned.substring(3); // Remove ```
-        }
-
-        if (cleaned.endsWith("```")) {
-            cleaned = cleaned.substring(0, cleaned.length() - 3);
-        }
-
-        return cleaned.trim();
     }
 }

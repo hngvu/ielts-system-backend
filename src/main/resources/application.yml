@@ -5,6 +5,19 @@ spring:
     multipart:
       max-file-size: 50MB       # Tăng giới hạn để upload được file Audio dài
       max-request-size: 50MB
+  ai:
+    openai:
+      base-url: https://integrate.api.nvidia.com
+      api-key: ${NVIDIA_API_KEY}
+      chat:
+        options:
+          model: meta/llama-3.3-70b-instruct
+    vertex:
+      ai:
+        gemini:
+          api-endpoint: ${GEMINI_API_KEY}
+          chat:
+            options: gemini-3-flash-preview
 
   datasource:
     driver-class-name: org.postgresql.Driver
@@ -35,3 +48,7 @@ outbound:
 
 jwt:
   signerKey: 1TjXchw5FloESb63Kc+DFhTARvpWL4jUGCwfGWxuG5SIf/1y/LgJxHnMqaF6A/ij
+
+sepay:
+  acc: ACB
+  bank: 21736271
