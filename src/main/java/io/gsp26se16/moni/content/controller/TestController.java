@@ -3,6 +3,7 @@ package io.gsp26se16.moni.content.controller;
 import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.content.dto.request.TestImportRequest;
+import io.gsp26se16.moni.content.dto.request.TestStructureRequest;
 import io.gsp26se16.moni.content.dto.request.TestUpdateRequest;
 import io.gsp26se16.moni.content.dto.response.TestDetailResponse;
 import io.gsp26se16.moni.content.dto.response.TestResponse;
@@ -91,5 +92,31 @@ public class TestController {
                 .message("Cập nhật thông tin đề thi thành công")
                 .build();
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Soft Delete Test")
+    public ResponseEntity<ApiResponse<Void>> deleteTest(@PathVariable Integer id) {
+        testService.deleteTest(id);
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .code(1000).message("Đã ẩn đề thi thành công").build());
+    }
+
+    @PostMapping("/{id}/structure")
+    @Operation(summary = "Add Stimulus to Test")
+    public ResponseEntity<ApiResponse<Void>> addStimulusToTest(
+            @PathVariable Integer id, @RequestBody @Valid TestStructureRequest request) {
+        testService.addStimulusToTest(id, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.<Void>builder()
+                .code(1000).message("Ghép ngữ liệu vào đề thi thành công").build());
+    }
+
+    @DeleteMapping("/{testId}/structure/{stimulusId}")
+    @Operation(summary = "Remove Stimulus from Test")
+    public ResponseEntity<ApiResponse<Void>> removeStimulusFromTest(
+            @PathVariable Integer testId, @PathVariable Integer stimulusId) {
+        testService.removeStimulusFromTest(testId, stimulusId);
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .code(1000).message("Gỡ ngữ liệu khỏi đề thi thành công").build());
     }
 }

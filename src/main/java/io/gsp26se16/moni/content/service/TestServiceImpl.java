@@ -7,6 +7,7 @@ import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.dto.request.TestImportRequest;
+import io.gsp26se16.moni.content.dto.request.TestStructureRequest;
 import io.gsp26se16.moni.content.dto.request.TestUpdateRequest;
 import io.gsp26se16.moni.content.dto.response.TestDetailResponse;
 import io.gsp26se16.moni.content.dto.response.TestResponse;
@@ -60,7 +61,15 @@ public class TestServiceImpl implements TestService {
 
         for (var stimReq : request.getStimuli()) {
             Stimulus stimulus = new Stimulus();
-            // ... set info ...
+
+            stimulus.setTitle(stimReq.getTitle());
+            stimulus.setContent(stimReq.getContent());
+            stimulus.setMediaUrl(stimReq.getMediaUrl());
+
+            stimulus.setSkill(request.getSkill());
+            stimulus.setTestType(request.getTestType());
+
+            stimulus.setStatus(PublishStatus.DRAFT);
             stimulus.setCreatedBy(adminUser);
             Stimulus savedStimulus = stimulusRepository.save(stimulus);
 
@@ -211,5 +220,38 @@ public class TestServiceImpl implements TestService {
             test.getTags().addAll(newTags);
         }
         testRepository.save(test);
+    }
+
+    @Override
+    @Transactional
+    public void deleteTest(Integer id) {
+        Test test = testRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Test not found"));
+        test.setStatus(PublishStatus.HIDDEN);
+        testRepository.save(test);
+    }
+
+    @Override
+    @Transactional
+    public void addStimulusToTest(Integer testId, TestStructureRequest request) {
+        Test test = testRepository.findById(testId)
+                .orElseThrow(() -> new RuntimeException("Test not found"));
+        Stimulus stimulus = stimulusRepository.getReferenceById(request.getStimulusId());
+
+        TestStructure structure = new TestStructure();
+        structure.setTest(test);
+        structure.setStimulus(stimulus);
+        structure.setSection(request.getSection());
+
+        testStructureRepository.save(structure);
+    }
+
+    @Override
+    @Transactional
+    public void removeStimulusFromTest(Integer testId, Integer stimulusId) {
+        if (!testStructureRepository.existsByTestIdAndStimulusId(testId, stimulusId)) {
+            throw new RuntimeException("Ngữ liệu không nằm trong đề thi này");
+        }
+        testStructureRepository.deleteByTestIdAndStimulusId(testId, stimulusId);
     }
 }
