@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.content.dto.request;
 
 import io.gsp26se16.moni.common.enumeration.Skill;
+import io.gsp26se16.moni.common.enumeration.TestMode;
 import io.gsp26se16.moni.common.enumeration.TestType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -23,6 +24,10 @@ public class TestImportRequest {
     @NotNull(message = "Test Type is required")
     private TestType testType;     // FULL_TEST, PRACTICE
 
+    private Integer duration;
+    private TestMode testMode;
+
+    private List<Integer> tagIds; // Danh sách ID của Tag (VD: [1, 5, 8])
     // Danh sách các bài đọc/nghe (Stimulus) trong đề này
     private List<StimulusRequest> stimuli;
 
@@ -57,8 +62,9 @@ public class TestImportRequest {
 
         private Map<String, Object> metadata;    // Dữ liệu phụ (JSONB)
         private Map<String, Object> explanation; // Giải thích chi tiết (JSONB)
-
+        private List<Integer> tagIds;
         private List<OptionRequest> options;
+
     }
 
     @Data

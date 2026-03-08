@@ -1,13 +1,15 @@
 package io.gsp26se16.moni.authentication.dto.request;
 
+import java.time.LocalDate;
+
 import jakarta.validation.constraints.*;
+
+import org.hibernate.validator.constraints.URL;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.validator.constraints.URL;
-
-import java.time.LocalDate;
 
 @Data
 @NoArgsConstructor

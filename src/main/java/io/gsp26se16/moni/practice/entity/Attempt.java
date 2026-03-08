@@ -1,13 +1,14 @@
 package io.gsp26se16.moni.practice.entity;
 
+import java.time.LocalDateTime;
+
+import jakarta.persistence.*;
+
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.content.entity.Stimulus;
-import jakarta.persistence.*;
-import lombok.AccessLevel;
 import lombok.*;
+import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -19,6 +20,7 @@ public class Attempt {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
+
     LocalDateTime startedAt;
     LocalDateTime submittedAt;
     int score; // correct answers

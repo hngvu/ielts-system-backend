@@ -1,17 +1,18 @@
 package io.gsp26se16.moni.content.config;
 
-import io.gsp26se16.moni.common.enumeration.Skill;
-import io.gsp26se16.moni.content.entity.QuestionType;
-import io.gsp26se16.moni.content.repository.QuestionTypeRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import io.gsp26se16.moni.common.enumeration.Skill;
+import io.gsp26se16.moni.content.entity.QuestionType;
+import io.gsp26se16.moni.content.repository.QuestionTypeRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @RequiredArgsConstructor
@@ -52,8 +53,7 @@ public class ContentDataInitializer {
                     // --- SPEAKING ---
                     createType("Speaking Part 1", "SPEAKING_PART_1", Skill.SPEAKING, false),
                     createType("Speaking Part 2", "SPEAKING_PART_2", Skill.SPEAKING, false),
-                    createType("Speaking Part 3", "SPEAKING_PART_3", Skill.SPEAKING, false)
-            );
+                    createType("Speaking Part 3", "SPEAKING_PART_3", Skill.SPEAKING, false));
 
             questionTypeRepository.saveAll(types);
             log.info("Successfully initialized {} Question Types.", types.size());

@@ -1,5 +1,10 @@
 package io.gsp26se16.moni.authentication.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
 
 import io.gsp26se16.moni.authentication.dto.request.UpdateProfileRequest;
 import io.gsp26se16.moni.authentication.dto.response.UserProfileResponse;
@@ -12,11 +17,6 @@ import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor

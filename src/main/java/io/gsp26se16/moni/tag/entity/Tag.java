@@ -1,14 +1,16 @@
 package io.gsp26se16.moni.tag.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
-import lombok.*;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import lombok.*;
 
 @Entity
-@Table (name = "tags")
+@Table(name = "tags")
 @Getter
 @Setter
 @AllArgsConstructor
@@ -17,7 +19,7 @@ import java.time.LocalDateTime;
 public class Tag {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
     @Column(nullable = false)
     private String name; // VD: "Multiple Choice"

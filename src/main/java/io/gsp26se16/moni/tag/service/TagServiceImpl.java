@@ -1,5 +1,11 @@
 package io.gsp26se16.moni.tag.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.tag.dto.request.TagRequest;
@@ -9,15 +15,10 @@ import io.gsp26se16.moni.tag.entity.TagType;
 import io.gsp26se16.moni.tag.mapper.TagMapper;
 import io.gsp26se16.moni.tag.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class TagServiceImpl implements TagService{
+public class TagServiceImpl implements TagService {
 
     private final TagRepository tagRepository;
     private final TagMapper tagMapper;
@@ -50,23 +51,19 @@ public class TagServiceImpl implements TagService{
             tags = tagRepository.findAll();
         }
 
-        return tags.stream()
-                .map(tagMapper::toResponse)
-                .collect(Collectors.toList());
+        return tags.stream().map(tagMapper::toResponse).collect(Collectors.toList());
     }
 
     @Override
-    public TagResponse getTagById(Long id) {
-        Tag tag = tagRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.TAG_NOT_FOUND));
+    public TagResponse getTagById(Integer id) {
+        Tag tag = tagRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.TAG_NOT_FOUND));
         return tagMapper.toResponse(tag);
     }
 
     @Override
     @Transactional
-    public TagResponse updateTag(Long id, TagRequest request) {
-        Tag tag = tagRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.TAG_NOT_FOUND));
+    public TagResponse updateTag(Integer id, TagRequest request) {
+        Tag tag = tagRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.TAG_NOT_FOUND));
 
         // 1. Check trùng code (trừ chính nó ra)
         if (tagRepository.existsByCodeAndIdNot(request.getCode(), id)) {
@@ -80,7 +77,7 @@ public class TagServiceImpl implements TagService{
 
     @Override
     @Transactional
-    public void deleteTag(Long id) {
+    public void deleteTag(Integer id) {
         if (!tagRepository.existsById(id)) {
             throw new AppException(ErrorCode.TAG_NOT_FOUND);
         }

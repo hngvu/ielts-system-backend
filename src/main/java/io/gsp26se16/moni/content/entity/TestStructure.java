@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.content.entity;
 
 import jakarta.persistence.*;
+
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -14,6 +15,8 @@ public class TestStructure {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
+    @Column(name = "section")
+    Integer section;
 
     @ManyToOne
     @JoinColumn(name = "test_id")
@@ -22,5 +25,4 @@ public class TestStructure {
     @ManyToOne
     @JoinColumn(name = "stimulus_id")
     Stimulus stimulus;
-
 }
