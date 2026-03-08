@@ -1,9 +1,10 @@
-package io.gsp26se16.moni.ai.service;
-
-import org.springframework.stereotype.Service;
-import lombok.RequiredArgsConstructor;
+package io.gsp26se16.moni.ai.writing.service;
 
 import java.util.*;
+
+import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -52,69 +53,53 @@ public class RuleEngine {
             // ---------- TASK 1 (TA) ----------
             // NOTE: Task 1 TA prompt not included in uploaded files.
             //       These rules are retained for the Task 1 pipeline.
-            Map.entry("data_misinterpretation",
-                    new HardRule(Map.of("TA", 5.5), 6.0)),
-
-            Map.entry("no_overview",
-                    new HardRule(Map.of("TA", 6.0), 6.5)),
-
-            Map.entry("irrelevant_data",
-                    new HardRule(Map.of("TA", 6.0), null)),
+            Map.entry("data_misinterpretation", new HardRule(Map.of("TA", 5.5), 6.0)),
+            Map.entry("no_overview", new HardRule(Map.of("TA", 6.0), 6.5)),
+            Map.entry("irrelevant_data", new HardRule(Map.of("TA", 6.0), null)),
 
             // ---------- TASK 2 (TR) ----------
 
             // Emitted by phase2_tr.txt as "no_position_throughout"
             // Emitted by phase2_ta.txt as "no_clear_position" (gating hard cap trigger)
             // Legacy key "no_position" retained via alias entry below
-            Map.entry("no_position_throughout",
-                    new HardRule(Map.of("TR", 5.0), 5.5)),
+            Map.entry("no_position_throughout", new HardRule(Map.of("TR", 5.0), 5.5)),
 
             // Legacy alias → same caps as no_position_throughout
-            Map.entry("no_position",
-                    new HardRule(Map.of("TR", 5.0), 5.5)),
+            Map.entry("no_position", new HardRule(Map.of("TR", 5.0), 5.5)),
 
             // Emitted by phase2_ta.txt as "unclear_position_progression"
             // Legacy alias "contradictory_position" retained below
-            Map.entry("unclear_position_progression",
-                    new HardRule(Map.of("TR", 5.5), 6.0)),
+            Map.entry("unclear_position_progression", new HardRule(Map.of("TR", 5.5), 6.0)),
 
             // Legacy alias → same caps as unclear_position_progression
-            Map.entry("contradictory_position",
-                    new HardRule(Map.of("TR", 5.5), 6.0)),
+            Map.entry("contradictory_position", new HardRule(Map.of("TR", 5.5), 6.0)),
 
             // NOTE: "mixed_task" is in the engine but NOT defined in any uploaded TR prompt
             //       violation schema. Action required: add "mixed_task" to phase2_ta.txt
             //       and phase2_tr.txt violation blocks, or remove this rule if not applicable.
-            Map.entry("mixed_task",
-                    new HardRule(Map.of("TR", 5.5), 6.0)),
+            Map.entry("mixed_task", new HardRule(Map.of("TR", 5.5), 6.0)),
 
             // Emitted by phase2_ta.txt and phase2_tr.txt as "irrelevant_content" (TR-scoped)
             // Dispatch logic in applyAllRules() uses criterion tag to differentiate
             // from CC-scoped "irrelevant_content".
             // Legacy key "tr_irrelevant_content" retained below.
-            Map.entry("irrelevant_content_tr",
-                    new HardRule(Map.of("TR", 6.0), null)),
+            Map.entry("irrelevant_content_tr", new HardRule(Map.of("TR", 6.0), null)),
 
             // Legacy alias → same caps as irrelevant_content_tr
-            Map.entry("tr_irrelevant_content",
-                    new HardRule(Map.of("TR", 6.0), null)),
+            Map.entry("tr_irrelevant_content", new HardRule(Map.of("TR", 6.0), null)),
 
             // [NEW] Emitted by phase2_ta.txt — "weak_argument_depth" blocks Band 8+
             // Translated as hard cap: TR ≤ 7.0
-            Map.entry("weak_argument_depth",
-                    new HardRule(Map.of("TR", 7.0), null)),
+            Map.entry("weak_argument_depth", new HardRule(Map.of("TR", 7.0), null)),
 
             // ---------- GRA ----------
-            Map.entry("too_many_errors",
-                    new HardRule(Map.of("GRA", 6.0), 6.5)),
+            Map.entry("too_many_errors", new HardRule(Map.of("GRA", 6.0), 6.5)),
 
             // ---------- CC ----------
             // "logic_break_significant" is the legacy key.
             // CC prompt (phase3_cc.txt) emits ONE "logic_break" key with a severity field.
             // See applyAllRules() for severity-aware dispatch logic.
-            Map.entry("logic_break_significant",
-                    new HardRule(Map.of("CC", 6.0), null))
-    );
+            Map.entry("logic_break_significant", new HardRule(Map.of("CC", 6.0), null)));
 
     // =====================================================
     // ================= SOFT PENALTIES ====================
@@ -123,53 +108,49 @@ public class RuleEngine {
     private static final Map<String, SoftRule> SOFT_RULES = Map.ofEntries(
 
             // ---------- TA (Task 1) ----------
-            Map.entry("weak_overview",         new SoftRule("TA", 0.25)),
-            Map.entry("missing_key_extreme",    new SoftRule("TA", 0.25)),
-            Map.entry("limited_comparison",     new SoftRule("TA", 0.25)),
-            Map.entry("mechanical_listing",     new SoftRule("TA", 0.25)),
+            Map.entry("weak_overview", new SoftRule("TA", 0.25)),
+            Map.entry("missing_key_extreme", new SoftRule("TA", 0.25)),
+            Map.entry("limited_comparison", new SoftRule("TA", 0.25)),
+            Map.entry("mechanical_listing", new SoftRule("TA", 0.25)),
 
             // ---------- TR (Task 2) ----------
 
             // [NEW] Emitted by phase2_ta.txt and phase2_tr.txt
-            Map.entry("partial_task_addressing",   new SoftRule("TR", 0.5)),
+            Map.entry("partial_task_addressing", new SoftRule("TR", 0.5)),
 
             // [NEW] Emitted by phase2_ta.txt and phase2_tr.txt
-            Map.entry("insufficient_development",  new SoftRule("TR", 0.25)),
+            Map.entry("insufficient_development", new SoftRule("TR", 0.25)),
 
             // [NEW] Emitted by phase2_ta.txt as "no_clear_position" (soft/moderate case)
             //       phase2_tr.txt emits "missing_clear_position" for the same concept.
             //       Both treated as soft penalty (hard cap is handled by no_position_throughout).
-            Map.entry("no_clear_position",         new SoftRule("TR", 0.25)),
-            Map.entry("missing_clear_position",    new SoftRule("TR", 0.25)),
+            Map.entry("no_clear_position", new SoftRule("TR", 0.25)),
+            Map.entry("missing_clear_position", new SoftRule("TR", 0.25)),
 
             // ---------- CC ----------
-            Map.entry("weak_cohesion",          new SoftRule("CC", 0.25)),
-            Map.entry("mixed_paragraph_focus",  new SoftRule("CC", 0.25)),
+            Map.entry("weak_cohesion", new SoftRule("CC", 0.25)),
+            Map.entry("mixed_paragraph_focus", new SoftRule("CC", 0.25)),
 
             // "logic_break_minor" is the legacy key.
             // If calling code uses the CC prompt output directly, it emits "logic_break"
             // with severity="minor" → handled via severity-aware dispatch in applyAllRules().
-            Map.entry("logic_break_minor",      new SoftRule("CC", 0.25)),
+            Map.entry("logic_break_minor", new SoftRule("CC", 0.25)),
 
             // ---------- LR ----------
-            Map.entry("limited_range",          new SoftRule("LR", 0.25)),
-            Map.entry("repetition",             new SoftRule("LR", 0.25)),
-            Map.entry("awkward_collocation",    new SoftRule("LR", 0.25)),
+            Map.entry("limited_range", new SoftRule("LR", 0.25)),
+            Map.entry("repetition", new SoftRule("LR", 0.25)),
+            Map.entry("awkward_collocation", new SoftRule("LR", 0.25)),
             Map.entry("inaccurate_word_choice", new SoftRule("LR", 0.25)),
 
             // ---------- GRA ----------
-            Map.entry("frequent_minor_errors",      new SoftRule("GRA", 0.25)),
-            Map.entry("limited_sentence_variety",   new SoftRule("GRA", 0.25))
-    );
+            Map.entry("frequent_minor_errors", new SoftRule("GRA", 0.25)),
+            Map.entry("limited_sentence_variety", new SoftRule("GRA", 0.25)));
 
     // =====================================================
     // ================= APPLY RULES =======================
     // =====================================================
 
-    public RuleResult applyAllRules(
-            Map<String, Double> originalBands,
-            Map<String, Violation> violations
-    ) {
+    public RuleResult applyAllRules(Map<String, Double> originalBands, Map<String, Violation> violations) {
 
         Map<String, Double> adjusted = new HashMap<>(originalBands);
         Double overallCap = null;
@@ -228,17 +209,14 @@ public class RuleEngine {
                 Double maxBand = capEntry.getValue();
 
                 if (adjusted.containsKey(criterion)) {
-                    adjusted.put(criterion,
-                            Math.min(adjusted.get(criterion), maxBand));
+                    adjusted.put(criterion, Math.min(adjusted.get(criterion), maxBand));
                     hardCappedCriteria.add(criterion);
                 }
             }
 
             // Overall cap
             if (rule.overallCap != null) {
-                overallCap = (overallCap == null)
-                        ? rule.overallCap
-                        : Math.min(overallCap, rule.overallCap);
+                overallCap = (overallCap == null) ? rule.overallCap : Math.min(overallCap, rule.overallCap);
             }
         }
 
@@ -298,12 +276,8 @@ public class RuleEngine {
     // ================= FINAL CALCULATION =================
     // =====================================================
 
-    public double calculateFinalBand(
-            Map<String, Double> adjustedBands,
-            Double overallCap
-    ) {
-        double average = adjustedBands.values()
-                .stream()
+    public double calculateFinalBand(Map<String, Double> adjustedBands, Double overallCap) {
+        double average = adjustedBands.values().stream()
                 .mapToDouble(Double::doubleValue)
                 .average()
                 .orElse(5.0);
@@ -346,9 +320,9 @@ public class RuleEngine {
             String location,
             String evidence,
             String reason,
-            String severity,   // "minor" | "significant" | "" — used by logic_break
-            String criterion   // "TR" | "CC" | "" — used by irrelevant_content dispatch
-    ) {
+            String severity, // "minor" | "significant" | "" — used by logic_break
+            String criterion // "TR" | "CC" | "" — used by irrelevant_content dispatch
+            ) {
         /** Legacy 4-arg constructor for backward compatibility */
         public Violation(boolean active, String location, String evidence, String reason) {
             this(active, location, evidence, reason, "", "");
@@ -375,9 +349,5 @@ public class RuleEngine {
         }
     }
 
-    public record RuleResult(
-            Map<String, Double> adjustedBands,
-            Double overallCap,
-            List<String> appliedHardRules
-    ) {}
+    public record RuleResult(Map<String, Double> adjustedBands, Double overallCap, List<String> appliedHardRules) {}
 }

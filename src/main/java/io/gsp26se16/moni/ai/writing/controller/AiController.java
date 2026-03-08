@@ -1,17 +1,18 @@
-package io.gsp26se16.moni.ai.controller;
+package io.gsp26se16.moni.ai.writing.controller;
 
 import java.io.IOException;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import io.gsp26se16.moni.ai.model.request.WritingRequest;
-import io.gsp26se16.moni.ai.service.WritingTask1Service;
-import io.gsp26se16.moni.ai.service.WritingTask2Service;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+import io.gsp26se16.moni.ai.writing.request.WritingRequest;
+import io.gsp26se16.moni.ai.writing.service.WritingTask1Service;
+import io.gsp26se16.moni.ai.writing.service.WritingTask2Service;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -23,9 +24,11 @@ public class AiController {
     private final WritingTask2Service task2Service;
 
     @PostMapping(value = "/writing/score", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Map<String, Object>> scoreWriting(@ModelAttribute WritingRequest request) throws JsonProcessingException {
-        boolean isTask1 =
-                (request.getChartImage() != null && !request.getChartImage().isEmpty()&& request.getChartImage().getSize() > 0);
+    public ResponseEntity<Map<String, Object>> scoreWriting(@ModelAttribute WritingRequest request)
+            throws JsonProcessingException {
+        boolean isTask1 = (request.getChartImage() != null
+                && !request.getChartImage().isEmpty()
+                && request.getChartImage().getSize() > 0);
 
         if (isTask1) {
             return ResponseEntity.ok(task1Service.score(request));

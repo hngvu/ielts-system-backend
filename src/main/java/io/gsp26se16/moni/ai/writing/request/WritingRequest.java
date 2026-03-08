@@ -1,4 +1,4 @@
-package io.gsp26se16.moni.ai.model.request;
+package io.gsp26se16.moni.ai.writing.request;
 
 import jakarta.validation.constraints.NotBlank;
 

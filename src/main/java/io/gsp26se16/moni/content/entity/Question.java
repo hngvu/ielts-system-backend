@@ -1,3 +1,4 @@
+
 package io.gsp26se16.moni.content.entity;
 
 import io.gsp26se16.moni.tag.entity.Tag;

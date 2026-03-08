@@ -11,19 +11,9 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
 
-import java.text.ParseException;
-import java.time.Instant;
-import java.util.Date;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtException;
-import org.springframework.stereotype.Component;
-
 import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.SignedJWT;
-
 import io.gsp26se16.moni.authentication.repository.InvalidatedTokenRepository;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 

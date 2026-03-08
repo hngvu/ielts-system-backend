@@ -1,4 +1,4 @@
-package io.gsp26se16.moni.ai.service;
+package io.gsp26se16.moni.ai.writing.service;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -16,13 +16,13 @@ import lombok.extern.slf4j.Slf4j;
  * Loads prompt templates and rubric files from classpath resources.
  * <p>
  * Directory layout (src/main/resources):
- * 
+ *
  * <pre>
  *   prompts/           – prompt template text files
  *   rubrics/writing/   – TA.txt | CC.txt | LR.txt | GRA.txt | TR.txt
  *   rubrics/speaking/  – FC.txt | GRA.txt | LR.txt | PR.txt
  * </pre>
- * 
+ *
  * Each speaking rubric file contains all bands (4–8) in a single file.
  */
 @Slf4j

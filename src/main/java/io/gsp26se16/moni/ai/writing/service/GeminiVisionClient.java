@@ -1,4 +1,4 @@
-package io.gsp26se16.moni.ai.service;
+package io.gsp26se16.moni.ai.writing.service;
 
 import java.util.List;
 import java.util.Map;

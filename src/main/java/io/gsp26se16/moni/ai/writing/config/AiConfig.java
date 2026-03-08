@@ -1,4 +1,4 @@
-package io.gsp26se16.moni.ai.config;
+package io.gsp26se16.moni.ai.writing.config;
 
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Qualifier;

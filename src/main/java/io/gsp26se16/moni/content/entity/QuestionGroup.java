@@ -7,12 +7,6 @@ import jakarta.persistence.*;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @Entity
 @Getter
@@ -37,8 +31,4 @@ public class QuestionGroup {
 
     @OneToMany(mappedBy = "questionGroup", cascade = CascadeType.ALL)
     List<Question> questions = new ArrayList<>();
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "vison_analysis_result", columnDefinition = "jsonb")
-    Map<String, Object> visonAnalysisResult;
 }

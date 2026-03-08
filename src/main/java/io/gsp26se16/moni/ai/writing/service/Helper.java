@@ -1,12 +1,14 @@
-package io.gsp26se16.moni.ai.service;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+package io.gsp26se16.moni.ai.writing.service;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -30,8 +32,7 @@ public class Helper {
      * See normaliseTrOutput() and withCriterion() below.
      */
     @SafeVarargs
-    public final Map<String, RuleEngine.Violation> collectViolations(
-            Map<String, Object>... criteriaResults) {
+    public final Map<String, RuleEngine.Violation> collectViolations(Map<String, Object>... criteriaResults) {
 
         Map<String, RuleEngine.Violation> result = new HashMap<>();
 
@@ -48,12 +49,13 @@ public class Helper {
                 boolean active = Boolean.TRUE.equals(vMap.get("active"));
                 if (!active) continue;
 
-                result.put(key, new RuleEngine.Violation(
-                        true,
-                        String.valueOf(vMap.get("location")),
-                        String.valueOf(vMap.get("evidence")),
-                        String.valueOf(vMap.get("reason"))
-                ));
+                result.put(
+                        key,
+                        new RuleEngine.Violation(
+                                true,
+                                String.valueOf(vMap.get("location")),
+                                String.valueOf(vMap.get("evidence")),
+                                String.valueOf(vMap.get("reason"))));
             }
         }
 
@@ -72,9 +74,7 @@ public class Helper {
      * CC, LR, and GRA outputs must have "criterion" injected via
      * withCriterion() before this is called.
      */
-    public Map<String, Object> mergeCriterion(
-            Map<String, Object> original,
-            Map<String, Double> adjustedBands) {
+    public Map<String, Object> mergeCriterion(Map<String, Object> original, Map<String, Double> adjustedBands) {
 
         String key = (String) original.get("criterion");
         Map<String, Object> copy = new HashMap<>(original);
@@ -109,47 +109,42 @@ public class Helper {
      * @return structured result map: final_band, overall_cap, applied_hard_rules, criteria
      */
     public Map<String, Object> calculateBands(
-            Map<String, Object> tr,
-            Map<String, Object> cc,
-            Map<String, Object> lr,
-            Map<String, Object> gra) {
+            Map<String, Object> tr, Map<String, Object> cc, Map<String, Object> lr, Map<String, Object> gra) {
 
         // ── Step 1 & 2: Normalise outputs ─────────────────────────────────────
         Map<String, Object> trNormalised = normaliseTrOutput(tr);
-        Map<String, Object> ccTagged     = withCriterion(cc,  "CC");
-        Map<String, Object> lrTagged     = withCriterion(lr,  "LR");
-        Map<String, Object> graTagged    = withCriterion(gra, "GRA");
+        Map<String, Object> ccTagged = withCriterion(cc, "CC");
+        Map<String, Object> lrTagged = withCriterion(lr, "LR");
+        Map<String, Object> graTagged = withCriterion(gra, "GRA");
 
         // ── Step 3: Raw bands ──────────────────────────────────────────────────
         Map<String, Double> rawBands = Map.of(
-                "TR",  getBand(trNormalised),
-                "CC",  getBand(ccTagged),
-                "LR",  getBand(lrTagged),
-                "GRA", getBand(graTagged)
-        );
+                "TR", getBand(trNormalised),
+                "CC", getBand(ccTagged),
+                "LR", getBand(lrTagged),
+                "GRA", getBand(graTagged));
 
         // ── Step 4: Collect violations ─────────────────────────────────────────
-        Map<String, RuleEngine.Violation> violations =
-                collectViolations(trNormalised, ccTagged, lrTagged, graTagged);
+        Map<String, RuleEngine.Violation> violations = collectViolations(trNormalised, ccTagged, lrTagged, graTagged);
 
         // ── Step 5: Apply Rule Engine ──────────────────────────────────────────
         RuleEngine.RuleResult ruleResult = ruleEngine.applyAllRules(rawBands, violations);
 
         // ── Step 6: Final band ─────────────────────────────────────────────────
-        double finalBand = ruleEngine.calculateFinalBand(
-                ruleResult.adjustedBands(), ruleResult.overallCap());
+        double finalBand = ruleEngine.calculateFinalBand(ruleResult.adjustedBands(), ruleResult.overallCap());
 
         // ── Step 7: Build result ───────────────────────────────────────────────
         Map<String, Object> result = new HashMap<>();
-        result.put("final_band",         finalBand);
-        result.put("overall_cap",         ruleResult.overallCap());
-        result.put("applied_hard_rules",  ruleResult.appliedHardRules());
-        result.put("criteria", Map.of(
-                "TR",  mergeCriterion(trNormalised, ruleResult.adjustedBands()),
-                "CC",  mergeCriterion(ccTagged,     ruleResult.adjustedBands()),
-                "LR",  mergeCriterion(lrTagged,     ruleResult.adjustedBands()),
-                "GRA", mergeCriterion(graTagged,    ruleResult.adjustedBands())
-        ));
+        result.put("final_band", finalBand);
+        result.put("overall_cap", ruleResult.overallCap());
+        result.put("applied_hard_rules", ruleResult.appliedHardRules());
+        result.put(
+                "criteria",
+                Map.of(
+                        "TR", mergeCriterion(trNormalised, ruleResult.adjustedBands()),
+                        "CC", mergeCriterion(ccTagged, ruleResult.adjustedBands()),
+                        "LR", mergeCriterion(lrTagged, ruleResult.adjustedBands()),
+                        "GRA", mergeCriterion(graTagged, ruleResult.adjustedBands())));
         return result;
     }
 
@@ -213,8 +208,11 @@ public class Helper {
             Object val = map.get("band");
             if (val instanceof Number n) return n.doubleValue();
             if (val instanceof String s) {
-                try { return Double.parseDouble(s); }
-                catch (NumberFormatException e) { log.warn("Cannot parse band: {}", val); }
+                try {
+                    return Double.parseDouble(s);
+                } catch (NumberFormatException e) {
+                    log.warn("Cannot parse band: {}", val);
+                }
             }
         }
         log.warn("Invalid band value, defaulting to 5.0: {}", obj);
@@ -262,18 +260,14 @@ public class Helper {
 
         // Pass 2: fix unquoted string values
         java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
-                "(\"[^\"]+\"\\s*:\\s*)(?![\"\\[\\{\\]\\}\\d]|true\\b|false\\b|null\\b)([^,}\\]]+)"
-        );
+                "(\"[^\"]+\"\\s*:\\s*)(?![\"\\[\\{\\]\\}\\d]|true\\b|false\\b|null\\b)([^,}\\]]+)");
         java.util.regex.Matcher matcher = pattern.matcher(step1);
         StringBuffer sb = new StringBuffer();
 
         while (matcher.find()) {
-            String keyPart   = matcher.group(1);
-            String valuePart = matcher.group(2).trim()
-                    .replace("\\", "\\\\")
-                    .replace("\"", "\\\"");
-            matcher.appendReplacement(sb,
-                    java.util.regex.Matcher.quoteReplacement(keyPart + "\"" + valuePart + "\""));
+            String keyPart = matcher.group(1);
+            String valuePart = matcher.group(2).trim().replace("\\", "\\\\").replace("\"", "\\\"");
+            matcher.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(keyPart + "\"" + valuePart + "\""));
         }
         matcher.appendTail(sb);
         return sb.toString();
