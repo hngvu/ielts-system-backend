@@ -91,7 +91,8 @@ public class PaymentServiceImpl implements PaymentService {
                 .amount(paymentInitRequest.amount())
                 .txnCode(txnCode)
                 .createdAt(LocalDateTime.now())
-                .expiredAt(LocalDateTime.now().plusMinutes(5))
+                .updatedAt(LocalDateTime.now())
+                .expiredAt(LocalDateTime.now().plusMinutes(15))
                 .status(PaymentStatus.PENDING)
                 .user(currentUser)
                 .build());
