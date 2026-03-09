@@ -1,28 +1,29 @@
 package io.gsp26se16.moni.content.dto.request;
 
+import java.util.List;
+import java.util.Map;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestMode;
 import io.gsp26se16.moni.common.enumeration.TestType;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-
-import java.util.List;
-import java.util.Map;
 
 @Data
 public class TestImportRequest {
 
     @NotBlank(message = "Title is required")
-    private String title;          // Ví dụ: "Cambridge 18 - Test 1"
+    private String title; // Ví dụ: "Cambridge 18 - Test 1"
 
     private String description;
 
     @NotNull(message = "Skill is required")
-    private Skill skill;           // READING, LISTENING, WRITING, SPEAKING
+    private Skill skill; // READING, LISTENING, WRITING, SPEAKING
 
     @NotNull(message = "Test Type is required")
-    private TestType testType;     // FULL_TEST, PRACTICE
+    private TestType testType; // FULL_TEST, PRACTICE
 
     private Integer duration;
     private TestMode testMode;
@@ -36,10 +37,11 @@ public class TestImportRequest {
     @Data
     public static class StimulusRequest {
         @NotBlank
-        private String title;       // Tên bài đọc (VD: "Passage 1: The History of Tea")
-        private String content;     // Nội dung bài đọc (HTML/Text)
-        private String mediaUrl;    // Link Audio (nếu là Listening)
-        private Integer section;    // Thứ tự (1, 2, 3)
+        private String title; // Tên bài đọc (VD: "Passage 1: The History of Tea")
+
+        private String content; // Nội dung bài đọc (HTML/Text)
+        private String mediaUrl; // Link Audio (nếu là Listening)
+        private Integer section; // Thứ tự (1, 2, 3)
 
         // Danh sách nhóm câu hỏi trong bài đọc này
         private List<QuestionGroupRequest> questionGroups;
@@ -47,7 +49,7 @@ public class TestImportRequest {
 
     @Data
     public static class QuestionGroupRequest {
-        private String instruction;      // Hướng dẫn (VD: "Choose the correct letter...")
+        private String instruction; // Hướng dẫn (VD: "Choose the correct letter...")
 
         @NotBlank(message = "Question Type Code is required")
         private String questionTypeCode; // Quan trọng: Phải khớp với mã trong DB (VD: "MCQ", "TFNG")
@@ -57,20 +59,19 @@ public class TestImportRequest {
 
     @Data
     public static class QuestionRequest {
-        private String content;          // Nội dung câu hỏi
-        private Integer position;        // Số thứ tự câu (VD: 1, 2, 3...)
+        private String content; // Nội dung câu hỏi
+        private Integer position; // Số thứ tự câu (VD: 1, 2, 3...)
 
-        private Map<String, Object> metadata;    // Dữ liệu phụ (JSONB)
+        private Map<String, Object> metadata; // Dữ liệu phụ (JSONB)
         private Map<String, Object> explanation; // Giải thích chi tiết (JSONB)
         private List<Integer> tagIds;
         private List<OptionRequest> options;
-
     }
 
     @Data
     public static class OptionRequest {
-        private String label;     // A, B, C, D
-        private String content;   // Nội dung đáp án
+        private String label; // A, B, C, D
+        private String content; // Nội dung đáp án
         private Boolean isCorrect; // Đáp án đúng hay sai (Admin được quyền gửi cái này)
     }
 }

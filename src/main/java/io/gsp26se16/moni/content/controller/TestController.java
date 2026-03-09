@@ -1,5 +1,15 @@
 package io.gsp26se16.moni.content.controller;
 
+import jakarta.validation.Valid;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
 import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.content.dto.request.TestImportRequest;
@@ -10,15 +20,7 @@ import io.gsp26se16.moni.content.dto.response.TestResponse;
 import io.gsp26se16.moni.content.service.TestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/admin/tests")
@@ -52,9 +54,10 @@ public class TestController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "desc") String direction
-    ) {
-        Sort sort = direction.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+            @RequestParam(defaultValue = "desc") String direction) {
+        Sort sort = direction.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
         Page<TestResponse> result = testService.getAllTests(keyword, skill, pageable);
@@ -84,8 +87,7 @@ public class TestController {
     @PutMapping("/{id}")
     @Operation(summary = "Update Test Info")
     public ResponseEntity<ApiResponse<Void>> updateTest(
-            @PathVariable Integer id,
-            @RequestBody @Valid TestUpdateRequest request) {
+            @PathVariable Integer id, @RequestBody @Valid TestUpdateRequest request) {
         testService.updateTest(id, request);
         ApiResponse<Void> response = ApiResponse.<Void>builder()
                 .code(1000)
@@ -99,7 +101,9 @@ public class TestController {
     public ResponseEntity<ApiResponse<Void>> deleteTest(@PathVariable Integer id) {
         testService.deleteTest(id);
         return ResponseEntity.ok(ApiResponse.<Void>builder()
-                .code(1000).message("Đã ẩn đề thi thành công").build());
+                .code(1000)
+                .message("Đã ẩn đề thi thành công")
+                .build());
     }
 
     @PostMapping("/{id}/structure")
@@ -107,8 +111,11 @@ public class TestController {
     public ResponseEntity<ApiResponse<Void>> addStimulusToTest(
             @PathVariable Integer id, @RequestBody @Valid TestStructureRequest request) {
         testService.addStimulusToTest(id, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.<Void>builder()
-                .code(1000).message("Ghép ngữ liệu vào đề thi thành công").build());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.<Void>builder()
+                        .code(1000)
+                        .message("Ghép ngữ liệu vào đề thi thành công")
+                        .build());
     }
 
     @DeleteMapping("/{testId}/structure/{stimulusId}")
@@ -117,6 +124,8 @@ public class TestController {
             @PathVariable Integer testId, @PathVariable Integer stimulusId) {
         testService.removeStimulusFromTest(testId, stimulusId);
         return ResponseEntity.ok(ApiResponse.<Void>builder()
-                .code(1000).message("Gỡ ngữ liệu khỏi đề thi thành công").build());
+                .code(1000)
+                .message("Gỡ ngữ liệu khỏi đề thi thành công")
+                .build());
     }
 }

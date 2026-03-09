@@ -15,6 +15,7 @@ public class TestStructure {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
+
     @Column(name = "section")
     Integer section;
 

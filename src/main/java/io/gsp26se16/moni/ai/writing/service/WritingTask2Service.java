@@ -49,19 +49,19 @@ public class WritingTask2Service {
         WritingSubmission submission = createSubmission(request, WritingTaskType.TASK_2);
 
         try {
-            ChatClient chatClient = chatClientBuilder
-                    .defaultAdvisors(new SimpleLoggerAdvisor()).build();
+            ChatClient chatClient =
+                    chatClientBuilder.defaultAdvisors(new SimpleLoggerAdvisor()).build();
 
             String question = request.getQuestion();
-            String essay    = request.getAnswer();
+            String essay = request.getAnswer();
 
             // ── Phase 1: Structural parse ─────────────────────────────────────
             Map<String, Object> parsedEssay = phase1Parse(chatClient, question, essay);
 
             // ── Phase 2–5: Criterion scoring ──────────────────────────────────
-            Map<String, Object> tr  = phase2TaskResponse(chatClient, question, essay, parsedEssay);
-            Map<String, Object> cc  = phase3Coherence(chatClient, essay, parsedEssay);
-            Map<String, Object> lr  = phase4Lexical(chatClient, essay);
+            Map<String, Object> tr = phase2TaskResponse(chatClient, question, essay, parsedEssay);
+            Map<String, Object> cc = phase3Coherence(chatClient, essay, parsedEssay);
+            Map<String, Object> lr = phase4Lexical(chatClient, essay);
             Map<String, Object> gra = phase5Grammar(chatClient, essay);
 
             // ── Phase 6: Rule Engine + band calculation ───────────────────────
@@ -103,8 +103,8 @@ public class WritingTask2Service {
         String prompt = promptLoader.loadPrompt(
                 "phase2_tr.txt",
                 Map.of(
-                        "question",    question,
-                        "essay",       essay,
+                        "question", question,
+                        "essay", essay,
                         "phase2_json", objectMapper.writeValueAsString(parsedEssay)));
         return callEvaluation(chatClient, prompt);
     }
@@ -211,7 +211,8 @@ public class WritingTask2Service {
     }
 
     private Map<String, Object> callEvaluation(ChatClient chatClient, String systemPrompt) {
-        String response = chatClient.prompt()
+        String response = chatClient
+                .prompt()
                 .system(systemPrompt)
                 .user("Return ONLY raw JSON.")
                 .call()
@@ -220,7 +221,8 @@ public class WritingTask2Service {
     }
 
     private Map<String, Object> callFeedback(ChatClient chatClient, String systemPrompt) {
-        String response = chatClient.prompt()
+        String response = chatClient
+                .prompt()
                 .system(systemPrompt)
                 .user("Explain strictly based on evaluation results. Return ONLY raw JSON.")
                 .call()

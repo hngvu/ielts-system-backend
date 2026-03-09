@@ -29,11 +29,15 @@ public class Stimulus {
     TestType testType;
 
     Skill skill;
+
     @Column(columnDefinition = "TEXT")
     String content;
+
     String mediaUrl;
+
     @Enumerated(EnumType.STRING)
     PublishStatus status;
+
     @Column(columnDefinition = "TEXT")
     String metadata;
 

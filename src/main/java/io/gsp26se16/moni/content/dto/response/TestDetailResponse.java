@@ -1,14 +1,13 @@
 package io.gsp26se16.moni.content.dto.response;
 
+import java.util.List;
+import java.util.Map;
+
 import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestMode;
-import io.gsp26se16.moni.common.enumeration.TestType;
 import lombok.Builder;
 import lombok.Data;
-
-import java.util.List;
-import java.util.Map;
 
 @Data
 @Builder
@@ -24,7 +23,9 @@ public class TestDetailResponse {
 
     private List<StimulusDetail> stimuli;
 
-    @Data @Builder public static class StimulusDetail {
+    @Data
+    @Builder
+    public static class StimulusDetail {
         private Integer id;
         private String title;
         private String content;
@@ -33,13 +34,17 @@ public class TestDetailResponse {
         private List<QuestionGroupDetail> questionGroups;
     }
 
-    @Data @Builder public static class QuestionGroupDetail {
+    @Data
+    @Builder
+    public static class QuestionGroupDetail {
         private Integer id;
         private String instruction;
         private List<QuestionDetail> questions;
     }
 
-    @Data @Builder public static class QuestionDetail {
+    @Data
+    @Builder
+    public static class QuestionDetail {
         private Integer id;
         private String content;
         private Integer position;
@@ -48,7 +53,9 @@ public class TestDetailResponse {
         private List<OptionDetail> options;
     }
 
-    @Data @Builder public static class OptionDetail {
+    @Data
+    @Builder
+    public static class OptionDetail {
         private Integer id;
         private String label;
         private String content;

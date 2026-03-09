@@ -81,8 +81,8 @@ public class SpeakingSocketHandler extends TextWebSocketHandler {
             switch (type) {
                 case "start" -> handleStart(session, payload);
                 case "audio" -> handleAudio(session, payload);
-                case "stop"  -> handleStop(session, payload);
-                default      -> sendError(session, "Unknown message type: " + type);
+                case "stop" -> handleStop(session, payload);
+                default -> sendError(session, "Unknown message type: " + type);
             }
         } catch (Exception e) {
             log.error("Error handling WebSocket message: {}", e.getMessage(), e);
@@ -107,9 +107,7 @@ public class SpeakingSocketHandler extends TextWebSocketHandler {
         ActiveSpeakingSession speakingSession = sessionManager.createSession(userId, question);
         wsSession.getAttributes().put("speakingSessionId", speakingSession.getSessionId());
 
-        sendMessage(wsSession, Map.of(
-                "type", "started",
-                "sessionId", speakingSession.getSessionId()));
+        sendMessage(wsSession, Map.of("type", "started", "sessionId", speakingSession.getSessionId()));
     }
 
     /**
@@ -130,9 +128,7 @@ public class SpeakingSocketHandler extends TextWebSocketHandler {
         // Forward to AudioStreamService — if a transcript is produced, send it back
         String transcript = audioStreamService.onAudioChunk(sessionId, audioChunk);
         if (transcript != null) {
-            sendMessage(wsSession, Map.of(
-                    "type", "transcript",
-                    "text", transcript));
+            sendMessage(wsSession, Map.of("type", "transcript", "text", transcript));
         }
     }
 

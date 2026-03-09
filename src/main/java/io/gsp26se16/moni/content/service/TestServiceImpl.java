@@ -1,11 +1,18 @@
 package io.gsp26se16.moni.content.service;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
-import io.gsp26se16.moni.common.exception.AppException;
-import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.dto.request.TestImportRequest;
 import io.gsp26se16.moni.content.dto.request.TestStructureRequest;
 import io.gsp26se16.moni.content.dto.request.TestUpdateRequest;
@@ -16,17 +23,6 @@ import io.gsp26se16.moni.content.repository.*;
 import io.gsp26se16.moni.tag.entity.Tag;
 import io.gsp26se16.moni.tag.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -135,58 +131,65 @@ public class TestServiceImpl implements TestService {
 
     @Override
     public TestDetailResponse getTestDetail(Integer id) {
-        Test test = testRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Test not found"));
+        Test test = testRepository.findById(id).orElseThrow(() -> new RuntimeException("Test not found"));
 
         List<TestStructure> structures = testStructureRepository.findByTestId(test.getId());
         structures.sort(Comparator.comparingInt(TestStructure::getSection));
 
-        List<TestDetailResponse.StimulusDetail> stimulusDetails = structures.stream().map(ts -> {
-            Stimulus s = ts.getStimulus();
+        List<TestDetailResponse.StimulusDetail> stimulusDetails = structures.stream()
+                .map(ts -> {
+                    Stimulus s = ts.getStimulus();
 
-            // Map QuestionGroup
-            List<TestDetailResponse.QuestionGroupDetail> groupDetails = s.getQuestionGroups().stream().map(g -> {
+                    // Map QuestionGroup
+                    List<TestDetailResponse.QuestionGroupDetail> groupDetails = s.getQuestionGroups().stream()
+                            .map(g -> {
 
-                // Map Question
-                List<TestDetailResponse.QuestionDetail> qDetails = g.getQuestions().stream().map(q -> {
+                                // Map Question
+                                List<TestDetailResponse.QuestionDetail> qDetails = g.getQuestions().stream()
+                                        .map(q -> {
 
-                    // Map Option
-                    List<TestDetailResponse.OptionDetail> optDetails = q.getOptions().stream().map(opt ->
-                            TestDetailResponse.OptionDetail.builder()
-                                    .id(opt.getId())
-                                    .label(opt.getLabel())
-                                    .content(opt.getContent())
-                                    .isCorrect(opt.isCorrect())
-                                    .build()
-                    ).toList();
+                                            // Map Option
+                                            List<TestDetailResponse.OptionDetail> optDetails = q.getOptions().stream()
+                                                    .map(opt -> TestDetailResponse.OptionDetail.builder()
+                                                            .id(opt.getId())
+                                                            .label(opt.getLabel())
+                                                            .content(opt.getContent())
+                                                            .isCorrect(opt.isCorrect())
+                                                            .build())
+                                                    .toList();
 
-                    return TestDetailResponse.QuestionDetail.builder()
-                            .id(q.getId())
-                            .content(q.getContent())
-                            .position(q.getPosition())
-                            .explanation(q.getExplanation())
-                            // Lấy danh sách tag ID của Câu hỏi này
-                            .tagIds(q.getTags().stream().map(Tag::getId).collect(Collectors.toList()))
-                            .options(optDetails)
+                                            return TestDetailResponse.QuestionDetail.builder()
+                                                    .id(q.getId())
+                                                    .content(q.getContent())
+                                                    .position(q.getPosition())
+                                                    .explanation(q.getExplanation())
+                                                    // Lấy danh sách tag ID của Câu hỏi này
+                                                    .tagIds(q.getTags().stream()
+                                                            .map(Tag::getId)
+                                                            .collect(Collectors.toList()))
+                                                    .options(optDetails)
+                                                    .build();
+                                        })
+                                        .toList();
+
+                                return TestDetailResponse.QuestionGroupDetail.builder()
+                                        .id(g.getId())
+                                        .instruction(g.getInstruction())
+                                        .questions(qDetails)
+                                        .build();
+                            })
+                            .toList();
+
+                    return TestDetailResponse.StimulusDetail.builder()
+                            .id(s.getId())
+                            .title(s.getTitle())
+                            .content(s.getContent())
+                            .mediaUrl(s.getMediaUrl())
+                            .section(ts.getSection()) // Lấy section từ TestStructure
+                            .questionGroups(groupDetails)
                             .build();
-                }).toList();
-
-                return TestDetailResponse.QuestionGroupDetail.builder()
-                        .id(g.getId())
-                        .instruction(g.getInstruction())
-                        .questions(qDetails)
-                        .build();
-            }).toList();
-
-            return TestDetailResponse.StimulusDetail.builder()
-                    .id(s.getId())
-                    .title(s.getTitle())
-                    .content(s.getContent())
-                    .mediaUrl(s.getMediaUrl())
-                    .section(ts.getSection()) // Lấy section từ TestStructure
-                    .questionGroups(groupDetails)
-                    .build();
-        }).toList();
+                })
+                .toList();
 
         return TestDetailResponse.builder()
                 .id(test.getId())
@@ -205,8 +208,7 @@ public class TestServiceImpl implements TestService {
     @Override
     @Transactional
     public void updateTest(Integer id, TestUpdateRequest request) {
-        Test test = testRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Test not found"));
+        Test test = testRepository.findById(id).orElseThrow(() -> new RuntimeException("Test not found"));
 
         if (request.getTitle() != null) test.setTitle(request.getTitle());
         if (request.getDescription() != null) test.setDescription(request.getDescription());
@@ -225,8 +227,7 @@ public class TestServiceImpl implements TestService {
     @Override
     @Transactional
     public void deleteTest(Integer id) {
-        Test test = testRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Test not found"));
+        Test test = testRepository.findById(id).orElseThrow(() -> new RuntimeException("Test not found"));
         test.setStatus(PublishStatus.HIDDEN);
         testRepository.save(test);
     }
@@ -234,8 +235,7 @@ public class TestServiceImpl implements TestService {
     @Override
     @Transactional
     public void addStimulusToTest(Integer testId, TestStructureRequest request) {
-        Test test = testRepository.findById(testId)
-                .orElseThrow(() -> new RuntimeException("Test not found"));
+        Test test = testRepository.findById(testId).orElseThrow(() -> new RuntimeException("Test not found"));
         Stimulus stimulus = stimulusRepository.getReferenceById(request.getStimulusId());
 
         TestStructure structure = new TestStructure();

@@ -1,14 +1,13 @@
 package io.gsp26se16.moni.content.dto.response;
 
+import java.util.List;
+
 import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestMode;
 import io.gsp26se16.moni.common.enumeration.TestType;
 import lombok.Builder;
 import lombok.Data;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @Builder

@@ -108,7 +108,8 @@ public class AudioStreamService {
      * @return the transcript if produced, {@code null} if segment was too short
      */
     private String extractAndTranscribe(ActiveSpeakingSession session) {
-        int bufferedBytes = session.getAudioBuffer().stream().mapToInt(b -> b.length).sum();
+        int bufferedBytes =
+                session.getAudioBuffer().stream().mapToInt(b -> b.length).sum();
 
         if (bufferedBytes < MIN_SEGMENT_BYTES) {
             log.debug("Segment too short ({} bytes), skipping transcription", bufferedBytes);

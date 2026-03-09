@@ -1,11 +1,11 @@
 package io.gsp26se16.moni.content.entity;
 
-import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import java.util.HashSet;
 import java.util.Set;
 
 import jakarta.persistence.*;
 
+import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestMode;
 import io.gsp26se16.moni.common.enumeration.TestType;
@@ -33,6 +33,7 @@ public class Test {
 
     @Enumerated(EnumType.STRING)
     TestType testType;
+
     @Column(name = "duration")
     Integer duration; // Thời gian làm bài (phút)
 
@@ -48,7 +49,6 @@ public class Test {
     @JoinTable(
             name = "test_tags", // Tên bảng trung gian
             joinColumns = @JoinColumn(name = "test_id"),
-            inverseJoinColumns = @JoinColumn(name = "tag_id")
-    )
+            inverseJoinColumns = @JoinColumn(name = "tag_id"))
     Set<Tag> tags = new HashSet<>();
 }

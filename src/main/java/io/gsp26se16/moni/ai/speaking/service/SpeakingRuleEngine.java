@@ -40,43 +40,41 @@ public class SpeakingRuleEngine {
     private static final Map<String, SpeakingHardRule> SPEAKING_HARD_RULES = Map.of(
 
             // FC: constant long pauses that severely disrupt communication
-            "long_pauses_throughout",     new SpeakingHardRule(Map.of("FC", 5.0), 5.5),
+            "long_pauses_throughout", new SpeakingHardRule(Map.of("FC", 5.0), 5.5),
 
             // FC: completely incoherent speech — cannot be understood
-            "incoherent_speech",          new SpeakingHardRule(Map.of("FC", 4.0), 4.5),
+            "incoherent_speech", new SpeakingHardRule(Map.of("FC", 4.0), 4.5),
 
             // LR: vocabulary so limited it prevents effective communication
-            "insufficient_vocabulary",    new SpeakingHardRule(Map.of("LR", 5.0), null),
+            "insufficient_vocabulary", new SpeakingHardRule(Map.of("LR", 5.0), null),
 
             // GRA: pervasive basic errors impede comprehension
-            "pervasive_grammar_errors",   new SpeakingHardRule(Map.of("GRA", 5.0), 5.5),
+            "pervasive_grammar_errors", new SpeakingHardRule(Map.of("GRA", 5.0), 5.5),
 
             // PR: pronunciation so unclear it causes persistent misunderstanding
-            "unintelligible_pronunciation", new SpeakingHardRule(Map.of("PR", 4.0), 5.0)
-    );
+            "unintelligible_pronunciation", new SpeakingHardRule(Map.of("PR", 4.0), 5.0));
 
     // ─────────────────────────────── Soft penalties ──────────────────────────
 
     private static final Map<String, SpeakingSoftRule> SPEAKING_SOFT_RULES = Map.of(
 
             // FC
-            "frequent_hesitation",       new SpeakingSoftRule("FC", 0.25),
-            "limited_linking_devices",   new SpeakingSoftRule("FC", 0.25),
+            "frequent_hesitation", new SpeakingSoftRule("FC", 0.25),
+            "limited_linking_devices", new SpeakingSoftRule("FC", 0.25),
             "repetitive_self_correction", new SpeakingSoftRule("FC", 0.25),
 
             // LR
-            "limited_range",             new SpeakingSoftRule("LR", 0.25),
-            "awkward_collocation",       new SpeakingSoftRule("LR", 0.25),
-            "inaccurate_word_choice",    new SpeakingSoftRule("LR", 0.25),
+            "limited_range", new SpeakingSoftRule("LR", 0.25),
+            "awkward_collocation", new SpeakingSoftRule("LR", 0.25),
+            "inaccurate_word_choice", new SpeakingSoftRule("LR", 0.25),
 
             // GRA
-            "frequent_minor_errors",     new SpeakingSoftRule("GRA", 0.25),
-            "limited_sentence_variety",  new SpeakingSoftRule("GRA", 0.25),
+            "frequent_minor_errors", new SpeakingSoftRule("GRA", 0.25),
+            "limited_sentence_variety", new SpeakingSoftRule("GRA", 0.25),
 
             // PR
-            "inconsistent_stress",       new SpeakingSoftRule("PR", 0.25),
-            "unclear_consonants",        new SpeakingSoftRule("PR", 0.25)
-    );
+            "inconsistent_stress", new SpeakingSoftRule("PR", 0.25),
+            "unclear_consonants", new SpeakingSoftRule("PR", 0.25));
 
     // ─────────────────────────────── Public API ───────────────────────────────
 
@@ -90,17 +88,14 @@ public class SpeakingRuleEngine {
      * @return structured result: final_band, overall_cap, applied_hard_rules, criteria
      */
     public Map<String, Object> calculateBands(
-            Map<String, Object> fc,
-            Map<String, Object> lr,
-            Map<String, Object> gra,
-            Map<String, Object> pr) {
+            Map<String, Object> fc, Map<String, Object> lr, Map<String, Object> gra, Map<String, Object> pr) {
 
         // ── Step 1: Raw bands ──────────────────────────────────────────────────
         Map<String, Double> rawBands = Map.of(
-                "FC",  helper.getBand(fc),
-                "LR",  helper.getBand(lr),
+                "FC", helper.getBand(fc),
+                "LR", helper.getBand(lr),
                 "GRA", helper.getBand(gra),
-                "PR",  helper.getBand(pr));
+                "PR", helper.getBand(pr));
 
         // ── Step 2: Collect violations from all criteria ───────────────────────
         Map<String, RuleEngine.Violation> violations = helper.collectViolations(fc, lr, gra, pr);
@@ -109,19 +104,20 @@ public class SpeakingRuleEngine {
         SpeakingRuleResult speakingResult = applySpeakingRules(rawBands, violations);
 
         // ── Step 4: Final band (shared IELTS rounding logic) ──────────────────
-        double finalBand = ruleEngine.calculateFinalBand(
-                speakingResult.adjustedBands(), speakingResult.overallCap());
+        double finalBand = ruleEngine.calculateFinalBand(speakingResult.adjustedBands(), speakingResult.overallCap());
 
         // ── Step 5: Build result ───────────────────────────────────────────────
         Map<String, Object> result = new HashMap<>();
-        result.put("final_band",         finalBand);
-        result.put("overall_cap",        speakingResult.overallCap());
+        result.put("final_band", finalBand);
+        result.put("overall_cap", speakingResult.overallCap());
         result.put("applied_hard_rules", speakingResult.appliedHardRules());
-        result.put("criteria", Map.of(
-                "FC",  helper.mergeCriterion(fc,  speakingResult.adjustedBands()),
-                "LR",  helper.mergeCriterion(lr,  speakingResult.adjustedBands()),
-                "GRA", helper.mergeCriterion(gra, speakingResult.adjustedBands()),
-                "PR",  helper.mergeCriterion(pr,  speakingResult.adjustedBands())));
+        result.put(
+                "criteria",
+                Map.of(
+                        "FC", helper.mergeCriterion(fc, speakingResult.adjustedBands()),
+                        "LR", helper.mergeCriterion(lr, speakingResult.adjustedBands()),
+                        "GRA", helper.mergeCriterion(gra, speakingResult.adjustedBands()),
+                        "PR", helper.mergeCriterion(pr, speakingResult.adjustedBands())));
 
         return result;
     }
@@ -129,8 +125,7 @@ public class SpeakingRuleEngine {
     // ─────────────────────────────── Rule application ─────────────────────────
 
     private SpeakingRuleResult applySpeakingRules(
-            Map<String, Double> originalBands,
-            Map<String, RuleEngine.Violation> violations) {
+            Map<String, Double> originalBands, Map<String, RuleEngine.Violation> violations) {
 
         Map<String, Double> adjusted = new HashMap<>(originalBands);
         Double overallCap = null;
@@ -157,9 +152,7 @@ public class SpeakingRuleEngine {
             }
 
             if (rule.overallCap != null) {
-                overallCap = (overallCap == null)
-                        ? rule.overallCap
-                        : Math.min(overallCap, rule.overallCap);
+                overallCap = (overallCap == null) ? rule.overallCap : Math.min(overallCap, rule.overallCap);
             }
         }
 
@@ -211,7 +204,5 @@ public class SpeakingRuleEngine {
     }
 
     private record SpeakingRuleResult(
-            Map<String, Double> adjustedBands,
-            Double overallCap,
-            List<String> appliedHardRules) {}
+            Map<String, Double> adjustedBands, Double overallCap, List<String> appliedHardRules) {}
 }

@@ -1,12 +1,12 @@
 package io.gsp26se16.moni.ai.speaking.repository;
 
-
 import java.util.List;
 import java.util.Optional;
 
-import io.gsp26se16.moni.ai.speaking.entity.SpeakingSubmission;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import io.gsp26se16.moni.ai.speaking.entity.SpeakingSubmission;
 
 @Repository
 public interface SpeakingSubmissionRepository extends JpaRepository<SpeakingSubmission, Long> {
