@@ -49,5 +49,5 @@ jwt:
   signerKey: 1TjXchw5FloESb63Kc+DFhTARvpWL4jUGCwfGWxuG5SIf/1y/LgJxHnMqaF6A/ij
 
 sepay:
-  acc: ACB
-  bank: 21736271
+  acc: 21736271
+  bank: ACB
