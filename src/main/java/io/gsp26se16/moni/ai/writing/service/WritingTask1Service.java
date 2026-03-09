@@ -56,8 +56,8 @@ public class WritingTask1Service {
         WritingSubmission submission = createSubmission(request, WritingTaskType.TASK_1);
 
         try {
-            ChatClient chatClient = chatClientBuilder
-                    .defaultAdvisors(new SimpleLoggerAdvisor()).build();
+            ChatClient chatClient =
+                    chatClientBuilder.defaultAdvisors(new SimpleLoggerAdvisor()).build();
 
             // ── Vision analysis (cache nếu đã có) ─────────────────────────────
             Map<String, Object> chartData = null;
@@ -69,9 +69,9 @@ public class WritingTask1Service {
             Map<String, Object> parsedEssay = phase1Parse(chatClient, request.getAnswer());
 
             // ── Phase 2–5 ─────────────────────────────────────────────────────
-            Map<String, Object> ta  = phase2TaskAchievement(chatClient, request.getAnswer(), parsedEssay, chartData);
-            Map<String, Object> cc  = phase3Coherence(chatClient, request.getAnswer(), parsedEssay);
-            Map<String, Object> lr  = phase4Lexical(chatClient, request.getAnswer());
+            Map<String, Object> ta = phase2TaskAchievement(chatClient, request.getAnswer(), parsedEssay, chartData);
+            Map<String, Object> cc = phase3Coherence(chatClient, request.getAnswer(), parsedEssay);
+            Map<String, Object> lr = phase4Lexical(chatClient, request.getAnswer());
             Map<String, Object> gra = phase5Grammar(chatClient, request.getAnswer());
 
             // ── Phase 6: Rule Engine ──────────────────────────────────────────
@@ -109,22 +109,21 @@ public class WritingTask1Service {
     }
 
     private Map<String, Object> phase2TaskAchievement(
-            ChatClient chatClient,
-            String essay,
-            Map<String, Object> parsed,
-            Map<String, Object> chartData)
+            ChatClient chatClient, String essay, Map<String, Object> parsed, Map<String, Object> chartData)
             throws JsonProcessingException {
         String prompt = promptLoader.loadPrompt(
                 "phase2_ta.txt",
                 Map.of(
-                        "essay",          essay,
-                        "phase1_json",    objectMapper.writeValueAsString(parsed),
-                        "chart_entities", chartData != null ? objectMapper.writeValueAsString(chartData) : "[]"));
+                        "essay",
+                        essay,
+                        "phase1_json",
+                        objectMapper.writeValueAsString(parsed),
+                        "chart_entities",
+                        chartData != null ? objectMapper.writeValueAsString(chartData) : "[]"));
         return callEvaluation(chatClient, prompt);
     }
 
-    private Map<String, Object> phase3Coherence(
-            ChatClient chatClient, String essay, Map<String, Object> parsed)
+    private Map<String, Object> phase3Coherence(ChatClient chatClient, String essay, Map<String, Object> parsed)
             throws JsonProcessingException {
         String prompt = promptLoader.loadPrompt(
                 "phase3_cc.txt", Map.of("essay", essay, "phase1_json", objectMapper.writeValueAsString(parsed)));
@@ -142,13 +141,12 @@ public class WritingTask1Service {
     }
 
     private Map<String, Object> phase6Calculate(
-            Map<String, Object> ta, Map<String, Object> cc,
-            Map<String, Object> lr, Map<String, Object> gra) {
+            Map<String, Object> ta, Map<String, Object> cc, Map<String, Object> lr, Map<String, Object> gra) {
 
         Map<String, Double> rawBands = Map.of(
-                "TA",  getBand(ta),
-                "CC",  getBand(cc),
-                "LR",  getBand(lr),
+                "TA", getBand(ta),
+                "CC", getBand(cc),
+                "LR", getBand(lr),
                 "GRA", getBand(gra));
 
         Map<String, RuleEngine.Violation> violations = helper.collectViolations(ta, cc, lr, gra);
@@ -156,14 +154,16 @@ public class WritingTask1Service {
         double finalBand = ruleEngine.calculateFinalBand(ruleResult.adjustedBands(), ruleResult.overallCap());
 
         Map<String, Object> result = new HashMap<>();
-        result.put("final_band",         finalBand);
-        result.put("overall_cap",        ruleResult.overallCap());
+        result.put("final_band", finalBand);
+        result.put("overall_cap", ruleResult.overallCap());
         result.put("applied_hard_rules", ruleResult.appliedHardRules());
-        result.put("criteria", Map.of(
-                "TA",  helper.mergeCriterion(ta,  ruleResult.adjustedBands()),
-                "CC",  helper.mergeCriterion(cc,  ruleResult.adjustedBands()),
-                "LR",  helper.mergeCriterion(lr,  ruleResult.adjustedBands()),
-                "GRA", helper.mergeCriterion(gra, ruleResult.adjustedBands())));
+        result.put(
+                "criteria",
+                Map.of(
+                        "TA", helper.mergeCriterion(ta, ruleResult.adjustedBands()),
+                        "CC", helper.mergeCriterion(cc, ruleResult.adjustedBands()),
+                        "LR", helper.mergeCriterion(lr, ruleResult.adjustedBands()),
+                        "GRA", helper.mergeCriterion(gra, ruleResult.adjustedBands())));
         return result;
     }
 
@@ -173,8 +173,8 @@ public class WritingTask1Service {
         String prompt = promptLoader.loadPrompt(
                 "phase7_feedback.txt",
                 Map.of(
-                        "question",          question,
-                        "essay",             essay,
+                        "question", question,
+                        "essay", essay,
                         "all_phase_results", objectMapper.writeValueAsString(finalResult)));
         return callFeedback(chatClient, prompt);
     }
@@ -194,7 +194,9 @@ public class WritingTask1Service {
         // Gắn questionGroup nếu có truyền questionGroupId
         QuestionGroup questionGroup = null;
         if (request.getQuestionGroupId() != null) {
-            questionGroup = questionGroupRepository.findById(request.getQuestionGroupId()).orElse(null);
+            questionGroup = questionGroupRepository
+                    .findById(request.getQuestionGroupId())
+                    .orElse(null);
         }
 
         WritingSubmission submission = WritingSubmission.builder()
@@ -271,8 +273,11 @@ public class WritingTask1Service {
             Object val = map.get("band");
             if (val instanceof Number n) return n.doubleValue();
             if (val instanceof String s) {
-                try { return Double.parseDouble(s); }
-                catch (NumberFormatException e) { log.warn("Cannot parse band: {}", val); }
+                try {
+                    return Double.parseDouble(s);
+                } catch (NumberFormatException e) {
+                    log.warn("Cannot parse band: {}", val);
+                }
             }
         }
         log.warn("Invalid band value, defaulting to 5.0: {}", obj);
@@ -280,7 +285,8 @@ public class WritingTask1Service {
     }
 
     private Map<String, Object> callEvaluation(ChatClient chatClient, String systemPrompt) {
-        String response = chatClient.prompt()
+        String response = chatClient
+                .prompt()
                 .system(systemPrompt)
                 .user("Return ONLY raw JSON.")
                 .call()
@@ -289,7 +295,8 @@ public class WritingTask1Service {
     }
 
     private Map<String, Object> callFeedback(ChatClient chatClient, String systemPrompt) {
-        String response = chatClient.prompt()
+        String response = chatClient
+                .prompt()
                 .system(systemPrompt)
                 .user("Explain strictly based on evaluation results. Return ONLY raw JSON.")
                 .call()
@@ -306,10 +313,10 @@ public class WritingTask1Service {
                 .findById(questionGroupId)
                 .orElseThrow(() -> new RuntimeException("QuestionGroup not found: " + questionGroupId));
 
-        if (questionGroup.getVisonAnalysisResult() != null
-                && !questionGroup.getVisonAnalysisResult().isEmpty()) {
+        if (questionGroup.getVisionAnalysisResult() != null
+                && !questionGroup.getVisionAnalysisResult().isEmpty()) {
             log.info("Dùng cached vision analysis cho QuestionGroup: {}", questionGroupId);
-            return questionGroup.getVisonAnalysisResult();
+            return questionGroup.getVisionAnalysisResult();
         }
 
         try {
@@ -327,7 +334,7 @@ public class WritingTask1Service {
             String base64Image = Base64.getEncoder().encodeToString(imageBytes);
             Map<String, Object> analysis = visionClient.analyzeChart(base64Image);
 
-            questionGroup.setVisonAnalysisResult(analysis);
+            questionGroup.setVisionAnalysisResult(analysis);
             questionGroupRepository.save(questionGroup);
             return analysis;
 

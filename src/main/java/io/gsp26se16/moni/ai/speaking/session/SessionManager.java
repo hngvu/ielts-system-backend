@@ -6,11 +6,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Component;
 
-import io.gsp26se16.moni.authentication.entity.Users;
-import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import io.gsp26se16.moni.ai.speaking.entity.SpeakingSession;
 import io.gsp26se16.moni.ai.speaking.model.ActiveSpeakingSession;
 import io.gsp26se16.moni.ai.speaking.repository.SpeakingSessionRepository;
+import io.gsp26se16.moni.authentication.entity.Users;
+import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,7 +49,8 @@ public class SessionManager {
      * @return the newly created {@link ActiveSpeakingSession}
      */
     public ActiveSpeakingSession createSession(String userId, String question) {
-        Users user = usersRepository.findById(userId)
+        Users user = usersRepository
+                .findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
         SpeakingSession entity = SpeakingSession.builder()

@@ -1,5 +1,10 @@
 package io.gsp26se16.moni.content.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import io.gsp26se16.moni.common.enumeration.PublishStatus;
@@ -15,15 +20,10 @@ import io.gsp26se16.moni.content.repository.QuestionRepository;
 import io.gsp26se16.moni.content.repository.StimulusRepository;
 import io.gsp26se16.moni.tag.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class StimulusServiceImpl implements  StimulusService {
+public class StimulusServiceImpl implements StimulusService {
 
     private final StimulusRepository stimulusRepository;
     private final QuestionGroupRepository questionGroupRepository;

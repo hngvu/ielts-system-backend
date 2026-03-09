@@ -10,10 +10,6 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.gsp26se16.moni.common.dto.ApiResponse;
-import io.gsp26se16.moni.common.exception.ErrorCode;
 
 import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.common.exception.ErrorCode;

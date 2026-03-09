@@ -25,8 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class SpeechToTextService {
 
-    private static final String WHISPER_URL =
-            "https://integrate.api.nvidia.com/v1/audio/transcriptions";
+    private static final String WHISPER_URL = "https://integrate.api.nvidia.com/v1/audio/transcriptions";
 
     private static final String WHISPER_MODEL = "nvidia/whisper-large-v3";
 
@@ -97,14 +96,23 @@ public class SpeechToTextService {
         byte[] header = new byte[44];
 
         // RIFF chunk
-        header[0] = 'R'; header[1] = 'I'; header[2] = 'F'; header[3] = 'F';
+        header[0] = 'R';
+        header[1] = 'I';
+        header[2] = 'F';
+        header[3] = 'F';
         writeInt32LE(header, 4, 36 + dataSize);
-        header[8]  = 'W'; header[9]  = 'A'; header[10] = 'V'; header[11] = 'E';
+        header[8] = 'W';
+        header[9] = 'A';
+        header[10] = 'V';
+        header[11] = 'E';
 
         // fmt sub-chunk
-        header[12] = 'f'; header[13] = 'm'; header[14] = 't'; header[15] = ' ';
-        writeInt32LE(header, 16, 16);           // sub-chunk size
-        writeInt16LE(header, 20, 1);            // PCM format
+        header[12] = 'f';
+        header[13] = 'm';
+        header[14] = 't';
+        header[15] = ' ';
+        writeInt32LE(header, 16, 16); // sub-chunk size
+        writeInt16LE(header, 20, 1); // PCM format
         writeInt16LE(header, 22, channels);
         writeInt32LE(header, 24, sampleRate);
         writeInt32LE(header, 28, byteRate);
@@ -112,24 +120,27 @@ public class SpeechToTextService {
         writeInt16LE(header, 34, bitDepth);
 
         // data sub-chunk
-        header[36] = 'd'; header[37] = 'a'; header[38] = 't'; header[39] = 'a';
+        header[36] = 'd';
+        header[37] = 'a';
+        header[38] = 't';
+        header[39] = 'a';
         writeInt32LE(header, 40, dataSize);
 
         byte[] wav = new byte[44 + dataSize];
         System.arraycopy(header, 0, wav, 0, 44);
-        System.arraycopy(pcm,    0, wav, 44, dataSize);
+        System.arraycopy(pcm, 0, wav, 44, dataSize);
         return wav;
     }
 
     private void writeInt32LE(byte[] buf, int offset, int value) {
-        buf[offset]     = (byte)  value;
+        buf[offset] = (byte) value;
         buf[offset + 1] = (byte) (value >> 8);
         buf[offset + 2] = (byte) (value >> 16);
         buf[offset + 3] = (byte) (value >> 24);
     }
 
     private void writeInt16LE(byte[] buf, int offset, int value) {
-        buf[offset]     = (byte)  value;
+        buf[offset] = (byte) value;
         buf[offset + 1] = (byte) (value >> 8);
     }
 

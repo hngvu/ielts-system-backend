@@ -3,6 +3,12 @@ package io.gsp26se16.moni.ai.speaking.service;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
+import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.gsp26se16.moni.ai.speaking.entity.SpeakingSession;
 import io.gsp26se16.moni.ai.speaking.entity.SpeakingSubmission;
 import io.gsp26se16.moni.ai.speaking.model.ActiveSpeakingSession;
@@ -17,12 +23,6 @@ import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import io.gsp26se16.moni.common.enumeration.EvaluationStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
-import org.springframework.stereotype.Service;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,7 +65,7 @@ public class ConversationEngine {
     public Map<String, Object> evaluate(String sessionId) {
         ActiveSpeakingSession active = sessionManager.getSession(sessionId);
         String transcript = active.getFullTranscript();
-        String question   = active.getCurrentQuestion();
+        String question = active.getCurrentQuestion();
 
         if (transcript.isBlank()) {
             log.warn("Transcript rỗng cho session {}, trả về kết quả mặc định", sessionId);
@@ -78,15 +78,14 @@ public class ConversationEngine {
         SpeakingSubmission submission = createSubmission(active, transcript);
 
         try {
-            ChatClient chatClient = chatClientBuilder
-                    .defaultAdvisors(new SimpleLoggerAdvisor())
-                    .build();
+            ChatClient chatClient =
+                    chatClientBuilder.defaultAdvisors(new SimpleLoggerAdvisor()).build();
 
             // ── Chấm điểm 4 tiêu chí ─────────────────────────────────────────
-            Map<String, Object> fc  = evaluateCriterion(chatClient, "FC",  transcript, question);
-            Map<String, Object> lr  = evaluateCriterion(chatClient, "LR",  transcript, question);
+            Map<String, Object> fc = evaluateCriterion(chatClient, "FC", transcript, question);
+            Map<String, Object> lr = evaluateCriterion(chatClient, "LR", transcript, question);
             Map<String, Object> gra = evaluateCriterion(chatClient, "GRA", transcript, question);
-            Map<String, Object> pr  = evaluateCriterion(chatClient, "PR",  transcript, question);
+            Map<String, Object> pr = evaluateCriterion(chatClient, "PR", transcript, question);
 
             // ── Rule Engine ───────────────────────────────────────────────────
             Map<String, Object> assessment = speakingRuleEngine.calculateBands(fc, lr, gra, pr);
@@ -101,14 +100,22 @@ public class ConversationEngine {
             // ── Build response ─────────────────────────────────────────────────
             Map<String, Object> criteriaMap = (Map<String, Object>) assessment.get("criteria");
             return Map.of(
-                    "type",          "evaluation",
-                    "final_band",    finalBand,
-                    "fluency",       getBandFromCriterion(criteriaMap, "FC"),
-                    "vocabulary",    getBandFromCriterion(criteriaMap, "LR"),
-                    "grammar",       getBandFromCriterion(criteriaMap, "GRA"),
-                    "pronunciation", getBandFromCriterion(criteriaMap, "PR"),
-                    "feedback",      feedback,
-                    "transcript",    transcript);
+                    "type",
+                    "evaluation",
+                    "final_band",
+                    finalBand,
+                    "fluency",
+                    getBandFromCriterion(criteriaMap, "FC"),
+                    "vocabulary",
+                    getBandFromCriterion(criteriaMap, "LR"),
+                    "grammar",
+                    getBandFromCriterion(criteriaMap, "GRA"),
+                    "pronunciation",
+                    getBandFromCriterion(criteriaMap, "PR"),
+                    "feedback",
+                    feedback,
+                    "transcript",
+                    transcript);
 
         } catch (Exception e) {
             log.error("Đánh giá thất bại cho session {}: {}", sessionId, e.getMessage(), e);
@@ -123,9 +130,8 @@ public class ConversationEngine {
     private SpeakingSubmission createSubmission(ActiveSpeakingSession active, String transcript) {
         Users user = usersRepository.findById(active.getUserId()).orElse(null);
 
-        SpeakingSession speakingSession = speakingSessionRepository
-                .findById(active.getSessionId())
-                .orElse(null);
+        SpeakingSession speakingSession =
+                speakingSessionRepository.findById(active.getSessionId()).orElse(null);
 
         SpeakingSubmission submission = SpeakingSubmission.builder()
                 .user(user)
@@ -146,11 +152,12 @@ public class ConversationEngine {
                 "speaking_eval.txt",
                 criterion,
                 Map.of(
-                        "criterion",  criterion,
-                        "question",   question,
+                        "criterion", criterion,
+                        "question", question,
                         "transcript", transcript));
 
-        String response = chatClient.prompt()
+        String response = chatClient
+                .prompt()
                 .system(prompt)
                 .user("Evaluate strictly using the rubric. Return ONLY raw JSON.")
                 .call()
@@ -165,11 +172,10 @@ public class ConversationEngine {
         try {
             String prompt = promptLoader.loadPrompt(
                     "speaking_feedback.txt",
-                    Map.of(
-                            "transcript", transcript,
-                            "assessment", objectMapper.writeValueAsString(assessment)));
+                    Map.of("transcript", transcript, "assessment", objectMapper.writeValueAsString(assessment)));
 
-            String response = chatClient.prompt()
+            String response = chatClient
+                    .prompt()
                     .system(prompt)
                     .user("Provide feedback strictly from the assessment. Return ONLY raw JSON.")
                     .call()
@@ -227,14 +233,13 @@ public class ConversationEngine {
 
     private Map<String, Object> defaultResult() {
         return Map.of(
-                "type",          "evaluation",
-                "final_band",    0.0,
-                "fluency",       0.0,
-                "vocabulary",    0.0,
-                "grammar",       0.0,
+                "type", "evaluation",
+                "final_band", 0.0,
+                "fluency", 0.0,
+                "vocabulary", 0.0,
+                "grammar", 0.0,
                 "pronunciation", 0.0,
-                "feedback",      Map.of("summary", "No speech detected."),
-                "transcript",    "");
+                "feedback", Map.of("summary", "No speech detected."),
+                "transcript", "");
     }
 }
-

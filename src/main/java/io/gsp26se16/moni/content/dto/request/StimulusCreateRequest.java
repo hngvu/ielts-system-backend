@@ -1,11 +1,11 @@
 package io.gsp26se16.moni.content.dto.request;
 
+import java.util.List;
+import java.util.Map;
+
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestType;
 import lombok.Data;
-
-import java.util.List;
-import java.util.Map;
 
 @Data
 public class StimulusCreateRequest {

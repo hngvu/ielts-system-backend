@@ -1,14 +1,13 @@
 package io.gsp26se16.moni.ai.speaking.entity;
 
-
 import java.time.LocalDateTime;
 
-import io.gsp26se16.moni.common.enumeration.EvaluationStatus;
 import jakarta.persistence.*;
 
 import org.hibernate.annotations.CreationTimestamp;
 
 import io.gsp26se16.moni.authentication.entity.Users;
+import io.gsp26se16.moni.common.enumeration.EvaluationStatus;
 import io.gsp26se16.moni.content.entity.QuestionGroup;
 import io.gsp26se16.moni.practice.entity.TestSession;
 import lombok.*;
