@@ -10,6 +10,7 @@ import lombok.Data;
 public class TestUpdateRequest {
     private String title;
     private String description;
+    private String thumbnailUrl;
     private Integer duration; // Thời gian làm bài (nếu cần đổi)
     private TestMode testMode;
     private PublishStatus status;

@@ -14,10 +14,15 @@ import lombok.Data;
 public class TestResponse {
     private Integer id;
     private String title;
+    private String description;
+    private String thumbnailUrl;
     private Skill skill;
     private TestType testType;
     private Integer duration;
     private TestMode testMode;
     private PublishStatus status;
     private List<Integer> tagIds;
+    private int questionCount;
+    private long attemptCount;
+    private List<String> questionTypes;
 }
