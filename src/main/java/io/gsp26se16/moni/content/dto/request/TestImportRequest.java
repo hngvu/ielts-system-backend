@@ -22,8 +22,7 @@ public class TestImportRequest {
     @NotNull(message = "Skill is required")
     private Skill skill; // READING, LISTENING, WRITING, SPEAKING
 
-    @NotNull(message = "Test Type is required")
-    private TestType testType; // FULL_TEST, PRACTICE
+    private TestType testType; // FULL_TEST, PRACTICE (optional, defaults handled by service)
 
     private Integer duration;
     private TestMode testMode;
