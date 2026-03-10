@@ -27,6 +27,8 @@ public class TestImportRequest {
     private Integer duration;
     private TestMode testMode;
 
+    private String thumbnailUrl;
+
     private List<Integer> tagIds; // Danh sách ID của Tag (VD: [1, 5, 8])
     // Danh sách các bài đọc/nghe (Stimulus) trong đề này
     private List<StimulusRequest> stimuli;

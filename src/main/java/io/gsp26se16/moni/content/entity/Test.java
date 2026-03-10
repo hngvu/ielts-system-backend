@@ -28,6 +28,8 @@ public class Test {
 
     String description;
 
+    String thumbnailUrl;
+
     @Enumerated(EnumType.STRING)
     Skill skill;
 

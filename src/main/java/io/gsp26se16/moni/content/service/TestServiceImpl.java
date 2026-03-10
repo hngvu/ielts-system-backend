@@ -49,6 +49,7 @@ public class TestServiceImpl implements TestService {
         test.setTestType(request.getTestType());
         test.setDuration(request.getDuration());
         test.setTestMode(request.getTestMode());
+        test.setThumbnailUrl(request.getThumbnailUrl());
         test.setStatus(PublishStatus.DRAFT);
 
         if (request.getTagIds() != null) {
@@ -122,32 +123,14 @@ public class TestServiceImpl implements TestService {
     public Page<TestResponse> getAllTests(String keyword, Skill skill, Pageable pageable) {
         Page<Test> testPage = testRepository.searchTests(keyword, skill, pageable);
 
-        return testPage.map(test -> TestResponse.builder()
-                .id(test.getId())
-                .title(test.getTitle())
-                .skill(test.getSkill())
-                .testType(test.getTestType())
-                .duration(test.getDuration())
-                .testMode(test.getTestMode())
-                .status(test.getStatus())
-                .tagIds(test.getTags().stream().map(Tag::getId).collect(Collectors.toList()))
-                .build());
+        return testPage.map(test -> buildTestResponse(test));
     }
 
     @Override
     public Page<TestResponse> getPublishedTests(String keyword, Skill skill, Pageable pageable) {
         Page<Test> testPage = testRepository.searchByStatus(PublishStatus.PUBLISHED, keyword, skill, pageable);
 
-        return testPage.map(test -> TestResponse.builder()
-                .id(test.getId())
-                .title(test.getTitle())
-                .skill(test.getSkill())
-                .testType(test.getTestType())
-                .duration(test.getDuration())
-                .testMode(test.getTestMode())
-                .status(test.getStatus())
-                .tagIds(test.getTags().stream().map(Tag::getId).collect(Collectors.toList()))
-                .build());
+        return testPage.map(test -> buildTestResponse(test));
     }
 
     @Override
@@ -226,6 +209,7 @@ public class TestServiceImpl implements TestService {
 
         if (request.getTitle() != null) test.setTitle(request.getTitle());
         if (request.getDescription() != null) test.setDescription(request.getDescription());
+        if (request.getThumbnailUrl() != null) test.setThumbnailUrl(request.getThumbnailUrl());
         if (request.getDuration() != null) test.setDuration(request.getDuration());
         if (request.getTestMode() != null) test.setTestMode(request.getTestMode());
         if (request.getStatus() != null) test.setStatus(request.getStatus());
@@ -267,6 +251,25 @@ public class TestServiceImpl implements TestService {
             throw new RuntimeException("Ngữ liệu không nằm trong đề thi này");
         }
         testStructureRepository.deleteByTestIdAndStimulusId(testId, stimulusId);
+    }
+
+    private TestResponse buildTestResponse(Test test) {
+        Integer testId = test.getId();
+        return TestResponse.builder()
+                .id(testId)
+                .title(test.getTitle())
+                .description(test.getDescription())
+                .thumbnailUrl(test.getThumbnailUrl())
+                .skill(test.getSkill())
+                .testType(test.getTestType())
+                .duration(test.getDuration())
+                .testMode(test.getTestMode())
+                .status(test.getStatus())
+                .tagIds(test.getTags().stream().map(Tag::getId).collect(Collectors.toList()))
+                .questionCount(testRepository.countQuestionsByTestId(testId))
+                .attemptCount(testRepository.countAttemptsByTestId(testId))
+                .questionTypes(testRepository.findQuestionTypesByTestId(testId))
+                .build();
     }
 
     private Users resolveCurrentUser() {

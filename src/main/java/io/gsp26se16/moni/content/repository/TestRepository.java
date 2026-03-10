@@ -1,5 +1,7 @@
 package io.gsp26se16.moni.content.repository;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -27,4 +29,15 @@ public interface TestRepository extends JpaRepository<Test, Integer> {
             @Param("keyword") String keyword,
             @Param("skill") Skill skill,
             Pageable pageable);
+
+    @Query(
+            "SELECT COUNT(q) FROM TestStructure ts JOIN ts.stimulus s JOIN s.questionGroups qg JOIN qg.questions q WHERE ts.test.id = :testId")
+    int countQuestionsByTestId(@Param("testId") Integer testId);
+
+    @Query(
+            "SELECT DISTINCT qg.questionType.code FROM TestStructure ts JOIN ts.stimulus s JOIN s.questionGroups qg WHERE ts.test.id = :testId AND qg.questionType IS NOT NULL")
+    List<String> findQuestionTypesByTestId(@Param("testId") Integer testId);
+
+    @Query("SELECT COUNT(a) FROM Attempt a WHERE a.testSession.test.id = :testId")
+    long countAttemptsByTestId(@Param("testId") Integer testId);
 }
