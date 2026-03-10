@@ -24,6 +24,13 @@ spring:
     url: jdbc:postgresql://ep-purple-mountain-ah918pfk.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
     username: neondb_owner
     password: npg_Lh8S1dtzMNpK
+    hikari:
+      minimum-idle: 2
+      maximum-pool-size: 5
+      idle-timeout: 300000
+      keepalive-time: 60000
+      connection-timeout: 10000
+      validation-timeout: 3000
 
   jpa:
     hibernate:

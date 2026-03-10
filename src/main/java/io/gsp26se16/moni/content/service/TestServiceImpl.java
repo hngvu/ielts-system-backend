@@ -6,6 +6,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +35,7 @@ public class TestServiceImpl implements TestService {
     private final TestStructureRepository testStructureRepository;
     private final QuestionGroupRepository questionGroupRepository;
     private final QuestionRepository questionRepository;
+    private final QuestionTypeRepository questionTypeRepository;
     private final TagRepository tagRepository;
     private final UsersRepository userRepository;
 
@@ -48,12 +51,11 @@ public class TestServiceImpl implements TestService {
         test.setTestMode(request.getTestMode());
         test.setStatus(PublishStatus.DRAFT);
 
-        // Add tag cho Test
         if (request.getTagIds() != null) {
             test.getTags().addAll(tagRepository.findAllById(request.getTagIds()));
         }
         Test savedTest = testRepository.save(test);
-        Users adminUser = userRepository.getReferenceById("1");
+        Users adminUser = resolveCurrentUser();
 
         for (var stimReq : request.getStimuli()) {
             Stimulus stimulus = new Stimulus();
@@ -80,6 +82,11 @@ public class TestServiceImpl implements TestService {
                     QuestionGroup group = new QuestionGroup();
                     group.setStimulus(savedStimulus);
                     group.setInstruction(groupReq.getInstruction());
+                    if (groupReq.getQuestionTypeCode() != null) {
+                        questionTypeRepository
+                                .findByCode(groupReq.getQuestionTypeCode())
+                                .ifPresent(group::setQuestionType);
+                    }
                     QuestionGroup savedGroup = questionGroupRepository.save(group);
 
                     for (var qReq : groupReq.getQuestions()) {
@@ -89,7 +96,6 @@ public class TestServiceImpl implements TestService {
                         question.setPosition(qReq.getPosition());
                         question.setExplanation(qReq.getExplanation());
 
-                        // Add tag cho Question
                         if (qReq.getTagIds() != null) {
                             question.getTags().addAll(tagRepository.findAllById(qReq.getTagIds()));
                         }
@@ -124,7 +130,22 @@ public class TestServiceImpl implements TestService {
                 .duration(test.getDuration())
                 .testMode(test.getTestMode())
                 .status(test.getStatus())
-                // Lấy ra danh sách các tag ID của Test này
+                .tagIds(test.getTags().stream().map(Tag::getId).collect(Collectors.toList()))
+                .build());
+    }
+
+    @Override
+    public Page<TestResponse> getPublishedTests(String keyword, Skill skill, Pageable pageable) {
+        Page<Test> testPage = testRepository.searchByStatus(PublishStatus.PUBLISHED, keyword, skill, pageable);
+
+        return testPage.map(test -> TestResponse.builder()
+                .id(test.getId())
+                .title(test.getTitle())
+                .skill(test.getSkill())
+                .testType(test.getTestType())
+                .duration(test.getDuration())
+                .testMode(test.getTestMode())
+                .status(test.getStatus())
                 .tagIds(test.getTags().stream().map(Tag::getId).collect(Collectors.toList()))
                 .build());
     }
@@ -140,15 +161,10 @@ public class TestServiceImpl implements TestService {
                 .map(ts -> {
                     Stimulus s = ts.getStimulus();
 
-                    // Map QuestionGroup
                     List<TestDetailResponse.QuestionGroupDetail> groupDetails = s.getQuestionGroups().stream()
                             .map(g -> {
-
-                                // Map Question
                                 List<TestDetailResponse.QuestionDetail> qDetails = g.getQuestions().stream()
                                         .map(q -> {
-
-                                            // Map Option
                                             List<TestDetailResponse.OptionDetail> optDetails = q.getOptions().stream()
                                                     .map(opt -> TestDetailResponse.OptionDetail.builder()
                                                             .id(opt.getId())
@@ -163,7 +179,6 @@ public class TestServiceImpl implements TestService {
                                                     .content(q.getContent())
                                                     .position(q.getPosition())
                                                     .explanation(q.getExplanation())
-                                                    // Lấy danh sách tag ID của Câu hỏi này
                                                     .tagIds(q.getTags().stream()
                                                             .map(Tag::getId)
                                                             .collect(Collectors.toList()))
@@ -185,7 +200,7 @@ public class TestServiceImpl implements TestService {
                             .title(s.getTitle())
                             .content(s.getContent())
                             .mediaUrl(s.getMediaUrl())
-                            .section(ts.getSection()) // Lấy section từ TestStructure
+                            .section(ts.getSection())
                             .questionGroups(groupDetails)
                             .build();
                 })
@@ -199,7 +214,6 @@ public class TestServiceImpl implements TestService {
                 .duration(test.getDuration())
                 .testMode(test.getTestMode())
                 .status(test.getStatus())
-                // Lấy danh sách tag ID của Test
                 .tagIds(test.getTags().stream().map(Tag::getId).collect(Collectors.toList()))
                 .stimuli(stimulusDetails)
                 .build();
@@ -253,5 +267,16 @@ public class TestServiceImpl implements TestService {
             throw new RuntimeException("Ngữ liệu không nằm trong đề thi này");
         }
         testStructureRepository.deleteByTestIdAndStimulusId(testId, stimulusId);
+    }
+
+    private Users resolveCurrentUser() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof Jwt jwt) {
+            String userId = jwt.getClaim("userId");
+            if (userId != null) {
+                return userRepository.findById(userId).orElse(null);
+            }
+        }
+        return null;
     }
 }

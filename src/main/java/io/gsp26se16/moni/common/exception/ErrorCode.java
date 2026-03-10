@@ -57,6 +57,12 @@ public enum ErrorCode {
     // --- TAG MODULE ---
     TAG_EXISTED(1043, "Tag code or name already exists", HttpStatus.BAD_REQUEST),
     TAG_NOT_FOUND(1044, "Tag not found", HttpStatus.NOT_FOUND),
+
+    // --- PRACTICE MODULE ---
+    STIMULUS_NOT_FOUND(1045, "Stimulus not found", HttpStatus.NOT_FOUND),
+    QUESTION_NOT_FOUND(1046, "Question not found", HttpStatus.NOT_FOUND),
+    OPTION_NOT_FOUND(1047, "Question option not found", HttpStatus.NOT_FOUND),
+    ATTEMPT_NOT_FOUND(1048, "Attempt not found", HttpStatus.NOT_FOUND),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

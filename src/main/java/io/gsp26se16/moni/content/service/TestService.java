@@ -20,6 +20,8 @@ public interface TestService {
 
     public Page<TestResponse> getAllTests(String keyword, Skill skill, Pageable pageable);
 
+    public Page<TestResponse> getPublishedTests(String keyword, Skill skill, Pageable pageable);
+
     public TestDetailResponse getTestDetail(Integer id);
 
     public void updateTest(Integer id, TestUpdateRequest request);
