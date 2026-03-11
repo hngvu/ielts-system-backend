@@ -6,11 +6,10 @@ import java.util.Map;
 
 import jakarta.persistence.*;
 
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Getter
@@ -33,10 +32,7 @@ public class QuestionGroup {
     @JoinColumn(name = "question_type_id")
     QuestionType questionType;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
-    Map<String, Object> visionAnalysisResult;
-
     @OneToMany(mappedBy = "questionGroup", cascade = CascadeType.ALL)
     List<Question> questions = new ArrayList<>();
+
 }
