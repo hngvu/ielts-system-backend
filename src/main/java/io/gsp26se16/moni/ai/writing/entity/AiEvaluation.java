@@ -3,22 +3,19 @@ package io.gsp26se16.moni.ai.writing.entity;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import io.gsp26se16.moni.common.enumeration.Skill;
 import jakarta.persistence.*;
 
-import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import io.gsp26se16.moni.common.enumeration.Skill;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 @Entity
 @Table(
         name = "ai_evaluations",
-        indexes = {
-                @Index(name = "idx_ai_eval_submission", columnList = "submission_id, skill")
-        }
-)
+        indexes = {@Index(name = "idx_ai_eval_submission", columnList = "submission_id, skill")})
 @Getter
 @Setter
 @NoArgsConstructor

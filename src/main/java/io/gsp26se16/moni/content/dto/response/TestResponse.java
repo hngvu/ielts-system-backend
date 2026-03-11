@@ -20,6 +20,7 @@ public class TestResponse {
     private TestType testType;
     private Integer duration;
     private TestMode testMode;
+    private Integer section;
     private PublishStatus status;
     private List<Integer> tagIds;
     private int questionCount;

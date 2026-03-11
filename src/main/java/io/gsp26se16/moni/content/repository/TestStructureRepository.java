@@ -15,4 +15,6 @@ public interface TestStructureRepository extends JpaRepository<TestStructure, In
     void deleteByTestIdAndStimulusId(Integer testId, Integer stimulusId);
 
     boolean existsByTestIdAndStimulusId(Integer testId, Integer stimulusId);
+
+    void deleteByTestId(Integer testId);
 }

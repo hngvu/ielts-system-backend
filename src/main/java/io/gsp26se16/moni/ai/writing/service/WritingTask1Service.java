@@ -5,8 +5,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.gsp26se16.moni.content.entity.Stimulus;
-import io.gsp26se16.moni.content.repository.StimulusRepository;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,6 +25,8 @@ import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import io.gsp26se16.moni.common.enumeration.EvaluationStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.WritingTaskType;
+import io.gsp26se16.moni.content.entity.Stimulus;
+import io.gsp26se16.moni.content.repository.StimulusRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -194,9 +194,7 @@ public class WritingTask1Service {
         // Gắn questionGroup nếu có truyền questionGroupId
         Stimulus stimulus = null;
         if (request.getStimulusId() != null) {
-            stimulus = stimulusRepository
-                    .findById(request.getStimulusId())
-                    .orElse(null);
+            stimulus = stimulusRepository.findById(request.getStimulusId()).orElse(null);
         }
 
         WritingSubmission submission = WritingSubmission.builder()

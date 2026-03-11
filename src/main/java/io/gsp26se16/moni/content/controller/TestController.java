@@ -99,12 +99,12 @@ public class TestController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Soft Delete Test")
+    @Operation(summary = "Delete Test")
     public ResponseEntity<ApiResponse<Void>> deleteTest(@PathVariable Integer id) {
         testService.deleteTest(id);
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .code(1000)
-                .message("Đã ẩn đề thi thành công")
+                .message("Đã xóa đề thi thành công")
                 .build());
     }
 

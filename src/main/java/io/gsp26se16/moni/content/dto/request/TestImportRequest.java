@@ -26,6 +26,7 @@ public class TestImportRequest {
 
     private Integer duration;
     private TestMode testMode;
+    private Integer section; // Passage/Section/Task/Part number
 
     private String thumbnailUrl;
 

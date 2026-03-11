@@ -29,10 +29,11 @@ public class PublicTestController {
     public ResponseEntity<ApiResponse<Page<TestResponse>>> getPublishedTests(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Skill skill,
+            @RequestParam(required = false) Integer section,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        Page<TestResponse> result = testService.getPublishedTests(keyword, skill, pageable);
+        Page<TestResponse> result = testService.getPublishedTests(keyword, skill, section, pageable);
         return ResponseEntity.ok(ApiResponse.<Page<TestResponse>>builder()
                 .code(1000)
                 .message("Lấy danh sách bài thi thành công")
