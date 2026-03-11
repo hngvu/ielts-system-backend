@@ -2,6 +2,7 @@ package io.gsp26se16.moni.ai.writing.entity;
 
 import java.time.LocalDateTime;
 
+import io.gsp26se16.moni.content.entity.Stimulus;
 import jakarta.persistence.*;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -29,18 +30,18 @@ public class WritingSubmission {
     Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "session_id", nullable = false)
+    @JoinColumn(name = "session_id")
     TestSession testSession;
 
     /** Người dùng nộp bài */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     Users user;
 
     /** Nhóm câu hỏi (chứa đề bài + stimulus nếu có) */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "question_group_id")
-    QuestionGroup questionGroup;
+    @JoinColumn(name = "stimulus_id")
+    Stimulus stimulus;
 
     /** Task 1 (biểu đồ/thư) hay Task 2 (essay) */
     @Enumerated(EnumType.STRING)

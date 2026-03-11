@@ -5,6 +5,8 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.gsp26se16.moni.content.entity.Stimulus;
+import io.gsp26se16.moni.content.repository.StimulusRepository;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,8 +27,6 @@ import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import io.gsp26se16.moni.common.enumeration.EvaluationStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.WritingTaskType;
-import io.gsp26se16.moni.content.entity.QuestionGroup;
-import io.gsp26se16.moni.content.repository.QuestionGroupRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,7 +38,7 @@ public class WritingTask1Service {
     private final ChatClient.Builder chatClientBuilder;
     private final ObjectMapper objectMapper;
     private final GeminiVisionClient visionClient;
-    private final QuestionGroupRepository questionGroupRepository;
+    private final StimulusRepository stimulusRepository;
     private final PromptLoader promptLoader;
     private final RuleEngine ruleEngine;
     private final Helper helper;
@@ -61,8 +61,8 @@ public class WritingTask1Service {
 
             // ── Vision analysis (cache nếu đã có) ─────────────────────────────
             Map<String, Object> chartData = null;
-            if (request.getQuestionGroupId() != null) {
-                chartData = getOrCacheVisionAnalysis(request.getQuestionGroupId(), request.getChartImage());
+            if (request.getStimulusId() != null) {
+                chartData = getOrCacheVisionAnalysis(request.getStimulusId(), request.getChartImage());
             }
 
             // ── Phase 1 ───────────────────────────────────────────────────────
@@ -192,16 +192,16 @@ public class WritingTask1Service {
         int wordCount = countWords(request.getAnswer());
 
         // Gắn questionGroup nếu có truyền questionGroupId
-        QuestionGroup questionGroup = null;
-        if (request.getQuestionGroupId() != null) {
-            questionGroup = questionGroupRepository
-                    .findById(request.getQuestionGroupId())
+        Stimulus stimulus = null;
+        if (request.getStimulusId() != null) {
+            stimulus = stimulusRepository
+                    .findById(request.getStimulusId())
                     .orElse(null);
         }
 
         WritingSubmission submission = WritingSubmission.builder()
                 .user(user)
-                .questionGroup(questionGroup)
+                .stimulus(stimulus)
                 .taskType(taskType)
                 .essayContent(request.getAnswer())
                 .wordCount(wordCount)
@@ -308,34 +308,34 @@ public class WritingTask1Service {
     // VISION CACHE
     // =========================================================================
 
-    private Map<String, Object> getOrCacheVisionAnalysis(Integer questionGroupId, MultipartFile chartImage) {
-        QuestionGroup questionGroup = questionGroupRepository
-                .findById(questionGroupId)
-                .orElseThrow(() -> new RuntimeException("QuestionGroup not found: " + questionGroupId));
+    private Map<String, Object> getOrCacheVisionAnalysis(Integer stimulusId, MultipartFile chartImage) {
+        Stimulus stimulus = stimulusRepository
+                .findById(stimulusId)
+                .orElseThrow(() -> new RuntimeException("QuestionGroup not found: " + stimulusId));
 
-        if (questionGroup.getVisionAnalysisResult() != null
-                && !questionGroup.getVisionAnalysisResult().isEmpty()) {
-            log.info("Dùng cached vision analysis cho QuestionGroup: {}", questionGroupId);
-            return questionGroup.getVisionAnalysisResult();
+        if (stimulus.getVisonAnalysisResult() != null
+                && !stimulus.getVisonAnalysisResult().isEmpty()) {
+            log.info("Dùng cached vision analysis cho QuestionGroup: {}", stimulusId);
+            return stimulus.getVisonAnalysisResult();
         }
 
         try {
             if (chartImage == null || chartImage.isEmpty() || chartImage.getSize() <= 0) {
-                log.warn("Chart image rỗng cho QuestionGroup: {}", questionGroupId);
+                log.warn("Chart image rỗng cho QuestionGroup: {}", stimulusId);
                 return Map.of();
             }
 
             byte[] imageBytes = chartImage.getBytes();
             if (imageBytes == null || imageBytes.length == 0) {
-                log.warn("Chart image bytes rỗng cho QuestionGroup: {}", questionGroupId);
+                log.warn("Chart image bytes rỗng cho QuestionGroup: {}", stimulusId);
                 return Map.of();
             }
 
             String base64Image = Base64.getEncoder().encodeToString(imageBytes);
             Map<String, Object> analysis = visionClient.analyzeChart(base64Image);
 
-            questionGroup.setVisionAnalysisResult(analysis);
-            questionGroupRepository.save(questionGroup);
+            stimulus.setVisonAnalysisResult(analysis);
+            stimulusRepository.save(stimulus);
             return analysis;
 
         } catch (Exception e) {

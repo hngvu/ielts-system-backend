@@ -14,7 +14,7 @@ public class WritingRequest {
     private String answer;
 
     // For Task 1: Question Group ID to cache vision analysis
-    private Integer questionGroupId;
+    private Integer stimulusId;
 
     // Optional: Chart image for Task 1 (only if first submission)
     private MultipartFile chartImage;

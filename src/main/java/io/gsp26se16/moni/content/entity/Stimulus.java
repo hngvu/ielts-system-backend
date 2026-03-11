@@ -2,6 +2,7 @@ package io.gsp26se16.moni.content.entity;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import jakarta.persistence.*;
 
@@ -11,6 +12,8 @@ import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Getter
@@ -44,6 +47,10 @@ public class Stimulus {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     Users createdBy;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "vison_analysis_result", columnDefinition = "jsonb")
+    Map<String, Object> visonAnalysisResult;
 
     @OneToMany(mappedBy = "stimulus", cascade = CascadeType.ALL)
     List<QuestionGroup> questionGroups = new ArrayList<>();
