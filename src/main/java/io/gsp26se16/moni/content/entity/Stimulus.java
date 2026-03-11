@@ -6,14 +6,15 @@ import java.util.Map;
 
 import jakarta.persistence.*;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Getter

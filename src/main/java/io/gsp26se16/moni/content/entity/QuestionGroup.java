@@ -2,14 +2,11 @@ package io.gsp26se16.moni.content.entity;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import jakarta.persistence.*;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Getter
@@ -34,5 +31,4 @@ public class QuestionGroup {
 
     @OneToMany(mappedBy = "questionGroup", cascade = CascadeType.ALL)
     List<Question> questions = new ArrayList<>();
-
 }
