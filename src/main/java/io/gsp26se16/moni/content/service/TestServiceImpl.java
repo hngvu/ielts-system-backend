@@ -4,6 +4,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import jakarta.persistence.EntityManager;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -38,6 +40,7 @@ public class TestServiceImpl implements TestService {
     private final QuestionTypeRepository questionTypeRepository;
     private final TagRepository tagRepository;
     private final UsersRepository userRepository;
+    private final EntityManager entityManager;
 
     @Override
     @Transactional
@@ -51,6 +54,7 @@ public class TestServiceImpl implements TestService {
         test.setTestMode(request.getTestMode());
         test.setThumbnailUrl(request.getThumbnailUrl());
         test.setStatus(PublishStatus.DRAFT);
+        test.setSection(request.getSection());
 
         if (request.getTagIds() != null) {
             test.getTags().addAll(tagRepository.findAllById(request.getTagIds()));
@@ -127,8 +131,8 @@ public class TestServiceImpl implements TestService {
     }
 
     @Override
-    public Page<TestResponse> getPublishedTests(String keyword, Skill skill, Pageable pageable) {
-        Page<Test> testPage = testRepository.searchByStatus(PublishStatus.PUBLISHED, keyword, skill, pageable);
+    public Page<TestResponse> getPublishedTests(String keyword, Skill skill, Integer section, Pageable pageable) {
+        Page<Test> testPage = testRepository.searchByStatus(PublishStatus.PUBLISHED, keyword, skill, section, pageable);
 
         return testPage.map(test -> buildTestResponse(test));
     }
@@ -196,6 +200,7 @@ public class TestServiceImpl implements TestService {
                 .skill(test.getSkill())
                 .duration(test.getDuration())
                 .testMode(test.getTestMode())
+                .section(test.getSection())
                 .status(test.getStatus())
                 .tagIds(test.getTags().stream().map(Tag::getId).collect(Collectors.toList()))
                 .stimuli(stimulusDetails)
@@ -211,7 +216,9 @@ public class TestServiceImpl implements TestService {
         if (request.getDescription() != null) test.setDescription(request.getDescription());
         if (request.getThumbnailUrl() != null) test.setThumbnailUrl(request.getThumbnailUrl());
         if (request.getDuration() != null) test.setDuration(request.getDuration());
+        if (request.getSkill() != null) test.setSkill(request.getSkill());
         if (request.getTestMode() != null) test.setTestMode(request.getTestMode());
+        if (request.getSection() != null) test.setSection(request.getSection());
         if (request.getStatus() != null) test.setStatus(request.getStatus());
 
         if (request.getTagIds() != null) {
@@ -226,8 +233,25 @@ public class TestServiceImpl implements TestService {
     @Transactional
     public void deleteTest(Integer id) {
         Test test = testRepository.findById(id).orElseThrow(() -> new RuntimeException("Test not found"));
-        test.setStatus(PublishStatus.HIDDEN);
-        testRepository.save(test);
+        // attempt_answer → attempt → test_session → test_structure → test_tags → test
+        entityManager
+                .createNativeQuery("DELETE FROM attempt_answer WHERE attempt_id IN ("
+                        + "SELECT id FROM attempt WHERE test_session_id IN ("
+                        + "SELECT id FROM test_session WHERE test_id = :id))")
+                .setParameter("id", id)
+                .executeUpdate();
+        entityManager
+                .createNativeQuery(
+                        "DELETE FROM attempt WHERE test_session_id IN (SELECT id FROM test_session WHERE test_id = :id)")
+                .setParameter("id", id)
+                .executeUpdate();
+        entityManager
+                .createNativeQuery("DELETE FROM test_session WHERE test_id = :id")
+                .setParameter("id", id)
+                .executeUpdate();
+        testStructureRepository.deleteByTestId(id);
+        test.getTags().clear();
+        testRepository.delete(test);
     }
 
     @Override
@@ -264,6 +288,7 @@ public class TestServiceImpl implements TestService {
                 .testType(test.getTestType())
                 .duration(test.getDuration())
                 .testMode(test.getTestMode())
+                .section(test.getSection())
                 .status(test.getStatus())
                 .tagIds(test.getTags().stream().map(Tag::getId).collect(Collectors.toList()))
                 .questionCount(testRepository.countQuestionsByTestId(testId))

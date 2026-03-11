@@ -43,6 +43,8 @@ public class Test {
     @Column(name = "test_mode")
     TestMode testMode; // Enum: FULL_TEST, PRACTICE
 
+    Integer section; // Passage/Section/Task/Part number
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     PublishStatus status; // Enum: DRAFT, PUBLISHED, HIDDEN

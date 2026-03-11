@@ -20,7 +20,7 @@ public interface TestService {
 
     public Page<TestResponse> getAllTests(String keyword, Skill skill, Pageable pageable);
 
-    public Page<TestResponse> getPublishedTests(String keyword, Skill skill, Pageable pageable);
+    public Page<TestResponse> getPublishedTests(String keyword, Skill skill, Integer section, Pageable pageable);
 
     public TestDetailResponse getTestDetail(Integer id);
 
