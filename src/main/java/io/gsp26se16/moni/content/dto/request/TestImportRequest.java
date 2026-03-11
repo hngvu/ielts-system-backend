@@ -56,6 +56,10 @@ public class TestImportRequest {
         @NotBlank(message = "Question Type Code is required")
         private String questionTypeCode; // Quan trọng: Phải khớp với mã trong DB (VD: "MCQ", "TFNG")
 
+        private String groupContent; // Gap-fill template with {{1}}, {{2}} placeholders
+        private String imageUrl; // Diagram label image URL
+        private List<Map<String, Object>> sharedOptions; // [{label: "A", content: "River Cam"}, ...]
+
         private List<QuestionRequest> questions;
     }
 
