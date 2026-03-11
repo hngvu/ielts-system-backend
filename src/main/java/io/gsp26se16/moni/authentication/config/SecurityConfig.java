@@ -32,7 +32,8 @@ public class SecurityConfig {
         "/auth/refresh",
         "/auth/logout",
         "/auth/outbound/authentication",
-        "/api/v1/ai/writing/score"
+        "/api/v1/ai/writing/score",
+        "/api/v1/vocab/lookup"
     };
 
     private final CustomJwtDecoder customJwtDecoder;
@@ -46,6 +47,8 @@ public class SecurityConfig {
         httpSecurity.authorizeHttpRequests(request -> request.requestMatchers(HttpMethod.OPTIONS, "/**")
                 .permitAll()
                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS)
+                .permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/vocab/lookup")
                 .permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
                 .permitAll()
