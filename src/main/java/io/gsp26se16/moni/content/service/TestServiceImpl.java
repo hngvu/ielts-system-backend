@@ -87,6 +87,9 @@ public class TestServiceImpl implements TestService {
                     QuestionGroup group = new QuestionGroup();
                     group.setStimulus(savedStimulus);
                     group.setInstruction(groupReq.getInstruction());
+                    group.setGroupContent(groupReq.getGroupContent());
+                    group.setImageUrl(groupReq.getImageUrl());
+                    group.setSharedOptions(groupReq.getSharedOptions());
                     if (groupReq.getQuestionTypeCode() != null) {
                         questionTypeRepository
                                 .findByCode(groupReq.getQuestionTypeCode())
@@ -177,6 +180,13 @@ public class TestServiceImpl implements TestService {
                                 return TestDetailResponse.QuestionGroupDetail.builder()
                                         .id(g.getId())
                                         .instruction(g.getInstruction())
+                                        .questionTypeCode(
+                                                g.getQuestionType() != null
+                                                        ? g.getQuestionType().getCode()
+                                                        : null)
+                                        .groupContent(g.getGroupContent())
+                                        .imageUrl(g.getImageUrl())
+                                        .sharedOptions(g.getSharedOptions())
                                         .questions(qDetails)
                                         .build();
                             })

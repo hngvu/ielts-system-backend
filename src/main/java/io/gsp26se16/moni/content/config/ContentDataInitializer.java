@@ -1,7 +1,5 @@
 package io.gsp26se16.moni.content.config;
 
-import java.util.List;
-
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
@@ -26,38 +24,50 @@ public class ContentDataInitializer {
     @Transactional
     public CommandLineRunner initQuestionTypes() {
         return args -> {
-            // Kiểm tra nếu đã có dữ liệu thì thôi
-            if (questionTypeRepository.count() > 0) {
-                log.info("Question Types already exist. Skipping initialization.");
-                return;
-            }
+            log.info("Upserting Question Types...");
+            int created = 0;
 
-            log.info("Initializing Question Types...");
+            // --- READING ---
+            created += upsertType("Multiple Choice", "MCQ", Skill.READING, false);
+            created += upsertType("Multiple Choice (Multiple Answers)", "MCQ_MULTIPLE", Skill.READING, false);
+            created += upsertType("True/False/Not Given", "TFNG", Skill.READING, false);
+            created += upsertType("Yes/No/Not Given", "YNNG", Skill.READING, false);
+            created += upsertType("Matching Headings", "MATCHING_HEADINGS", Skill.READING, true);
+            created += upsertType("Matching Information", "MATCHING_INFORMATION", Skill.READING, true);
+            created += upsertType("Matching Feature", "MATCHING_FEATURE", Skill.READING, true);
+            created += upsertType("Sentence Completion", "SENTENCE_COMPLETION", Skill.READING, false);
+            created += upsertType("Fill in the Blank", "FILL_IN_THE_BLANK", Skill.READING, false);
+            created += upsertType("Short Answer", "SHORT_ANSWER", Skill.READING, false);
+            created += upsertType("Gap Filling", "GAP_FILLING", Skill.READING, false);
+            created += upsertType("Diagram Label", "DIAGRAM_LABEL", Skill.READING, false);
+            created += upsertType("Matching", "MATCHING", Skill.READING, true);
 
-            List<QuestionType> types = List.of(
-                    // --- READING ---
-                    createType("Multiple Choice", "MCQ", Skill.READING, true), // A,B,C,D chung cho cả nhóm
-                    createType("True/False/Not Given", "TFNG", Skill.READING, false), // Mỗi câu 1 drop-down
-                    createType("Matching Headings", "MATCHING_HEADINGS", Skill.READING, false),
-                    createType("Sentence Completion", "SENTENCE_COMPLETION", Skill.READING, false),
+            // --- LISTENING ---
+            created += upsertType("Multiple Choice (Listening)", "MCQ_L", Skill.LISTENING, false);
+            created += upsertType("Map Labeling", "MAP_LABELING", Skill.LISTENING, false);
+            created += upsertType("Form Completion", "FORM_COMPLETION", Skill.LISTENING, false);
+            created += upsertType("Note Completion", "NOTE_COMPLETION", Skill.LISTENING, false);
+            created += upsertType("Table Completion", "TABLE_COMPLETION", Skill.LISTENING, false);
 
-                    // --- LISTENING ---
-                    createType("Multiple Choice (Listening)", "MCQ_L", Skill.LISTENING, true),
-                    createType("Map Labeling", "MAP_LABELING", Skill.LISTENING, false),
-                    createType("Form Completion", "FORM_COMPLETION", Skill.LISTENING, false),
+            // --- WRITING ---
+            created += upsertType("Writing Task 1", "WRITING_TASK_1", Skill.WRITING, false);
+            created += upsertType("Writing Task 2", "WRITING_TASK_2", Skill.WRITING, false);
 
-                    // --- WRITING ---
-                    createType("Writing Task 1", "WRITING_TASK_1", Skill.WRITING, false),
-                    createType("Writing Task 2", "WRITING_TASK_2", Skill.WRITING, false),
+            // --- SPEAKING ---
+            created += upsertType("Speaking Part 1", "SPEAKING_PART_1", Skill.SPEAKING, false);
+            created += upsertType("Speaking Part 2", "SPEAKING_PART_2", Skill.SPEAKING, false);
+            created += upsertType("Speaking Part 3", "SPEAKING_PART_3", Skill.SPEAKING, false);
 
-                    // --- SPEAKING ---
-                    createType("Speaking Part 1", "SPEAKING_PART_1", Skill.SPEAKING, false),
-                    createType("Speaking Part 2", "SPEAKING_PART_2", Skill.SPEAKING, false),
-                    createType("Speaking Part 3", "SPEAKING_PART_3", Skill.SPEAKING, false));
-
-            questionTypeRepository.saveAll(types);
-            log.info("Successfully initialized {} Question Types.", types.size());
+            log.info("Question Types upsert complete. {} new types created.", created);
         };
+    }
+
+    private int upsertType(String name, String code, Skill skill, boolean hasSharedOptions) {
+        if (questionTypeRepository.findByCode(code).isPresent()) {
+            return 0;
+        }
+        questionTypeRepository.save(createType(name, code, skill, hasSharedOptions));
+        return 1;
     }
 
     // Helper method

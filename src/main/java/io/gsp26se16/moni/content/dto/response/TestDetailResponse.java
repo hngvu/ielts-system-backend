@@ -40,6 +40,10 @@ public class TestDetailResponse {
     public static class QuestionGroupDetail {
         private Integer id;
         private String instruction;
+        private String questionTypeCode;
+        private String groupContent;
+        private String imageUrl;
+        private List<Map<String, Object>> sharedOptions;
         private List<QuestionDetail> questions;
     }
 
