@@ -34,6 +34,16 @@ public class StimulusController {
                         .build());
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> updateStimulus(
+            @PathVariable Integer id, @RequestBody java.util.Map<String, String> body) {
+        stimulusService.updateStimulus(id, body.get("content"), body.get("mediaUrl"));
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .code(1000)
+                .message("Cập nhật ngữ liệu thành công")
+                .build());
+    }
+
     @GetMapping
     public ResponseEntity<ApiResponse<Page<StimulusResponse>>> getAllStimuli(
             @RequestParam(required = false) String keyword,
