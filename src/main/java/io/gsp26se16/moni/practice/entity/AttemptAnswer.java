@@ -7,35 +7,44 @@ import jakarta.persistence.*;
 import io.gsp26se16.moni.content.entity.Question;
 import io.gsp26se16.moni.content.entity.QuestionOption;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
 @Entity
+@Table(name = "attempt_answers")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class AttemptAnswer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Integer id;
+    private Integer id;
 
-    boolean isCorrect;
-    LocalDateTime createdAt;
-    LocalDateTime submittedAt;
-    int changeCount;
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "attempt_id")
-    Attempt attempt;
+    private Attempt attempt;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id")
-    Question question;
+    private Question question;
 
-    @ManyToOne
+    // Dành cho câu hỏi trắc nghiệm chọn A, B, C, D
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "selected_option_id")
-    QuestionOption questionOption;
+    private QuestionOption selectedOption;
 
-    String answerText;
+    // Dành cho câu hỏi điền từ (Fill in the blanks)
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
+    @Column(name = "is_correct")
+    private Boolean isCorrect;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "change_count")
+    private Integer changeCount;
 }

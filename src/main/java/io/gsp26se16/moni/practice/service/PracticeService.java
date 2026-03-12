@@ -4,7 +4,7 @@ import io.gsp26se16.moni.practice.dto.request.SubmitAttemptRequest;
 import io.gsp26se16.moni.practice.dto.response.SubmitAttemptResponse;
 
 public interface PracticeService {
-    SubmitAttemptResponse submitAttempt(SubmitAttemptRequest request);
+    public SubmitAttemptResponse submitAttempt(Integer sessionId, Integer attemptId, SubmitAttemptRequest request);
 
-    SubmitAttemptResponse getAttemptResult(Integer attemptId);
+    public SubmitAttemptResponse getAttemptResult(Integer attemptId);
 }

@@ -29,6 +29,7 @@ public class SubmitAttemptResponse {
     @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class AnswerResult {
         Integer questionId;
+        String questionContent;
         Integer selectedOptionId;
         String answerText;
         boolean isCorrect;

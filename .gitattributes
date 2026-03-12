@@ -6,3 +6,6 @@ mvnw text eol=lf
 mvnw.cmd text eol=crlf
 *.java text diff=java
 *.yml text
+
+# Ignore environment variables
+.env

@@ -1,7 +1,10 @@
 package io.gsp26se16.moni.content.service;
 
+import io.gsp26se16.moni.authentication.entity.UserCredentials;
+import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +33,7 @@ public class StimulusServiceImpl implements StimulusService {
     private final QuestionRepository questionRepository;
     private final TagRepository tagRepository;
     private final UsersRepository userRepository;
+    private final UserCredentialsRepository userCredentialsRepository;
 
     @Override
     @Transactional
@@ -43,7 +47,7 @@ public class StimulusServiceImpl implements StimulusService {
         stimulus.setMetadata(request.getMetadata());
         stimulus.setStatus(PublishStatus.DRAFT);
 
-        Users adminUser = userRepository.getReferenceById("1");
+        Users adminUser = getCurrentUser();
         stimulus.setCreatedBy(adminUser);
 
         Stimulus savedStimulus = stimulusRepository.save(stimulus);
@@ -94,5 +98,30 @@ public class StimulusServiceImpl implements StimulusService {
                 .skill(s.getSkill())
                 .status(s.getStatus())
                 .build());
+    }
+
+    // --- Helper lấy User từ JWT Token ---
+    private Users getCurrentUser() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("Chưa xác thực (Unauthenticated)");
+        }
+
+        String credentialId = null;
+        if (authentication.getPrincipal() instanceof org.springframework.security.oauth2.jwt.Jwt jwt) {
+            credentialId = jwt.getClaimAsString("userId"); // Tùy thuộc vào claim bạn config trong token
+        }
+
+        if (credentialId == null) {
+            throw new RuntimeException("Token không hợp lệ (Không tìm thấy userId)");
+        }
+
+        UserCredentials credentials = userCredentialsRepository.findById(credentialId)
+                .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại"));
+
+        if (credentials.getUser() == null) {
+            throw new RuntimeException("Lỗi dữ liệu: UserCredentials không gắn với Users nào");
+        }
+        return credentials.getUser();
     }
 }

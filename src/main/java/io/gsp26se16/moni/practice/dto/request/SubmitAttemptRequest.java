@@ -19,17 +19,25 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SubmitAttemptRequest {
-    @NotNull
-    Integer testId;
-
-    @NotNull
-    Integer stimulusId;
-
-    @NotNull
+    @NotNull(message = "Elapsed seconds is required")
     Integer elapsedSeconds;
 
     @NotNull
-    @Size(min = 1)
+    @Size(min = 1, message = "Answers list cannot be empty")
     @Valid
     List<AnswerRequest> answers;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class AnswerRequest {
+        @NotNull(message = "Question ID is required")
+        Integer questionId;
+
+        Integer selectedOptionId;
+
+        String answerText;
+    }
 }

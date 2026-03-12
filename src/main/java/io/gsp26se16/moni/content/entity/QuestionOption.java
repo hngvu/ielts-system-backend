@@ -17,7 +17,9 @@ public class QuestionOption {
     Integer id;
 
     String label;
+
     String content;
+
     boolean isCorrect;
 
     @ManyToOne

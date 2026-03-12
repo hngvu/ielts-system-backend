@@ -15,26 +15,28 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Attempt {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Integer id;
+    private Integer id;
 
-    LocalDateTime startedAt;
-    LocalDateTime submittedAt;
-    int score; // correct answers
-    int totalQuestions;
-
-    @ManyToOne
-    @JoinColumn(name = "test_session_id")
-    TestSession testSession;
-
-    @ManyToOne
-    @JoinColumn(name = "stimulus_id")
-    Stimulus stimulus;
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    Users user;
+    private Users user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "test_session_id")
+    private TestSession testSession;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "stimulus_id")
+    private Stimulus stimulus;
+
+    @Column(name = "started_at")
+    private LocalDateTime startedAt;
+
+    @Column(name = "submitted_at")
+    private LocalDateTime submittedAt;
+
+    private String result;
 }
