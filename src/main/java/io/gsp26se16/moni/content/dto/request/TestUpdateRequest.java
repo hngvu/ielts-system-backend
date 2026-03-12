@@ -5,6 +5,7 @@ import java.util.List;
 import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestMode;
+import io.gsp26se16.moni.common.enumeration.TestType;
 import lombok.Data;
 
 @Data
@@ -15,6 +16,7 @@ public class TestUpdateRequest {
     private Integer duration;
     private Skill skill;
     private TestMode testMode;
+    private TestType testType;
     private Integer section;
     private PublishStatus status;
     private List<Integer> tagIds;

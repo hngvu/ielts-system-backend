@@ -6,16 +6,15 @@ import java.util.Map;
 import lombok.Data;
 
 @Data
-public class QuestionUpdateRequest {
+public class QuestionCreateRequest {
     private String content;
-    private Map<String, Object> explanation;
     private Integer position;
-
+    private Map<String, Object> explanation;
     private List<Integer> tagIds;
-    private List<OptionUpdateRequest> options;
+    private List<OptionCreateRequest> options;
 
     @Data
-    public static class OptionUpdateRequest {
+    public static class OptionCreateRequest {
         private String label;
         private String content;
         private Boolean isCorrect;
