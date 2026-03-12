@@ -228,6 +228,7 @@ public class TestServiceImpl implements TestService {
         if (request.getDuration() != null) test.setDuration(request.getDuration());
         if (request.getSkill() != null) test.setSkill(request.getSkill());
         if (request.getTestMode() != null) test.setTestMode(request.getTestMode());
+        if (request.getTestType() != null) test.setTestType(request.getTestType());
         if (request.getSection() != null) test.setSection(request.getSection());
         if (request.getStatus() != null) test.setStatus(request.getStatus());
 

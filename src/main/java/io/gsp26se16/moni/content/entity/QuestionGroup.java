@@ -42,6 +42,6 @@ public class QuestionGroup {
     @JoinColumn(name = "question_type_id")
     QuestionType questionType;
 
-    @OneToMany(mappedBy = "questionGroup", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "questionGroup", cascade = CascadeType.ALL, orphanRemoval = true)
     List<Question> questions = new ArrayList<>();
 }
