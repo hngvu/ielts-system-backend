@@ -10,5 +10,7 @@ import io.gsp26se16.moni.content.dto.response.StimulusResponse;
 public interface StimulusService {
     public Integer createStimulus(StimulusCreateRequest request);
 
+    public void updateStimulus(Integer id, String content, String mediaUrl);
+
     public Page<StimulusResponse> getAllStimuli(String keyword, Skill skill, Pageable pageable);
 }

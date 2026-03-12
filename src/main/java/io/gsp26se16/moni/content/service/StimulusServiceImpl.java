@@ -85,6 +85,16 @@ public class StimulusServiceImpl implements StimulusService {
     }
 
     @Override
+    @Transactional
+    public void updateStimulus(Integer id, String content, String mediaUrl) {
+        Stimulus stimulus =
+                stimulusRepository.findById(id).orElseThrow(() -> new RuntimeException("Stimulus not found: " + id));
+        if (content != null) stimulus.setContent(content);
+        if (mediaUrl != null) stimulus.setMediaUrl(mediaUrl);
+        stimulusRepository.save(stimulus);
+    }
+
+    @Override
     public Page<StimulusResponse> getAllStimuli(String keyword, Skill skill, Pageable pageable) {
         Page<Stimulus> stimuliPage = stimulusRepository.searchStimuli(keyword, skill, pageable);
 
