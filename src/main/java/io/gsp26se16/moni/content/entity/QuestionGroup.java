@@ -23,6 +23,7 @@ public class QuestionGroup {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
 
+    @Column(columnDefinition = "TEXT")
     String instruction;
 
     @Column(columnDefinition = "TEXT")
