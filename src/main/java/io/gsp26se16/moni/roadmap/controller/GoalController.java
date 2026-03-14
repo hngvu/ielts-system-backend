@@ -3,6 +3,7 @@ package io.gsp26se16.moni.roadmap.controller;
 import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.roadmap.dto.request.GoalCreateRequest;
 import io.gsp26se16.moni.roadmap.dto.request.GoalUpdateRequest;
+import io.gsp26se16.moni.roadmap.dto.request.TaskStatusUpdateRequest;
 import io.gsp26se16.moni.roadmap.dto.response.GoalCreateResponse;
 import io.gsp26se16.moni.roadmap.dto.response.GoalResponse;
 import io.gsp26se16.moni.roadmap.service.GoalService;
@@ -59,6 +60,20 @@ public class GoalController {
                 .code(1000)
                 .message("Cập nhật mục tiêu thành công!")
                 .result(result)
+                .build());
+    }
+
+    @PatchMapping("/tasks/{taskId}/status")
+    @Operation(summary = "6. Cập nhật trạng thái Bài tập (Tự động đẻ Lộ trình mới nếu làm hết bài)")
+    public ResponseEntity<ApiResponse<Void>> updateTaskStatus(
+            @PathVariable Integer taskId,
+            @RequestBody @Valid TaskStatusUpdateRequest request) {
+
+        goalService.updateTaskStatus(taskId, request);
+
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .code(1000)
+                .message("Đã cập nhật trạng thái bài tập thành công")
                 .build());
     }
 }
