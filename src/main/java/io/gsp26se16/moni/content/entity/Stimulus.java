@@ -1,9 +1,8 @@
 package io.gsp26se16.moni.content.entity;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import io.gsp26se16.moni.tag.entity.Tag;
 import jakarta.persistence.*;
 
 import org.hibernate.annotations.JdbcTypeCode;
@@ -55,4 +54,11 @@ public class Stimulus {
 
     @OneToMany(mappedBy = "stimulus", cascade = CascadeType.ALL)
     List<QuestionGroup> questionGroups = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "stimulus_tag",
+            joinColumns = @JoinColumn(name = "stimulus_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id"))
+    private Set<Tag> tags = new HashSet<>();
 }

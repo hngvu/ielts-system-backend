@@ -1,8 +1,16 @@
 package io.gsp26se16.moni.tag.service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import io.gsp26se16.moni.content.entity.Question;
+import io.gsp26se16.moni.content.entity.Stimulus;
+import io.gsp26se16.moni.content.entity.Test;
+import io.gsp26se16.moni.content.repository.QuestionRepository;
+import io.gsp26se16.moni.content.repository.StimulusRepository;
+import io.gsp26se16.moni.content.repository.TestRepository;
+import io.gsp26se16.moni.tag.dto.request.TagAssignRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +30,9 @@ public class TagServiceImpl implements TagService {
 
     private final TagRepository tagRepository;
     private final TagMapper tagMapper;
+    private final QuestionRepository questionRepository;
+    private final StimulusRepository stimulusRepository;
+    private final TestRepository testRepository;
 
     @Override
     @Transactional
@@ -83,5 +94,52 @@ public class TagServiceImpl implements TagService {
         }
         // TODO: Về sau cần check xem Tag có đang được dùng trong Bài thi không trước khi xóa
         tagRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public void assignTagsToQuestion(Integer questionId, TagAssignRequest request) {
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Câu hỏi với ID: " + questionId));
+
+        // Lấy danh sách Tag từ DB dựa trên list IDs gửi lên
+        List<Tag> tags = tagRepository.findAllById(request.getTagIds());
+        if (tags.size() != request.getTagIds().size()) {
+            throw new RuntimeException("Một hoặc nhiều Tag không tồn tại trong hệ thống!");
+        }
+
+        // Ghi đè list Tag mới vào (Nhờ Set và Hibernate, nó sẽ tự động tính toán cái nào cần thêm/xóa trong bảng trung gian)
+        question.setTags(new HashSet<>(tags));
+        questionRepository.save(question);
+    }
+
+    @Override
+    @Transactional
+    public void assignTagsToStimulus(Integer stimulusId, TagAssignRequest request) {
+        Stimulus stimulus = stimulusRepository.findById(stimulusId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Đoạn văn/Audio với ID: " + stimulusId));
+
+        List<Tag> tags = tagRepository.findAllById(request.getTagIds());
+        if (tags.size() != request.getTagIds().size()) {
+            throw new RuntimeException("Một hoặc nhiều Tag không tồn tại trong hệ thống!");
+        }
+
+        stimulus.setTags(new HashSet<>(tags));
+        stimulusRepository.save(stimulus);
+    }
+
+    @Override
+    @Transactional
+    public void assignTagsToTest(Integer testId, TagAssignRequest request) {
+        Test test = testRepository.findById(testId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Đề thi với ID: " + testId));
+
+        List<Tag> tags = tagRepository.findAllById(request.getTagIds());
+        if (tags.size() != request.getTagIds().size()) {
+            throw new RuntimeException("Một hoặc nhiều Tag không tồn tại trong hệ thống!");
+        }
+
+        test.setTags(new HashSet<>(tags));
+        testRepository.save(test);
     }
 }

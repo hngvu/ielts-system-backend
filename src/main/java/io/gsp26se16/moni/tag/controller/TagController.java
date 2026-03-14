@@ -2,6 +2,7 @@ package io.gsp26se16.moni.tag.controller;
 
 import java.util.List;
 
+import io.gsp26se16.moni.tag.dto.request.TagAssignRequest;
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -69,5 +70,44 @@ public class TagController {
                 .build();
 
         return ResponseEntity.ok(apiResponse);
+    }
+
+    @PostMapping("/questions/{questionId}/tags")
+    public ResponseEntity<ApiResponse<Void>> assignToQuestion(
+            @PathVariable Integer questionId,
+            @RequestBody @Valid TagAssignRequest request) {
+
+        tagService.assignTagsToQuestion(questionId, request);
+
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .code(1000)
+                .message("Đã cập nhật Tag cho Câu hỏi thành công")
+                .build());
+    }
+
+    @PostMapping("/stimulus/{stimulusId}/tags")
+    public ResponseEntity<ApiResponse<Void>> assignToStimulus(
+            @PathVariable Integer stimulusId,
+            @RequestBody @Valid TagAssignRequest request) {
+
+        tagService.assignTagsToStimulus(stimulusId, request);
+
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .code(1000)
+                .message("Đã cập nhật Tag cho Đoạn văn/Audio thành công")
+                .build());
+    }
+
+    @PostMapping("/tests/{testId}/tags")
+    public ResponseEntity<ApiResponse<Void>> assignToTest(
+            @PathVariable Integer testId,
+            @RequestBody @Valid TagAssignRequest request) {
+
+        tagService.assignTagsToTest(testId, request);
+
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .code(1000)
+                .message("Đã cập nhật Tag cho Đề thi thành công")
+                .build());
     }
 }

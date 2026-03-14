@@ -22,10 +22,10 @@ public class Tag {
     private Integer id;
 
     @Column(nullable = false)
-    private String name; // VD: "Multiple Choice"
+    private String name;
 
     @Column(nullable = false, unique = true)
-    private String code; // VD: "QT_MCQ" (Dùng để code logic check)
+    private String code;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tag_type", nullable = false)
