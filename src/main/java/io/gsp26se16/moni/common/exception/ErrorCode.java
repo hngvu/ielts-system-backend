@@ -8,61 +8,60 @@ import lombok.Getter;
 @Getter
 public enum ErrorCode {
     // --- 1. SYSTEM & GENERAL ---
-    UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
-    INVALID_KEY(1001, "Uncategorized error", HttpStatus.BAD_REQUEST),
+    UNCATEGORIZED_EXCEPTION(9999, "Đã xảy ra lỗi không xác định", HttpStatus.INTERNAL_SERVER_ERROR),
+    INVALID_KEY(1001, "Yêu cầu không hợp lệ", HttpStatus.BAD_REQUEST),
 
     // --- 2. AUTHENTICATION & USER  ---
-    USER_EXISTED(1002, "User existed", HttpStatus.BAD_REQUEST),
-    USERNAME_INVALID(1003, "Username must be at least {min} characters", HttpStatus.BAD_REQUEST),
-    INVALID_PASSWORD(1004, "Password must be at least {min} characters", HttpStatus.BAD_REQUEST),
-    USER_NOT_EXISTED(1005, "User not existed", HttpStatus.NOT_FOUND),
-    UNAUTHENTICATED(1006, "Unauthenticated", HttpStatus.UNAUTHORIZED),
-    UNAUTHORIZED(1007, "You do not have permission", HttpStatus.FORBIDDEN),
-    EMAIL_EXISTED(1008, "Email has been used", HttpStatus.BAD_REQUEST),
-    PASSWORD_EXISTED(
-            1009, "Password existed", HttpStatus.BAD_REQUEST), // Case này ít dùng, thường gộp vào INVALID_PASSWORD
-    UNVERIFIED_EMAIL(1010, "Unverified email", HttpStatus.UNAUTHORIZED),
-    OTP_EXPIRED(1011, "OTP expired", HttpStatus.UNAUTHORIZED),
-    PROFILE_CREATION_FAILED(1012, "Profile creation failed", HttpStatus.INTERNAL_SERVER_ERROR),
-    USER_NOT_ACTIVE(1013, "User is not active", HttpStatus.UNAUTHORIZED),
-    USER_ALREADY_ACTIVE(1014, "User is already active", HttpStatus.BAD_REQUEST),
-    USER_ALREADY_DEACTIVATED(1015, "User is already deactivated", HttpStatus.BAD_REQUEST),
-    PASSWORD_INCORRECT(1016, "Password incorrect", HttpStatus.BAD_REQUEST),
+    USER_EXISTED(1002, "Tài khoản đã tồn tại", HttpStatus.BAD_REQUEST),
+    USERNAME_INVALID(1003, "Tên đăng nhập phải có ít nhất {min} ký tự", HttpStatus.BAD_REQUEST),
+    INVALID_PASSWORD(1004, "Mật khẩu phải có ít nhất {min} ký tự", HttpStatus.BAD_REQUEST),
+    USER_NOT_EXISTED(1005, "Không tìm thấy người dùng", HttpStatus.NOT_FOUND),
+    UNAUTHENTICATED(1006, "Chưa đăng nhập hoặc phiên đã hết hạn", HttpStatus.UNAUTHORIZED),
+    UNAUTHORIZED(1007, "Bạn không có quyền thực hiện thao tác này", HttpStatus.FORBIDDEN),
+    EMAIL_EXISTED(1008, "Email này đã được sử dụng", HttpStatus.BAD_REQUEST),
+    PASSWORD_EXISTED(1009, "Mật khẩu đã tồn tại", HttpStatus.BAD_REQUEST),
+    UNVERIFIED_EMAIL(1010, "Email chưa được xác thực", HttpStatus.UNAUTHORIZED),
+    OTP_EXPIRED(1011, "Mã OTP đã hết hạn", HttpStatus.UNAUTHORIZED),
+    PROFILE_CREATION_FAILED(1012, "Tạo hồ sơ thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+    USER_NOT_ACTIVE(1013, "Tài khoản chưa được kích hoạt", HttpStatus.UNAUTHORIZED),
+    USER_ALREADY_ACTIVE(1014, "Tài khoản đã được kích hoạt rồi", HttpStatus.BAD_REQUEST),
+    USER_ALREADY_DEACTIVATED(1015, "Tài khoản đã bị vô hiệu hóa rồi", HttpStatus.BAD_REQUEST),
+    PASSWORD_INCORRECT(1016, "Mật khẩu không đúng", HttpStatus.BAD_REQUEST),
 
     // --- VALIDATION: EMAIL & PASSWORD ---
-    EMAIL_REQUIRED(1016, "Email is required", HttpStatus.BAD_REQUEST),
-    INVALID_EMAIL_FORMAT(1017, "Invalid email format", HttpStatus.BAD_REQUEST),
-    PASSWORD_REQUIRED(1018, "Password is required", HttpStatus.BAD_REQUEST),
-    PASSWORD_TOO_SHORT(1019, "Password must be at least 8 characters", HttpStatus.BAD_REQUEST),
-    PASSWORD_WEAK(1020, "Password must contain uppercase, lowercase and number", HttpStatus.BAD_REQUEST),
+    EMAIL_REQUIRED(1016, "Vui lòng nhập email", HttpStatus.BAD_REQUEST),
+    INVALID_EMAIL_FORMAT(1017, "Định dạng email không đúng", HttpStatus.BAD_REQUEST),
+    PASSWORD_REQUIRED(1018, "Vui lòng nhập mật khẩu", HttpStatus.BAD_REQUEST),
+    PASSWORD_TOO_SHORT(1019, "Mật khẩu phải có ít nhất 8 ký tự", HttpStatus.BAD_REQUEST),
+    PASSWORD_WEAK(1020, "Mật khẩu phải bao gồm chữ hoa, chữ thường và số", HttpStatus.BAD_REQUEST),
 
-    FULL_NAME_REQUIRED(1021, "Full name is required", HttpStatus.BAD_REQUEST),
-    FULL_NAME_LENGTH_INVALID(1022, "Full name must be between 2 and 100 characters", HttpStatus.BAD_REQUEST),
-    INVALID_AVATAR_URL(1023, "Avatar URL is invalid", HttpStatus.BAD_REQUEST),
+    FULL_NAME_REQUIRED(1021, "Vui lòng nhập họ tên", HttpStatus.BAD_REQUEST),
+    FULL_NAME_LENGTH_INVALID(1022, "Họ tên phải từ 2 đến 100 ký tự", HttpStatus.BAD_REQUEST),
+    INVALID_AVATAR_URL(1023, "URL avatar không hợp lệ", HttpStatus.BAD_REQUEST),
 
-    INVALID_PHONE_NUMBER(1024, "Phone number format is invalid", HttpStatus.BAD_REQUEST),
-    DOB_REQUIRED(1025, "Date of birth is required", HttpStatus.BAD_REQUEST),
-    DOB_MUST_BE_IN_PAST(1026, "Date of birth must be in the past", HttpStatus.BAD_REQUEST),
+    INVALID_PHONE_NUMBER(1024, "Số điện thoại không hợp lệ", HttpStatus.BAD_REQUEST),
+    DOB_REQUIRED(1025, "Vui lòng nhập ngày sinh", HttpStatus.BAD_REQUEST),
+    DOB_MUST_BE_IN_PAST(1026, "Ngày sinh phải trong quá khứ", HttpStatus.BAD_REQUEST),
 
     // --- VALIDATION: IELTS SPECS ---
-    TARGET_BAND_REQUIRED(1027, "Target band is required", HttpStatus.BAD_REQUEST),
-    INVALID_IELTS_BAND(1028, "IELTS band must be between 0.0 and 9.0", HttpStatus.BAD_REQUEST),
-    BAND_MUST_BE_HALVES(1029, "IELTS band must be in 0.5 increments (e.g. 6.0, 6.5)", HttpStatus.BAD_REQUEST),
+    TARGET_BAND_REQUIRED(1027, "Vui lòng nhập band mục tiêu", HttpStatus.BAD_REQUEST),
+    INVALID_IELTS_BAND(1028, "Band IELTS phải từ 0.0 đến 9.0", HttpStatus.BAD_REQUEST),
+    BAND_MUST_BE_HALVES(1029, "Band IELTS phải theo bước 0.5 (VD: 6.0, 6.5)", HttpStatus.BAD_REQUEST),
 
     // --- ROADMAP & STUDY ---
-    ROADMAP_NOT_FOUND(1040, "Study roadmap not found", HttpStatus.NOT_FOUND),
-    TEST_NOT_FOUND(1041, "IELTS test not found", HttpStatus.NOT_FOUND),
-    VOCAB_COLLECTION_NOT_FOUND(1042, "Vocabulary collection not found", HttpStatus.NOT_FOUND),
+    ROADMAP_NOT_FOUND(1040, "Không tìm thấy lộ trình học", HttpStatus.NOT_FOUND),
+    TEST_NOT_FOUND(1041, "Không tìm thấy bài thi IELTS", HttpStatus.NOT_FOUND),
+    VOCAB_COLLECTION_NOT_FOUND(1042, "Không tìm thấy bộ từ vựng", HttpStatus.NOT_FOUND),
 
     // --- TAG MODULE ---
-    TAG_EXISTED(1043, "Tag code or name already exists", HttpStatus.BAD_REQUEST),
-    TAG_NOT_FOUND(1044, "Tag not found", HttpStatus.NOT_FOUND),
+    TAG_EXISTED(1043, "Mã hoặc tên tag đã tồn tại", HttpStatus.BAD_REQUEST),
+    TAG_NOT_FOUND(1044, "Không tìm thấy tag", HttpStatus.NOT_FOUND),
 
     // --- PRACTICE MODULE ---
-    STIMULUS_NOT_FOUND(1045, "Stimulus not found", HttpStatus.NOT_FOUND),
-    QUESTION_NOT_FOUND(1046, "Question not found", HttpStatus.NOT_FOUND),
-    OPTION_NOT_FOUND(1047, "Question option not found", HttpStatus.NOT_FOUND),
-    ATTEMPT_NOT_FOUND(1048, "Attempt not found", HttpStatus.NOT_FOUND),
+    STIMULUS_NOT_FOUND(1045, "Không tìm thấy nội dung bài thi", HttpStatus.NOT_FOUND),
+    QUESTION_NOT_FOUND(1046, "Không tìm thấy câu hỏi", HttpStatus.NOT_FOUND),
+    OPTION_NOT_FOUND(1047, "Không tìm thấy đáp án", HttpStatus.NOT_FOUND),
+    ATTEMPT_NOT_FOUND(1048, "Không tìm thấy lần làm bài", HttpStatus.NOT_FOUND),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
