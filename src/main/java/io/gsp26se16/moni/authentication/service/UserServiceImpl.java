@@ -108,11 +108,14 @@ public class UserServiceImpl implements UserService {
 
     private void updateUserInfo(Users user, UpdateProfileRequest request) {
         if (request.getFullName() != null) user.setFull_name(request.getFullName());
-
         if (request.getAvatarUrl() != null) user.setAvatar_url(request.getAvatarUrl());
-
         if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
-
         if (request.getDateOfBirth() != null) user.setDateOfBirth(request.getDateOfBirth());
+        if (request.getTargetReading() != null) user.setTargetReading(request.getTargetReading());
+        if (request.getTargetListening() != null) user.setTargetListening(request.getTargetListening());
+        if (request.getTargetWriting() != null) user.setTargetWriting(request.getTargetWriting());
+        if (request.getTargetSpeaking() != null) user.setTargetSpeaking(request.getTargetSpeaking());
+        if (request.getTargetBand() != null) user.setTargetBand(request.getTargetBand());
+        if (request.getExamDate() != null) user.setExamDate(request.getExamDate());
     }
 }

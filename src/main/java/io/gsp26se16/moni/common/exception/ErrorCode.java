@@ -62,6 +62,12 @@ public enum ErrorCode {
     QUESTION_NOT_FOUND(1046, "Không tìm thấy câu hỏi", HttpStatus.NOT_FOUND),
     OPTION_NOT_FOUND(1047, "Không tìm thấy đáp án", HttpStatus.NOT_FOUND),
     ATTEMPT_NOT_FOUND(1048, "Không tìm thấy lần làm bài", HttpStatus.NOT_FOUND),
+
+    // --- PLACEMENT MODULE ---
+    PLACEMENT_NO_READING_TEST(1050, "Không có bài thi Reading nào được công bố", HttpStatus.NOT_FOUND),
+    PLACEMENT_NO_LISTENING_TEST(1051, "Không có bài thi Listening nào được công bố", HttpStatus.NOT_FOUND),
+    PLACEMENT_INVALID_BAND(1052, "Điểm band không hợp lệ (0-9, bước 0.5)", HttpStatus.BAD_REQUEST),
+    PLACEMENT_NOT_FOUND(1053, "Không tìm thấy kết quả kiểm tra trình độ", HttpStatus.NOT_FOUND),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

@@ -18,4 +18,13 @@ public class UpdateProfileRequest {
     String phoneNumber;
 
     LocalDate dateOfBirth;
+
+    // IELTS target scores
+    Double targetReading;
+    Double targetListening;
+    Double targetWriting;
+    Double targetSpeaking;
+    Double targetBand;
+
+    LocalDate examDate;
 }

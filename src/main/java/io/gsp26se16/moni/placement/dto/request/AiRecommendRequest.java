@@ -1,4 +1,4 @@
-package io.gsp26se16.moni.authentication.dto.response;
+package io.gsp26se16.moni.placement.dto.request;
 
 import java.time.LocalDate;
 
@@ -6,26 +6,20 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class UserProfileResponse {
-    String email;
-
-    String full_name;
-
-    String avatar_url;
-
-    String phoneNumber;
-
-    LocalDate dateOfBirth;
-
+public class AiRecommendRequest {
+    Double currentReading;
+    Double currentListening;
+    Double currentWriting;
+    Double currentSpeaking;
+    Double currentOverall;
     Double targetReading;
     Double targetListening;
     Double targetWriting;
     Double targetSpeaking;
-    Double targetBand;
-
+    Double targetOverall;
     LocalDate examDate;
 }

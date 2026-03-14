@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.content.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,4 +43,15 @@ public interface TestRepository extends JpaRepository<Test, Integer> {
 
     @Query("SELECT COUNT(a) FROM Attempt a WHERE a.testSession.test.id = :testId")
     long countAttemptsByTestId(@Param("testId") Integer testId);
+
+    @Query(
+            value =
+                    "SELECT * FROM test WHERE skill = :skill AND test_mode = 'FULL_TEST' AND status = 'PUBLISHED' ORDER BY RANDOM() LIMIT 1",
+            nativeQuery = true)
+    Optional<Test> findRandomPublishedFullTest(@Param("skill") String skill);
+
+    @Query(
+            value = "SELECT * FROM test WHERE skill = :skill AND status = 'PUBLISHED' ORDER BY RANDOM() LIMIT 1",
+            nativeQuery = true)
+    Optional<Test> findRandomPublishedTest(@Param("skill") String skill);
 }
