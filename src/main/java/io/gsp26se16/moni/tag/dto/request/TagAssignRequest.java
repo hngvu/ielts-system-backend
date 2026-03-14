@@ -1,9 +1,10 @@
 package io.gsp26se16.moni.tag.dto.request;
 
-import jakarta.validation.constraints.NotEmpty;
-import lombok.Data;
-
 import java.util.List;
+
+import jakarta.validation.constraints.NotEmpty;
+
+import lombok.Data;
 
 @Data
 public class TagAssignRequest {

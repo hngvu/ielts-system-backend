@@ -2,6 +2,7 @@ package io.gsp26se16.moni.placement.service;
 
 import java.util.List;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
@@ -26,12 +27,11 @@ import io.gsp26se16.moni.placement.entity.PlacementResult;
 import io.gsp26se16.moni.placement.repository.PlacementResultRepository;
 import io.gsp26se16.moni.placement.util.BandScoreUtil;
 import io.gsp26se16.moni.practice.dto.request.AnswerRequest;
-import lombok.RequiredArgsConstructor;
+import io.gsp26se16.moni.roadmap.service.GoalService;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Transactional
-@RequiredArgsConstructor
 @Slf4j
 public class PlacementServiceImpl implements PlacementService {
 
@@ -40,11 +40,26 @@ public class PlacementServiceImpl implements PlacementService {
     private final TestService testService;
     private final QuestionRepository questionRepository;
     private final UserCredentialsRepository userCredentialsRepository;
+    private final GoalService goalService;
+
+    public PlacementServiceImpl(
+            PlacementResultRepository placementResultRepository,
+            TestRepository testRepository,
+            TestService testService,
+            QuestionRepository questionRepository,
+            UserCredentialsRepository userCredentialsRepository,
+            @Lazy GoalService goalService) {
+        this.placementResultRepository = placementResultRepository;
+        this.testRepository = testRepository;
+        this.testService = testService;
+        this.questionRepository = questionRepository;
+        this.userCredentialsRepository = userCredentialsRepository;
+        this.goalService = goalService;
+    }
 
     @Override
     @Transactional(readOnly = true)
     public PlacementTestResponse generate() {
-        // Try FULL_TEST first, fallback to any PUBLISHED test
         Test readingTest = testRepository
                 .findRandomPublishedFullTest("READING")
                 .or(() -> testRepository.findRandomPublishedTest("READING"))
@@ -93,6 +108,24 @@ public class PlacementServiceImpl implements PlacementService {
                 .build();
 
         result = placementResultRepository.save(result);
+
+        // Auto-create Goals from placement result
+        try {
+            goalService.createGoalsFromPlacement(
+                    user,
+                    readingBand,
+                    listeningBand,
+                    request.getWritingBand(),
+                    request.getSpeakingBand(),
+                    user.getTargetReading(),
+                    user.getTargetListening(),
+                    user.getTargetWriting(),
+                    user.getTargetSpeaking(),
+                    user.getExamDate());
+        } catch (Exception e) {
+            log.warn("Không tạo được Goals từ placement result: {}", e.getMessage());
+        }
+
         return toResponse(result);
     }
 
@@ -123,6 +156,24 @@ public class PlacementServiceImpl implements PlacementService {
                 .build();
 
         result = placementResultRepository.save(result);
+
+        // Auto-create Goals from self-assessed placement result
+        try {
+            goalService.createGoalsFromPlacement(
+                    user,
+                    request.getReadingBand(),
+                    request.getListeningBand(),
+                    request.getWritingBand(),
+                    request.getSpeakingBand(),
+                    user.getTargetReading(),
+                    user.getTargetListening(),
+                    user.getTargetWriting(),
+                    user.getTargetSpeaking(),
+                    user.getExamDate());
+        } catch (Exception e) {
+            log.warn("Không tạo được Goals từ self-assess result: {}", e.getMessage());
+        }
+
         return toResponse(result);
     }
 

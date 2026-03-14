@@ -2,7 +2,6 @@ package io.gsp26se16.moni.tag.controller;
 
 import java.util.List;
 
-import io.gsp26se16.moni.tag.dto.request.TagAssignRequest;
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -10,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import io.gsp26se16.moni.common.dto.ApiResponse;
+import io.gsp26se16.moni.tag.dto.request.TagAssignRequest;
 import io.gsp26se16.moni.tag.dto.request.TagRequest;
 import io.gsp26se16.moni.tag.dto.response.TagResponse;
 import io.gsp26se16.moni.tag.entity.TagType;
@@ -74,8 +74,7 @@ public class TagController {
 
     @PostMapping("/questions/{questionId}/tags")
     public ResponseEntity<ApiResponse<Void>> assignToQuestion(
-            @PathVariable Integer questionId,
-            @RequestBody @Valid TagAssignRequest request) {
+            @PathVariable Integer questionId, @RequestBody @Valid TagAssignRequest request) {
 
         tagService.assignTagsToQuestion(questionId, request);
 
@@ -87,8 +86,7 @@ public class TagController {
 
     @PostMapping("/stimulus/{stimulusId}/tags")
     public ResponseEntity<ApiResponse<Void>> assignToStimulus(
-            @PathVariable Integer stimulusId,
-            @RequestBody @Valid TagAssignRequest request) {
+            @PathVariable Integer stimulusId, @RequestBody @Valid TagAssignRequest request) {
 
         tagService.assignTagsToStimulus(stimulusId, request);
 
@@ -100,8 +98,7 @@ public class TagController {
 
     @PostMapping("/tests/{testId}/tags")
     public ResponseEntity<ApiResponse<Void>> assignToTest(
-            @PathVariable Integer testId,
-            @RequestBody @Valid TagAssignRequest request) {
+            @PathVariable Integer testId, @RequestBody @Valid TagAssignRequest request) {
 
         tagService.assignTagsToTest(testId, request);
 

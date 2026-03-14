@@ -6,9 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
-import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
-import io.gsp26se16.moni.tag.entity.Tag;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
@@ -29,6 +26,7 @@ import io.gsp26se16.moni.content.repository.StimulusRepository;
 import io.gsp26se16.moni.content.repository.TestRepository;
 import io.gsp26se16.moni.practice.dto.request.AnswerRequest;
 import io.gsp26se16.moni.practice.dto.request.SubmitAttemptRequest;
+import io.gsp26se16.moni.practice.dto.response.AttemptHistoryResponse;
 import io.gsp26se16.moni.practice.dto.response.SubmitAttemptResponse;
 import io.gsp26se16.moni.practice.entity.Attempt;
 import io.gsp26se16.moni.practice.entity.AttemptAnswer;
@@ -36,6 +34,9 @@ import io.gsp26se16.moni.practice.entity.TestSession;
 import io.gsp26se16.moni.practice.repository.AttemptAnswerRepository;
 import io.gsp26se16.moni.practice.repository.AttemptRepository;
 import io.gsp26se16.moni.practice.repository.TestSessionRepository;
+import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
+import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
+import io.gsp26se16.moni.tag.entity.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,7 +54,7 @@ public class PracticeServiceImpl implements PracticeService {
     private final QuestionRepository questionRepository;
     private final QuestionOptionRepository questionOptionRepository;
     private final UserCredentialsRepository userCredentialsRepository;
-        private final LearnerMetricRepository learnerMetricRepository;
+    private final LearnerMetricRepository learnerMetricRepository;
 
     @Override
     public SubmitAttemptResponse submitAttempt(SubmitAttemptRequest request) {
@@ -224,6 +225,37 @@ public class PracticeServiceImpl implements PracticeService {
                 .elapsedSeconds(elapsedSeconds)
                 .results(results)
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AttemptHistoryResponse> getAttemptHistory() {
+        Users user = getCurrentUser();
+        List<Attempt> attempts = attemptRepository.findByUserOrderBySubmittedAtDesc(user);
+
+        return attempts.stream()
+                .map(a -> {
+                    int elapsed = 0;
+                    if (a.getStartedAt() != null && a.getSubmittedAt() != null) {
+                        elapsed = (int) java.time.Duration.between(a.getStartedAt(), a.getSubmittedAt())
+                                .getSeconds();
+                    }
+                    Stimulus s = a.getStimulus();
+                    return AttemptHistoryResponse.builder()
+                            .attemptId(a.getId())
+                            .stimulusId(s != null ? s.getId() : null)
+                            .stimulusTitle(s != null ? s.getTitle() : null)
+                            .skill(
+                                    s != null && s.getSkill() != null
+                                            ? s.getSkill().name()
+                                            : null)
+                            .score(a.getScore())
+                            .totalQuestions(a.getTotalQuestions())
+                            .elapsedSeconds(elapsed)
+                            .submittedAt(a.getSubmittedAt())
+                            .build();
+                })
+                .toList();
     }
 
     // --- Helpers ---

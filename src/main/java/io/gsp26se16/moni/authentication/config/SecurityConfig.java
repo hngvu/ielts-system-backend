@@ -48,7 +48,7 @@ public class SecurityConfig {
                 .permitAll()
                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS)
                 .permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/vocab/lookup")
+                .requestMatchers(HttpMethod.GET, "/api/v1/vocab/lookup", "/api/v1/tests", "/api/v1/tests/**")
                 .permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
                 .permitAll()

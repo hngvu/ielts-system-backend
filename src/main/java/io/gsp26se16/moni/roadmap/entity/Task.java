@@ -1,8 +1,9 @@
 package io.gsp26se16.moni.roadmap.entity;
 
+import jakarta.persistence.*;
+
 import io.gsp26se16.moni.content.entity.Stimulus;
 import io.gsp26se16.moni.content.entity.Test;
-import jakarta.persistence.*;
 import lombok.*;
 
 @Entity

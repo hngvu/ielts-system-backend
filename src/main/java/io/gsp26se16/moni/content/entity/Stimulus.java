@@ -2,7 +2,6 @@ package io.gsp26se16.moni.content.entity;
 
 import java.util.*;
 
-import io.gsp26se16.moni.tag.entity.Tag;
 import jakarta.persistence.*;
 
 import org.hibernate.annotations.JdbcTypeCode;
@@ -12,6 +11,7 @@ import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestType;
+import io.gsp26se16.moni.tag.entity.Tag;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

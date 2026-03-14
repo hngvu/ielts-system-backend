@@ -1,10 +1,10 @@
 package io.gsp26se16.moni.roadmap.dto.response;
 
+import java.time.LocalDate;
+
 import io.gsp26se16.moni.common.enumeration.Skill;
 import lombok.Builder;
 import lombok.Data;
-
-import java.time.LocalDate;
 
 @Data
 @Builder
