@@ -19,6 +19,8 @@ public interface TagService {
     void deleteTag(Integer id);
 
     void assignTagsToQuestion(Integer questionId, TagAssignRequest request);
+
     void assignTagsToStimulus(Integer stimulusId, TagAssignRequest request);
+
     void assignTagsToTest(Integer testId, TagAssignRequest request);
 }

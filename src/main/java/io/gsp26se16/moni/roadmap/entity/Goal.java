@@ -1,13 +1,14 @@
 package io.gsp26se16.moni.roadmap.entity;
 
+import java.time.LocalDate;
+
+import jakarta.persistence.*;
+
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.common.enumeration.Skill;
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
 
 @Data
 @Entity

@@ -1,12 +1,13 @@
 package io.gsp26se16.moni.roadmap.dto.request;
 
+import java.time.LocalDate;
+
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
 
-import java.time.LocalDate;
+import lombok.Data;
 
 @Data
 public class GoalUpdateRequest {

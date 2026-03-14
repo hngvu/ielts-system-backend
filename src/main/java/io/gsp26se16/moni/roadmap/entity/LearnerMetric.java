@@ -1,11 +1,12 @@
 package io.gsp26se16.moni.roadmap.entity;
 
+import java.time.LocalDateTime;
+
+import jakarta.persistence.*;
+
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.tag.entity.Tag;
-import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "learner_metrics")

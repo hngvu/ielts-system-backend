@@ -4,6 +4,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import io.gsp26se16.moni.common.exception.AppException;
+import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.entity.Question;
 import io.gsp26se16.moni.content.entity.Stimulus;
 import io.gsp26se16.moni.content.entity.Test;
@@ -11,11 +16,6 @@ import io.gsp26se16.moni.content.repository.QuestionRepository;
 import io.gsp26se16.moni.content.repository.StimulusRepository;
 import io.gsp26se16.moni.content.repository.TestRepository;
 import io.gsp26se16.moni.tag.dto.request.TagAssignRequest;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import io.gsp26se16.moni.common.exception.AppException;
-import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.tag.dto.request.TagRequest;
 import io.gsp26se16.moni.tag.dto.response.TagResponse;
 import io.gsp26se16.moni.tag.entity.Tag;
@@ -99,7 +99,8 @@ public class TagServiceImpl implements TagService {
     @Override
     @Transactional
     public void assignTagsToQuestion(Integer questionId, TagAssignRequest request) {
-        Question question = questionRepository.findById(questionId)
+        Question question = questionRepository
+                .findById(questionId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy Câu hỏi với ID: " + questionId));
 
         // Lấy danh sách Tag từ DB dựa trên list IDs gửi lên
@@ -108,7 +109,8 @@ public class TagServiceImpl implements TagService {
             throw new RuntimeException("Một hoặc nhiều Tag không tồn tại trong hệ thống!");
         }
 
-        // Ghi đè list Tag mới vào (Nhờ Set và Hibernate, nó sẽ tự động tính toán cái nào cần thêm/xóa trong bảng trung gian)
+        // Ghi đè list Tag mới vào (Nhờ Set và Hibernate, nó sẽ tự động tính toán cái nào cần thêm/xóa trong bảng trung
+        // gian)
         question.setTags(new HashSet<>(tags));
         questionRepository.save(question);
     }
@@ -116,7 +118,8 @@ public class TagServiceImpl implements TagService {
     @Override
     @Transactional
     public void assignTagsToStimulus(Integer stimulusId, TagAssignRequest request) {
-        Stimulus stimulus = stimulusRepository.findById(stimulusId)
+        Stimulus stimulus = stimulusRepository
+                .findById(stimulusId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy Đoạn văn/Audio với ID: " + stimulusId));
 
         List<Tag> tags = tagRepository.findAllById(request.getTagIds());
@@ -131,7 +134,8 @@ public class TagServiceImpl implements TagService {
     @Override
     @Transactional
     public void assignTagsToTest(Integer testId, TagAssignRequest request) {
-        Test test = testRepository.findById(testId)
+        Test test = testRepository
+                .findById(testId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy Đề thi với ID: " + testId));
 
         List<Tag> tags = tagRepository.findAllById(request.getTagIds());

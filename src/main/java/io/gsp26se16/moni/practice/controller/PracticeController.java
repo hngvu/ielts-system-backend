@@ -1,5 +1,7 @@
 package io.gsp26se16.moni.practice.controller;
 
+import java.util.List;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -8,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.practice.dto.request.SubmitAttemptRequest;
+import io.gsp26se16.moni.practice.dto.response.AttemptHistoryResponse;
 import io.gsp26se16.moni.practice.dto.response.SubmitAttemptResponse;
 import io.gsp26se16.moni.practice.service.PracticeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,6 +46,17 @@ public class PracticeController {
                 .code(1000)
                 .message("Lấy kết quả bài làm thành công")
                 .result(result)
+                .build());
+    }
+
+    @GetMapping("/attempts")
+    @Operation(summary = "Get user's practice attempt history")
+    public ResponseEntity<ApiResponse<List<AttemptHistoryResponse>>> getAttemptHistory() {
+        List<AttemptHistoryResponse> history = practiceService.getAttemptHistory();
+        return ResponseEntity.ok(ApiResponse.<List<AttemptHistoryResponse>>builder()
+                .code(1000)
+                .message("Lấy lịch sử làm bài thành công")
+                .result(history)
                 .build());
     }
 }
