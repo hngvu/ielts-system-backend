@@ -21,9 +21,9 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://ep-purple-mountain-ah918pfk.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
-    username: neondb_owner
-    password: npg_Lh8S1dtzMNpK
+    url: jdbc:postgresql://pg-2e2d5154-moni.f.aivencloud.com:27573/defaultdb?sslmode=require
+    username: avnadmin
+    password: ${DB_PASSWORD}
     hikari:
       minimum-idle: 2
       maximum-pool-size: 5

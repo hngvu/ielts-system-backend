@@ -34,6 +34,15 @@ public class Users {
 
     Double credit;
 
+    // IELTS target scores
+    Double targetReading;
+    Double targetListening;
+    Double targetWriting;
+    Double targetSpeaking;
+    Double targetBand; // overall target
+
+    LocalDate examDate;
+
     @OneToOne(mappedBy = "user")
     UserCredentials credential;
 
