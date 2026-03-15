@@ -28,7 +28,26 @@ public class VocabController {
     private final VocabSearchService vocabSearchService;
     private final VocabLearningService vocabLearningService;
     private final CuratedWordService curatedWordService;
+    private final CuratedWordEnricher curatedWordEnricher;
     private final VocabAuthHelper vocabAuthHelper;
+
+    // --- Enrichment ---
+
+    @PostMapping("/enrich")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> startEnrichment() {
+        curatedWordEnricher.startEnrichment();
+        return ResponseEntity.ok(ApiResponse.<java.util.Map<String, Object>>builder()
+                .result(curatedWordEnricher.getStatus())
+                .message("Enrichment started")
+                .build());
+    }
+
+    @GetMapping("/enrich/status")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> enrichmentStatus() {
+        return ResponseEntity.ok(ApiResponse.<java.util.Map<String, Object>>builder()
+                .result(curatedWordEnricher.getStatus())
+                .build());
+    }
 
     // --- Existing endpoint ---
 
@@ -126,7 +145,7 @@ public class VocabController {
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<VocabSearchResponse>> search(@RequestParam String q) {
-        String credentialId = getCredentialId();
+        String credentialId = resolveOptionalUserId();
         VocabSearchResponse result = vocabSearchService.searchWord(credentialId, q);
         return ResponseEntity.ok(
                 ApiResponse.<VocabSearchResponse>builder().result(result).build());

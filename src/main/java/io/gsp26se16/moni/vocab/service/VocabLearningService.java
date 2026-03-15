@@ -158,13 +158,17 @@ public class VocabLearningService {
                             .build())
                     .toList();
         } else {
-            pairs = curatedWordRepository.findByFilters(band, topic, null, Pageable.ofSize(count)).getContent().stream()
-                    .map(c -> WordMatchPair.builder()
-                            .word(c.getWord())
-                            .definition(c.getDefinition())
-                            .meaning(c.getMeaning())
-                            .build())
-                    .toList();
+            pairs =
+                    curatedWordRepository
+                            .findByFilters(band, topic, null, null, Pageable.ofSize(count))
+                            .getContent()
+                            .stream()
+                            .map(c -> WordMatchPair.builder()
+                                    .word(c.getWord())
+                                    .definition(c.getDefinition())
+                                    .meaning(c.getMeaning())
+                                    .build())
+                            .toList();
         }
         return WordMatchResponse.builder().pairs(pairs).build();
     }
@@ -181,7 +185,7 @@ public class VocabLearningService {
                     .map(v -> new WordEntry(v.getWord(), v.getDefinition(), v.getMeaning(), v.getExample()))
                     .toList();
         }
-        return curatedWordRepository.findByFilters(band, topic, null, Pageable.ofSize(200)).getContent().stream()
+        return curatedWordRepository.findByFilters(band, topic, null, null, Pageable.ofSize(200)).getContent().stream()
                 .map(c -> new WordEntry(c.getWord(), c.getDefinition(), c.getMeaning(), c.getExample()))
                 .toList();
     }

@@ -30,7 +30,7 @@ public class VocabSearchService {
 
     public VocabSearchResponse searchWord(String credentialId, String query) {
         String word = query.trim().toLowerCase();
-        Users user = authHelper.getUser(credentialId);
+        Users user = credentialId != null ? authHelper.getUser(credentialId) : null;
 
         // Step 1: Check Dictionary cache
         Dictionary dict = dictionaryRepository.findFirstByWordIgnoreCase(word).orElseGet(() -> {
@@ -40,7 +40,7 @@ public class VocabSearchService {
         });
 
         // Step 5: Check if user already saved this word
-        boolean saved = vocabRepository.existsByUserIdAndWord(user.getId(), word);
+        boolean saved = user != null && vocabRepository.existsByUserIdAndWord(user.getId(), word);
 
         return VocabSearchResponse.builder()
                 .word(dict.getWord())

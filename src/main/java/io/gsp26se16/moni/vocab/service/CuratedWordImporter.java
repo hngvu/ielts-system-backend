@@ -52,6 +52,11 @@ public class CuratedWordImporter implements ApplicationRunner {
     private static final String CSV_URL =
             "https://raw.githubusercontent.com/Maximax67/Words-CEFR-Dataset/main/datasets/word_list_cefr.csv";
 
+    private static final String C1C2_CSV_URL =
+            "https://raw.githubusercontent.com/openlanguageprofiles/olp-en-cefrj/master/octanove-vocabulary-profile-c1c2-1.0.csv";
+
+    private static final List<String> C1C2_BANDS = List.of("7-8", "8.5-9");
+
     private static final Map<String, String> BAND_MAP = Map.of(
             "A2", "3-4",
             "B1", "4-5",
@@ -327,18 +332,35 @@ public class CuratedWordImporter implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         long existing = curatedWordRepository.count();
-        if (existing > 0) {
-            log.info("CEFR data already imported ({} words). Skipping.", existing);
-            return;
+        if (existing == 0) {
+            log.info("No curated words found. Importing CEFR dataset...");
+            try {
+                List<CuratedWord> words = downloadAndParse();
+                batchInsert(words, jdbcTemplate);
+                log.info("CEFR import complete: {} words imported.", words.size());
+            } catch (Exception e) {
+                log.error("CEFR import failed: {}", e.getMessage(), e);
+            }
+        } else {
+            log.info("CEFR data already imported ({} words). Skipping main import.", existing);
         }
 
-        log.info("No curated words found. Importing CEFR dataset...");
-        try {
-            List<CuratedWord> words = downloadAndParse();
-            batchInsert(words, jdbcTemplate);
-            log.info("CEFR import complete: {} words imported.", words.size());
-        } catch (Exception e) {
-            log.error("CEFR import failed: {}", e.getMessage(), e);
+        long c1c2Count = curatedWordRepository.countByBandIn(C1C2_BANDS);
+        if (c1c2Count == 0) {
+            log.info("No C1/C2 words found. Importing Octanove C1/C2 dataset...");
+            try {
+                List<CuratedWord> c1c2Words = downloadAndParseC1C2();
+                if (!c1c2Words.isEmpty()) {
+                    batchInsert(c1c2Words, jdbcTemplate);
+                    log.info("Octanove C1/C2 import complete: {} words imported.", c1c2Words.size());
+                } else {
+                    log.warn("Octanove C1/C2 dataset returned 0 new words.");
+                }
+            } catch (Exception e) {
+                log.error("Octanove C1/C2 import failed: {}", e.getMessage(), e);
+            }
+        } else {
+            log.info("C1/C2 words already exist ({} words). Skipping Octanove import.", c1c2Count);
         }
     }
 
@@ -367,6 +389,49 @@ public class CuratedWordImporter implements ApplicationRunner {
 
                 String band = BAND_MAP.get(cefr);
                 if (band == null) continue; // skip A1 or unknown
+
+                CuratedWord cw = CuratedWord.builder()
+                        .word(word)
+                        .pos(pos.isEmpty() ? null : pos)
+                        .cefrLevel(cefr)
+                        .band(band)
+                        .topic(detectTopic(word))
+                        .build();
+                result.add(cw);
+            }
+        }
+        return result;
+    }
+
+    private List<CuratedWord> downloadAndParseC1C2() throws Exception {
+        // Load existing words from DB to avoid duplicates
+        Set<String> existingWords = new HashSet<>(curatedWordRepository.findWordByBandIn(C1C2_BANDS));
+        Set<String> seen = new HashSet<>(existingWords);
+
+        List<CuratedWord> result = new ArrayList<>();
+
+        try (var in = URI.create(C1C2_CSV_URL).toURL().openStream();
+                var reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+
+            String header = reader.readLine(); // skip header: headword,pos,CEFR,notes
+            if (header == null) return result;
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // comma-separated: headword,pos,CEFR,notes
+                String[] parts = line.split(",", -1);
+                if (parts.length < 3) continue;
+
+                String word = parts[0].trim().toLowerCase();
+                String pos = parts[1].trim();
+                String cefr = parts[2].trim().toUpperCase();
+
+                if (word.isEmpty() || cefr.isEmpty()) continue;
+                if (seen.contains(word)) continue;
+                seen.add(word);
+
+                String band = BAND_MAP.get(cefr);
+                if (band == null) continue; // skip unexpected CEFR values
 
                 CuratedWord cw = CuratedWord.builder()
                         .word(word)

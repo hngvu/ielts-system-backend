@@ -31,4 +31,13 @@ public interface CuratedWordRepository extends JpaRepository<CuratedWord, Intege
     @Query("SELECT c.topic, COUNT(c) FROM CuratedWord c "
             + "WHERE c.topic IS NOT NULL GROUP BY c.topic ORDER BY c.topic")
     List<Object[]> countByTopic();
+
+    @Query("SELECT c FROM CuratedWord c WHERE c.meaning IS NULL OR c.definition IS NULL ORDER BY c.id")
+    List<CuratedWord> findUnenriched();
+
+    long countByMeaningIsNotNull();
+
+    long countByBandIn(java.util.Collection<String> bands);
+
+    java.util.List<String> findWordByBandIn(java.util.Collection<String> bands);
 }
