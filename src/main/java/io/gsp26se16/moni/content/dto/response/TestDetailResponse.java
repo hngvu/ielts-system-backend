@@ -32,6 +32,7 @@ public class TestDetailResponse {
         private String content;
         private String mediaUrl;
         private Integer section;
+        private List<Map<String, Object>> transcript;
         private List<QuestionGroupDetail> questionGroups;
     }
 
