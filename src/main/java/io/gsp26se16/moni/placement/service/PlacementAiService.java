@@ -28,10 +28,28 @@ public class PlacementAiService {
 
         String prompt = buildPrompt(request, daysRemaining);
 
-        ChatClient chatClient = chatClientBuilder.build();
-        String response = chatClient.prompt().user(prompt).call().content();
+        try {
+            ChatClient chatClient = chatClientBuilder.build();
+            String response = chatClient.prompt().user(prompt).call().content();
+            log.info("AI recommend raw response: {}", response);
 
-        return parseResponse(response);
+            if (response == null || response.isBlank()) {
+                log.error("AI returned empty response");
+                return fallbackResponse();
+            }
+
+            return parseResponse(response);
+        } catch (Exception e) {
+            log.error("AI recommend call failed", e);
+            return fallbackResponse();
+        }
+    }
+
+    private AiRecommendResponse fallbackResponse() {
+        return AiRecommendResponse.builder()
+                .analysis("Không thể kết nối AI. Vui lòng thử lại sau.")
+                .studyPlan("")
+                .build();
     }
 
     private String buildPrompt(AiRecommendRequest req, long daysRemaining) {

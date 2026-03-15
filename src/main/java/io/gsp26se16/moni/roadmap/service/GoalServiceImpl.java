@@ -15,7 +15,9 @@ import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.content.entity.Stimulus;
+import io.gsp26se16.moni.content.entity.TestStructure;
 import io.gsp26se16.moni.content.repository.StimulusRepository;
+import io.gsp26se16.moni.content.repository.TestStructureRepository;
 import io.gsp26se16.moni.roadmap.dto.request.GoalCreateRequest;
 import io.gsp26se16.moni.roadmap.dto.request.GoalUpdateRequest;
 import io.gsp26se16.moni.roadmap.dto.request.TaskStatusUpdateRequest;
@@ -46,6 +48,7 @@ public class GoalServiceImpl implements GoalService {
     private final UserCredentialsRepository userCredentialsRepository;
     private final LearnerMetricRepository learnerMetricRepository;
     private final StimulusRepository stimulusRepository;
+    private final TestStructureRepository testStructureRepository;
 
     @Override
     @Transactional
@@ -347,11 +350,24 @@ public class GoalServiceImpl implements GoalService {
                                                 .sum();
                                     }
 
+                                    Integer testId = task.getTest() != null
+                                            ? task.getTest().getId()
+                                            : null;
+                                    // Lookup testId from TestStructure if not set directly
+                                    if (testId == null && stimulusId != null) {
+                                        List<TestStructure> structures =
+                                                testStructureRepository.findByStimulusId(stimulusId);
+                                        if (!structures.isEmpty()) {
+                                            testId = structures.get(0).getTest().getId();
+                                        }
+                                    }
+
                                     return TaskResponse.builder()
                                             .id(task.getId())
                                             .order(task.getOrder())
                                             .taskType(task.getTaskType())
                                             .status(task.getStatus())
+                                            .testId(testId)
                                             .stimulusId(stimulusId)
                                             .stimulusTitle(stimulusTitle)
                                             .questionCount(questionCount)
