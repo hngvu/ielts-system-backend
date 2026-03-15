@@ -8,4 +8,6 @@ public interface QuestionGroupService {
     void deleteQuestionGroup(Integer id);
 
     void updateImageUrl(Integer id, String imageUrl);
+
+    void updateGroupContent(Integer id, String groupContent);
 }

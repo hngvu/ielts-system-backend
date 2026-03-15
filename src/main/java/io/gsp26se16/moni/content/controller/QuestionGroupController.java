@@ -51,6 +51,15 @@ public class QuestionGroupController {
                 ApiResponse.<Void>builder().code(1000).message("Updated").build());
     }
 
+    @PatchMapping("/question-groups/{id}/group-content")
+    @Operation(summary = "Update QuestionGroup groupContent (gap-fill paragraph)")
+    public ResponseEntity<ApiResponse<Void>> updateGroupContent(
+            @PathVariable Integer id, @RequestBody java.util.Map<String, String> body) {
+        questionGroupService.updateGroupContent(id, body.get("groupContent"));
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder().code(1000).message("Updated").build());
+    }
+
     @PostMapping("/question-groups/{groupId}/questions")
     @Operation(summary = "Create Question under a QuestionGroup")
     public ResponseEntity<ApiResponse<Integer>> createQuestion(
