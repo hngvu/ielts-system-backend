@@ -52,6 +52,7 @@ public enum ErrorCode {
     ROADMAP_NOT_FOUND(1040, "Không tìm thấy lộ trình học", HttpStatus.NOT_FOUND),
     TEST_NOT_FOUND(1041, "Không tìm thấy bài thi IELTS", HttpStatus.NOT_FOUND),
     VOCAB_COLLECTION_NOT_FOUND(1042, "Không tìm thấy bộ từ vựng", HttpStatus.NOT_FOUND),
+    VOCAB_NOT_FOUND(1049, "Không tìm thấy từ vựng", HttpStatus.NOT_FOUND),
 
     // --- TAG MODULE ---
     TAG_EXISTED(1043, "Mã hoặc tên tag đã tồn tại", HttpStatus.BAD_REQUEST),
