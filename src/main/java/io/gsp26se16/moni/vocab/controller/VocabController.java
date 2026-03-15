@@ -184,36 +184,53 @@ public class VocabController {
                 ApiResponse.<WordMatchResponse>builder().result(result).build());
     }
 
-    // --- Browse curated words ---
+    // --- Browse curated words (public) ---
 
     @GetMapping("/browse")
-    public ResponseEntity<ApiResponse<Page<CuratedWord>>> browse(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
+    public ResponseEntity<ApiResponse<Page<CuratedWordResponse>>> browse(
             @RequestParam(required = false) String band,
             @RequestParam(required = false) String topic,
-            @RequestParam(required = false) String search) {
-        var pageable = PageRequest.of(page, size);
-        Page<CuratedWord> result = curatedWordRepository.findByFilters(band, topic, search, pageable);
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        String userId = resolveOptionalUserId();
+        Page<CuratedWordResponse> result = curatedWordService.browse(band, topic, search, page, size, userId);
         return ResponseEntity.ok(
-                ApiResponse.<Page<CuratedWord>>builder().result(result).build());
+                ApiResponse.<Page<CuratedWordResponse>>builder().result(result).build());
     }
 
-    @GetMapping("/topics")
-    public ResponseEntity<ApiResponse<List<Object[]>>> getTopics() {
-        return ResponseEntity.ok(ApiResponse.<List<Object[]>>builder()
-                .result(curatedWordRepository.countByTopic())
+    @GetMapping("/browse/topics")
+    public ResponseEntity<ApiResponse<List<TopicSummary>>> browseTopics() {
+        return ResponseEntity.ok(ApiResponse.<List<TopicSummary>>builder()
+                .result(curatedWordService.getTopics())
                 .build());
     }
 
-    @GetMapping("/bands")
-    public ResponseEntity<ApiResponse<List<Object[]>>> getBands() {
-        return ResponseEntity.ok(ApiResponse.<List<Object[]>>builder()
-                .result(curatedWordRepository.countByBand())
+    @GetMapping("/browse/bands")
+    public ResponseEntity<ApiResponse<List<BandSummary>>> browseBands() {
+        return ResponseEntity.ok(ApiResponse.<List<BandSummary>>builder()
+                .result(curatedWordService.getBands())
                 .build());
     }
 
-    // --- Helper ---
+    // --- Helpers ---
+
+    /** Returns Users.id if authenticated, null otherwise (for public endpoints). */
+    private String resolveOptionalUserId() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) return null;
+        if (auth.getPrincipal() instanceof Jwt jwt) {
+            String credentialId = jwt.getClaimAsString("userId");
+            if (credentialId != null) {
+                try {
+                    return vocabAuthHelper.getUser(credentialId).getId();
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
 
     private String getCredentialId() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
