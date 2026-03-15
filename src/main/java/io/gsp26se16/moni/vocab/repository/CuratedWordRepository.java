@@ -6,28 +6,27 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import io.gsp26se16.moni.vocab.entity.CuratedWord;
 
 public interface CuratedWordRepository extends JpaRepository<CuratedWord, Integer> {
 
-    Page<CuratedWord> findByBand(String band, Pageable pageable);
-
-    Page<CuratedWord> findByTopic(String topic, Pageable pageable);
-
-    Page<CuratedWord> findByBandAndTopic(String band, String topic, Pageable pageable);
-
-    @Query("SELECT DISTINCT c.topic FROM CuratedWord c WHERE c.topic IS NOT NULL ORDER BY c.topic")
-    List<String> findDistinctTopics();
-
-    @Query("SELECT DISTINCT c.band FROM CuratedWord c WHERE c.band IS NOT NULL ORDER BY c.band")
-    List<String> findDistinctBands();
-
-    @Query(
-            "SELECT c FROM CuratedWord c WHERE (:band IS NULL OR c.band = :band) AND (:topic IS NULL OR c.topic = :topic) AND (:cefrLevel IS NULL OR c.cefrLevel = :cefrLevel)")
+    @Query("SELECT c FROM CuratedWord c WHERE "
+            + "(:band IS NULL OR c.band = :band) AND "
+            + "(:topic IS NULL OR c.topic = :topic) AND "
+            + "(:search IS NULL OR LOWER(c.word) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<CuratedWord> findByFilters(
-            @org.springframework.data.repository.query.Param("band") String band,
-            @org.springframework.data.repository.query.Param("topic") String topic,
-            @org.springframework.data.repository.query.Param("cefrLevel") String cefrLevel,
+            @Param("band") String band,
+            @Param("topic") String topic,
+            @Param("search") String search,
             Pageable pageable);
+
+    @Query("SELECT c.band AS band, MIN(c.cefrLevel) AS cefrLevel, COUNT(c) AS wordCount "
+            + "FROM CuratedWord c GROUP BY c.band ORDER BY c.band")
+    List<Object[]> countByBand();
+
+    @Query("SELECT c.topic, COUNT(c) FROM CuratedWord c "
+            + "WHERE c.topic IS NOT NULL GROUP BY c.topic ORDER BY c.topic")
+    List<Object[]> countByTopic();
 }

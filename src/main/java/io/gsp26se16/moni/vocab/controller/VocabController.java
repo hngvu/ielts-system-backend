@@ -3,7 +3,6 @@ package io.gsp26se16.moni.vocab.controller;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -13,8 +12,6 @@ import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.vocab.dto.*;
-import io.gsp26se16.moni.vocab.entity.CuratedWord;
-import io.gsp26se16.moni.vocab.repository.CuratedWordRepository;
 import io.gsp26se16.moni.vocab.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +27,8 @@ public class VocabController {
     private final VocabListService vocabListService;
     private final VocabSearchService vocabSearchService;
     private final VocabLearningService vocabLearningService;
-    private final CuratedWordRepository curatedWordRepository;
+    private final CuratedWordService curatedWordService;
+    private final VocabAuthHelper vocabAuthHelper;
 
     // --- Existing endpoint ---
 
@@ -194,24 +192,24 @@ public class VocabController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String band,
             @RequestParam(required = false) String topic,
-            @RequestParam(required = false) String cefrLevel) {
+            @RequestParam(required = false) String search) {
         var pageable = PageRequest.of(page, size);
-        Page<CuratedWord> result = curatedWordRepository.findByFilters(band, topic, cefrLevel, pageable);
+        Page<CuratedWord> result = curatedWordRepository.findByFilters(band, topic, search, pageable);
         return ResponseEntity.ok(
                 ApiResponse.<Page<CuratedWord>>builder().result(result).build());
     }
 
     @GetMapping("/topics")
-    public ResponseEntity<ApiResponse<List<String>>> getTopics() {
-        return ResponseEntity.ok(ApiResponse.<List<String>>builder()
-                .result(curatedWordRepository.findDistinctTopics())
+    public ResponseEntity<ApiResponse<List<Object[]>>> getTopics() {
+        return ResponseEntity.ok(ApiResponse.<List<Object[]>>builder()
+                .result(curatedWordRepository.countByTopic())
                 .build());
     }
 
     @GetMapping("/bands")
-    public ResponseEntity<ApiResponse<List<String>>> getBands() {
-        return ResponseEntity.ok(ApiResponse.<List<String>>builder()
-                .result(curatedWordRepository.findDistinctBands())
+    public ResponseEntity<ApiResponse<List<Object[]>>> getBands() {
+        return ResponseEntity.ok(ApiResponse.<List<Object[]>>builder()
+                .result(curatedWordRepository.countByBand())
                 .build());
     }
 
