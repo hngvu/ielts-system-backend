@@ -19,4 +19,15 @@ public interface CuratedWordRepository extends JpaRepository<CuratedWord, Intege
 
     @Query("SELECT DISTINCT c.topic FROM CuratedWord c WHERE c.topic IS NOT NULL ORDER BY c.topic")
     List<String> findDistinctTopics();
+
+    @Query("SELECT DISTINCT c.band FROM CuratedWord c WHERE c.band IS NOT NULL ORDER BY c.band")
+    List<String> findDistinctBands();
+
+    @Query(
+            "SELECT c FROM CuratedWord c WHERE (:band IS NULL OR c.band = :band) AND (:topic IS NULL OR c.topic = :topic) AND (:cefrLevel IS NULL OR c.cefrLevel = :cefrLevel)")
+    Page<CuratedWord> findByFilters(
+            @org.springframework.data.repository.query.Param("band") String band,
+            @org.springframework.data.repository.query.Param("topic") String topic,
+            @org.springframework.data.repository.query.Param("cefrLevel") String cefrLevel,
+            Pageable pageable);
 }

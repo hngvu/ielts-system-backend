@@ -3,6 +3,7 @@ package io.gsp26se16.moni.vocab.controller;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -12,6 +13,8 @@ import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.vocab.dto.*;
+import io.gsp26se16.moni.vocab.entity.CuratedWord;
+import io.gsp26se16.moni.vocab.repository.CuratedWordRepository;
 import io.gsp26se16.moni.vocab.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +29,8 @@ public class VocabController {
     private final VocabService vocabService;
     private final VocabListService vocabListService;
     private final VocabSearchService vocabSearchService;
+    private final VocabLearningService vocabLearningService;
+    private final CuratedWordRepository curatedWordRepository;
 
     // --- Existing endpoint ---
 
@@ -127,6 +132,87 @@ public class VocabController {
         VocabSearchResponse result = vocabSearchService.searchWord(credentialId, q);
         return ResponseEntity.ok(
                 ApiResponse.<VocabSearchResponse>builder().result(result).build());
+    }
+
+    // --- Learning / Review ---
+
+    @GetMapping("/due-review")
+    public ResponseEntity<ApiResponse<List<VocabResponse>>> getDueReview(@RequestParam(defaultValue = "20") int limit) {
+        String credentialId = getCredentialId();
+        List<VocabResponse> result = vocabLearningService.getDueReview(credentialId, limit);
+        return ResponseEntity.ok(
+                ApiResponse.<List<VocabResponse>>builder().result(result).build());
+    }
+
+    @PatchMapping("/{id}/review")
+    public ResponseEntity<ApiResponse<Void>> submitReview(
+            @PathVariable Integer id, @RequestBody ReviewRequest request) {
+        String credentialId = getCredentialId();
+        vocabLearningService.submitReview(credentialId, id, request.getQuality());
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder().message("Đã lưu kết quả ôn tập").build());
+    }
+
+    @GetMapping("/review-stats")
+    public ResponseEntity<ApiResponse<ReviewStatsResponse>> getReviewStats() {
+        String credentialId = getCredentialId();
+        ReviewStatsResponse result = vocabLearningService.getReviewStats(credentialId);
+        return ResponseEntity.ok(
+                ApiResponse.<ReviewStatsResponse>builder().result(result).build());
+    }
+
+    @GetMapping("/quiz")
+    public ResponseEntity<ApiResponse<QuizResponse>> generateQuiz(
+            @RequestParam(defaultValue = "10") int count,
+            @RequestParam(defaultValue = "curated") String source,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String band,
+            @RequestParam(required = false) String topic) {
+        String credentialId = "saved".equals(source) ? getCredentialId() : null;
+        QuizResponse result = vocabLearningService.generateQuiz(credentialId, count, source, type, band, topic);
+        return ResponseEntity.ok(
+                ApiResponse.<QuizResponse>builder().result(result).build());
+    }
+
+    @GetMapping("/word-match")
+    public ResponseEntity<ApiResponse<WordMatchResponse>> getWordMatch(
+            @RequestParam(defaultValue = "10") int count,
+            @RequestParam(defaultValue = "curated") String source,
+            @RequestParam(required = false) String band,
+            @RequestParam(required = false) String topic) {
+        String credentialId = "saved".equals(source) ? getCredentialId() : null;
+        WordMatchResponse result = vocabLearningService.getWordMatch(credentialId, count, source, band, topic);
+        return ResponseEntity.ok(
+                ApiResponse.<WordMatchResponse>builder().result(result).build());
+    }
+
+    // --- Browse curated words ---
+
+    @GetMapping("/browse")
+    public ResponseEntity<ApiResponse<Page<CuratedWord>>> browse(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String band,
+            @RequestParam(required = false) String topic,
+            @RequestParam(required = false) String cefrLevel) {
+        var pageable = PageRequest.of(page, size);
+        Page<CuratedWord> result = curatedWordRepository.findByFilters(band, topic, cefrLevel, pageable);
+        return ResponseEntity.ok(
+                ApiResponse.<Page<CuratedWord>>builder().result(result).build());
+    }
+
+    @GetMapping("/topics")
+    public ResponseEntity<ApiResponse<List<String>>> getTopics() {
+        return ResponseEntity.ok(ApiResponse.<List<String>>builder()
+                .result(curatedWordRepository.findDistinctTopics())
+                .build());
+    }
+
+    @GetMapping("/bands")
+    public ResponseEntity<ApiResponse<List<String>>> getBands() {
+        return ResponseEntity.ok(ApiResponse.<List<String>>builder()
+                .result(curatedWordRepository.findDistinctBands())
+                .build());
     }
 
     // --- Helper ---
