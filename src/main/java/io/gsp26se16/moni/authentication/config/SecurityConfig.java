@@ -48,7 +48,21 @@ public class SecurityConfig {
                 .permitAll()
                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS)
                 .permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/vocab/lookup", "/api/v1/tests", "/api/v1/tests/**")
+                .requestMatchers(
+                        HttpMethod.GET,
+                        "/api/v1/vocab/lookup",
+                        "/api/v1/vocab/browse",
+                        "/api/v1/vocab/browse/**",
+                        "/api/v1/vocab/bands",
+                        "/api/v1/vocab/topics",
+                        "/api/v1/vocab/quiz",
+                        "/api/v1/vocab/word-match",
+                        "/api/v1/vocab/enrich/status",
+                        "/api/v1/vocab/search",
+                        "/api/v1/tests",
+                        "/api/v1/tests/**")
+                .permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/vocab/enrich")
                 .permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
                 .permitAll()
