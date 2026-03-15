@@ -42,6 +42,15 @@ public class QuestionGroupController {
                 ApiResponse.<Void>builder().code(1000).message("Deleted").build());
     }
 
+    @PatchMapping("/question-groups/{id}/image-url")
+    @Operation(summary = "Update QuestionGroup imageUrl")
+    public ResponseEntity<ApiResponse<Void>> updateImageUrl(
+            @PathVariable Integer id, @RequestBody java.util.Map<String, String> body) {
+        questionGroupService.updateImageUrl(id, body.get("imageUrl"));
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder().code(1000).message("Updated").build());
+    }
+
     @PostMapping("/question-groups/{groupId}/questions")
     @Operation(summary = "Create Question under a QuestionGroup")
     public ResponseEntity<ApiResponse<Integer>> createQuestion(

@@ -6,4 +6,6 @@ public interface QuestionGroupService {
     Integer createForStimulus(Integer stimulusId, QuestionGroupCreateRequest request);
 
     void deleteQuestionGroup(Integer id);
+
+    void updateImageUrl(Integer id, String imageUrl);
 }

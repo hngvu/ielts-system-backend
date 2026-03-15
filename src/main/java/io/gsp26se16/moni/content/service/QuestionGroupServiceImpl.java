@@ -64,6 +64,16 @@ public class QuestionGroupServiceImpl implements QuestionGroupService {
         questionGroupRepository.delete(group);
     }
 
+    @Override
+    @Transactional
+    public void updateImageUrl(Integer id, String imageUrl) {
+        QuestionGroup group = questionGroupRepository
+                .findById(id)
+                .orElseThrow(() -> new RuntimeException("QuestionGroup not found: " + id));
+        group.setImageUrl(imageUrl);
+        questionGroupRepository.save(group);
+    }
+
     // shared helper — also used by QuestionServiceImpl via QuestionGroupServiceImpl injection
     void saveQuestion(QuestionGroup group, QuestionCreateRequest qReq) {
         Question question = new Question();
