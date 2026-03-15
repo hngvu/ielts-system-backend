@@ -1,5 +1,8 @@
 package io.gsp26se16.moni.content.service;
 
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,6 +33,7 @@ public class StimulusServiceImpl implements StimulusService {
     private final QuestionRepository questionRepository;
     private final TagRepository tagRepository;
     private final UsersRepository userRepository;
+    private final TranscriptService transcriptService;
 
     @Override
     @Transactional
@@ -86,11 +90,13 @@ public class StimulusServiceImpl implements StimulusService {
 
     @Override
     @Transactional
-    public void updateStimulus(Integer id, String content, String mediaUrl) {
+    @SuppressWarnings("unchecked")
+    public void updateStimulus(Integer id, String content, String mediaUrl, Object transcript) {
         Stimulus stimulus =
                 stimulusRepository.findById(id).orElseThrow(() -> new RuntimeException("Stimulus not found: " + id));
         if (content != null) stimulus.setContent(content);
         if (mediaUrl != null) stimulus.setMediaUrl(mediaUrl);
+        if (transcript != null) stimulus.setTranscript((List<Map<String, Object>>) transcript);
         stimulusRepository.save(stimulus);
     }
 
@@ -104,5 +110,28 @@ public class StimulusServiceImpl implements StimulusService {
                 .skill(s.getSkill())
                 .status(s.getStatus())
                 .build());
+    }
+
+    @Override
+    @Transactional
+    public List<Map<String, Object>> transcribeAndSave(Integer stimulusId) {
+        Stimulus stimulus = stimulusRepository
+                .findById(stimulusId)
+                .orElseThrow(() -> new RuntimeException("Stimulus not found: " + stimulusId));
+        if (stimulus.getMediaUrl() == null || stimulus.getMediaUrl().isBlank()) {
+            throw new RuntimeException("Stimulus không có audio URL");
+        }
+        List<Map<String, Object>> transcript = transcriptService.transcribeAudio(stimulus.getMediaUrl());
+        stimulus.setTranscript(transcript);
+        stimulusRepository.save(stimulus);
+        return transcript;
+    }
+
+    @Override
+    public List<Map<String, Object>> getTranscript(Integer stimulusId) {
+        Stimulus stimulus = stimulusRepository
+                .findById(stimulusId)
+                .orElseThrow(() -> new RuntimeException("Stimulus not found: " + stimulusId));
+        return stimulus.getTranscript();
     }
 }

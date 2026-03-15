@@ -1,5 +1,8 @@
 package io.gsp26se16.moni.content.controller;
 
+import java.util.List;
+import java.util.Map;
+
 import jakarta.validation.Valid;
 
 import org.springframework.data.domain.Page;
@@ -36,11 +39,32 @@ public class StimulusController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> updateStimulus(
-            @PathVariable Integer id, @RequestBody java.util.Map<String, String> body) {
-        stimulusService.updateStimulus(id, body.get("content"), body.get("mediaUrl"));
+            @PathVariable Integer id, @RequestBody Map<String, Object> body) {
+        stimulusService.updateStimulus(
+                id, (String) body.get("content"), (String) body.get("mediaUrl"), body.get("transcript"));
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .code(1000)
                 .message("Cập nhật ngữ liệu thành công")
+                .build());
+    }
+
+    @PostMapping("/{id}/transcribe")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> transcribeStimulus(@PathVariable Integer id) {
+        List<Map<String, Object>> transcript = stimulusService.transcribeAndSave(id);
+        return ResponseEntity.ok(ApiResponse.<List<Map<String, Object>>>builder()
+                .code(1000)
+                .message("Transcript tạo thành công")
+                .result(transcript)
+                .build());
+    }
+
+    @GetMapping("/{id}/transcript")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getTranscript(@PathVariable Integer id) {
+        List<Map<String, Object>> transcript = stimulusService.getTranscript(id);
+        return ResponseEntity.ok(ApiResponse.<List<Map<String, Object>>>builder()
+                .code(1000)
+                .message("Lấy transcript thành công")
+                .result(transcript)
                 .build());
     }
 

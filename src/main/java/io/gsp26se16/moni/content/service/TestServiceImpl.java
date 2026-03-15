@@ -198,6 +198,7 @@ public class TestServiceImpl implements TestService {
                             .content(s.getContent())
                             .mediaUrl(s.getMediaUrl())
                             .section(ts.getSection())
+                            .transcript(s.getTranscript())
                             .questionGroups(groupDetails)
                             .build();
                 })

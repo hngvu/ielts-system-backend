@@ -52,6 +52,10 @@ public class Stimulus {
     @Column(name = "vison_analysis_result", columnDefinition = "jsonb")
     Map<String, Object> visonAnalysisResult;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "transcript", columnDefinition = "jsonb")
+    List<Map<String, Object>> transcript;
+
     @OneToMany(mappedBy = "stimulus", cascade = CascadeType.ALL)
     List<QuestionGroup> questionGroups = new ArrayList<>();
 

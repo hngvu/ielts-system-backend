@@ -59,6 +59,10 @@ sepay:
   acc: ACB
   bank: 21736271
 
+assemblyai:
+  api-key: ${ASSEMBLYAI_API_KEY}
+  base-url: https://api.assemblyai.com/v2
+
 logging:
   level:
     org.springframework.web.client: DEBUG
