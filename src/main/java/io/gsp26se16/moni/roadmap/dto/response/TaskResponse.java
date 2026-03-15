@@ -17,6 +17,7 @@ public class TaskResponse {
     Integer order;
     String taskType;
     String status;
+    Integer testId;
     Integer stimulusId;
     String stimulusTitle;
     Integer questionCount;

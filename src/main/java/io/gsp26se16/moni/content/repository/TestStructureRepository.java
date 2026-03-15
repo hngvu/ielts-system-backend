@@ -12,6 +12,8 @@ public interface TestStructureRepository extends JpaRepository<TestStructure, In
     // Tìm cấu trúc của một đề thi cụ thể
     List<TestStructure> findByTestId(Integer testId);
 
+    List<TestStructure> findByStimulusId(Integer stimulusId);
+
     void deleteByTestIdAndStimulusId(Integer testId, Integer stimulusId);
 
     boolean existsByTestIdAndStimulusId(Integer testId, Integer stimulusId);
