@@ -23,14 +23,16 @@ public class CuratedWordService {
     private final VocabRepository vocabRepository;
 
     public Page<CuratedWordResponse> browse(
-            String band, String topic, String search, int page, int size, String userId) {
+            String band, String topic, String pos, String search, int page, int size, String userId) {
 
         String bandParam = (band != null && !band.isBlank()) ? band : null;
         String topicParam = (topic != null && !topic.isBlank()) ? topic : null;
+        String posParam = (pos != null && !pos.isBlank()) ? pos : null;
         String searchParam = (search != null && !search.isBlank()) ? search : null;
 
         var pageable = PageRequest.of(page, size, Sort.by("word").ascending());
-        Page<CuratedWord> result = curatedWordRepository.findByFilters(bandParam, topicParam, searchParam, pageable);
+        Page<CuratedWord> result =
+                curatedWordRepository.findByFilters(bandParam, topicParam, posParam, searchParam, pageable);
 
         return result.map(c -> toResponse(c, userId));
     }

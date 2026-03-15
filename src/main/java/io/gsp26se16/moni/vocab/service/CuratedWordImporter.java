@@ -12,6 +12,7 @@ import java.util.Set;
 
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import io.gsp26se16.moni.vocab.entity.CuratedWord;
@@ -23,6 +24,30 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class CuratedWordImporter implements ApplicationRunner {
+
+    /* ───── batch-insert helper (JDBC, much faster than saveAll over remote DB) ───── */
+    private void batchInsert(List<CuratedWord> words, JdbcTemplate jdbc) {
+        String sql =
+                "INSERT INTO curated_word (word, pos, cefr_level, band, topic, phonetic, definition, example, meaning, audio_url) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        int batchSize = 500;
+        for (int i = 0; i < words.size(); i += batchSize) {
+            List<CuratedWord> batch = words.subList(i, Math.min(i + batchSize, words.size()));
+            jdbc.batchUpdate(sql, batch, batchSize, (ps, cw) -> {
+                ps.setString(1, cw.getWord());
+                ps.setString(2, cw.getPos());
+                ps.setString(3, cw.getCefrLevel());
+                ps.setString(4, cw.getBand());
+                ps.setString(5, cw.getTopic());
+                ps.setString(6, cw.getPhonetic());
+                ps.setString(7, cw.getDefinition());
+                ps.setString(8, cw.getExample());
+                ps.setString(9, cw.getMeaning());
+                ps.setString(10, cw.getAudioUrl());
+            });
+            log.info("Imported batch {}/{}", Math.min(i + batchSize, words.size()), words.size());
+        }
+    }
 
     private static final String CSV_URL =
             "https://raw.githubusercontent.com/Maximax67/Words-CEFR-Dataset/main/datasets/word_list_cefr.csv";
@@ -297,6 +322,7 @@ public class CuratedWordImporter implements ApplicationRunner {
                             "cultural")));
 
     private final CuratedWordRepository curatedWordRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -309,7 +335,7 @@ public class CuratedWordImporter implements ApplicationRunner {
         log.info("No curated words found. Importing CEFR dataset...");
         try {
             List<CuratedWord> words = downloadAndParse();
-            curatedWordRepository.saveAll(words);
+            batchInsert(words, jdbcTemplate);
             log.info("CEFR import complete: {} words imported.", words.size());
         } catch (Exception e) {
             log.error("CEFR import failed: {}", e.getMessage(), e);

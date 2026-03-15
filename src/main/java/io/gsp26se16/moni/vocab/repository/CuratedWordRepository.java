@@ -15,10 +15,12 @@ public interface CuratedWordRepository extends JpaRepository<CuratedWord, Intege
     @Query("SELECT c FROM CuratedWord c WHERE "
             + "(:band IS NULL OR c.band = :band) AND "
             + "(:topic IS NULL OR c.topic = :topic) AND "
-            + "(:search IS NULL OR LOWER(c.word) LIKE LOWER(CONCAT('%', :search, '%')))")
+            + "(:pos IS NULL OR LOWER(c.pos) = LOWER(CAST(:pos AS text))) AND "
+            + "(:search IS NULL OR LOWER(c.word) LIKE LOWER(CONCAT('%', CAST(:search AS text), '%')))")
     Page<CuratedWord> findByFilters(
             @Param("band") String band,
             @Param("topic") String topic,
+            @Param("pos") String pos,
             @Param("search") String search,
             Pageable pageable);
 

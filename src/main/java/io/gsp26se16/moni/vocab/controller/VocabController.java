@@ -190,11 +190,12 @@ public class VocabController {
     public ResponseEntity<ApiResponse<Page<CuratedWordResponse>>> browse(
             @RequestParam(required = false) String band,
             @RequestParam(required = false) String topic,
+            @RequestParam(required = false) String pos,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         String userId = resolveOptionalUserId();
-        Page<CuratedWordResponse> result = curatedWordService.browse(band, topic, search, page, size, userId);
+        Page<CuratedWordResponse> result = curatedWordService.browse(band, topic, pos, search, page, size, userId);
         return ResponseEntity.ok(
                 ApiResponse.<Page<CuratedWordResponse>>builder().result(result).build());
     }
