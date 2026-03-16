@@ -30,6 +30,7 @@ public class VocabController {
     private final CuratedWordService curatedWordService;
     private final CuratedWordEnricher curatedWordEnricher;
     private final VocabAuthHelper vocabAuthHelper;
+    private final SentenceTranslateService sentenceTranslateService;
 
     // --- Enrichment ---
 
@@ -62,6 +63,26 @@ public class VocabController {
             log.error("Vocab lookup failed for word='{}': {}", word, e.getMessage());
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.<VocabLookupResponse>builder()
+                            .code(5001)
+                            .message(e.getMessage())
+                            .build());
+        }
+    }
+
+    // --- Sentence translation ---
+
+    @PostMapping("/translate-sentence")
+    public ResponseEntity<ApiResponse<SentenceTranslateResponse>> translateSentence(
+            @RequestBody SentenceTranslateRequest request) {
+        try {
+            SentenceTranslateResponse result = sentenceTranslateService.translate(request.getText());
+            return ResponseEntity.ok(ApiResponse.<SentenceTranslateResponse>builder()
+                    .result(result)
+                    .build());
+        } catch (Exception e) {
+            log.error("Sentence translate failed: {}", e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.<SentenceTranslateResponse>builder()
                             .code(5001)
                             .message(e.getMessage())
                             .build());
