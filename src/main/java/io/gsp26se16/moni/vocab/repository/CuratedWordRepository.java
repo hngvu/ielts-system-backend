@@ -39,5 +39,6 @@ public interface CuratedWordRepository extends JpaRepository<CuratedWord, Intege
 
     long countByBandIn(java.util.Collection<String> bands);
 
-    java.util.List<String> findWordByBandIn(java.util.Collection<String> bands);
+    @Query("SELECT c.word FROM CuratedWord c WHERE c.band IN :bands")
+    java.util.List<String> findWordByBandIn(@Param("bands") java.util.Collection<String> bands);
 }
