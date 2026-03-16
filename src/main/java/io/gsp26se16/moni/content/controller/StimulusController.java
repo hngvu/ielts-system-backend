@@ -48,6 +48,18 @@ public class StimulusController {
                 .build());
     }
 
+    @PostMapping("/transcribe-url")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> transcribeByUrl(
+            @RequestBody Map<String, String> body) {
+        String audioUrl = body.get("audioUrl");
+        List<Map<String, Object>> transcript = stimulusService.transcribeByUrl(audioUrl);
+        return ResponseEntity.ok(ApiResponse.<List<Map<String, Object>>>builder()
+                .code(1000)
+                .message("Transcript tạo thành công")
+                .result(transcript)
+                .build());
+    }
+
     @PostMapping("/{id}/transcribe")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> transcribeStimulus(@PathVariable Integer id) {
         List<Map<String, Object>> transcript = stimulusService.transcribeAndSave(id);

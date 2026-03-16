@@ -20,4 +20,6 @@ public interface StimulusService {
     List<Map<String, Object>> transcribeAndSave(Integer stimulusId);
 
     List<Map<String, Object>> getTranscript(Integer stimulusId);
+
+    List<Map<String, Object>> transcribeByUrl(String audioUrl);
 }

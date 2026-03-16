@@ -128,6 +128,14 @@ public class StimulusServiceImpl implements StimulusService {
     }
 
     @Override
+    public List<Map<String, Object>> transcribeByUrl(String audioUrl) {
+        if (audioUrl == null || audioUrl.isBlank()) {
+            throw new RuntimeException("audioUrl không được để trống");
+        }
+        return transcriptService.transcribeAudio(audioUrl);
+    }
+
+    @Override
     public List<Map<String, Object>> getTranscript(Integer stimulusId) {
         Stimulus stimulus = stimulusRepository
                 .findById(stimulusId)
