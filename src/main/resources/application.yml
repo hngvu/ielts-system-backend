@@ -49,7 +49,7 @@ outbound:
   identity:
     client-id: 1010429030946-7rpjhtpauni9gim1ihfrbjeh79d21ddc.apps.googleusercontent.com
     client-secret: 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
-    redirect-uri: http://localhost:5173
+    redirect-uri: http://localhost:3000/oauth/callback
 
 
 jwt:
