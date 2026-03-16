@@ -66,7 +66,7 @@ public class TranscriptServiceImpl implements TranscriptService {
             String status = (String) result.get("status");
             if ("completed".equals(status)) {
                 log.info("AssemblyAI transcript completed: {}", transcriptId);
-                return parseUtterances(result);
+                return fetchSentences(transcriptId, headers, result);
             }
             if ("error".equals(status)) {
                 String error = (String) result.get("error");
@@ -75,6 +75,56 @@ public class TranscriptServiceImpl implements TranscriptService {
             log.debug("Transcript status: {} (attempt {}/{})", status, i + 1, maxRetries);
         }
         throw new RuntimeException("AssemblyAI transcription timed out after 5 minutes");
+    }
+
+    /**
+     * Fetch sentence-level timestamps from AssemblyAI /sentences endpoint.
+     * Falls back to utterance parsing if sentences API fails.
+     */
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> fetchSentences(
+            String transcriptId, HttpHeaders headers, Map<String, Object> transcriptResult) {
+        try {
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    baseUrl + "/transcript/" + transcriptId + "/sentences", HttpMethod.GET, entity, (Class<
+                                    Map<String, Object>>)
+                            (Class<?>) Map.class);
+            Map<String, Object> body = response.getBody();
+            if (body != null) {
+                List<Map<String, Object>> sentences = (List<Map<String, Object>>) body.get("sentences");
+                if (sentences != null && !sentences.isEmpty()) {
+                    log.info("Using sentence-level timestamps ({} sentences)", sentences.size());
+                    return parseSentences(sentences);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to fetch sentences, falling back to utterances: {}", e.getMessage());
+        }
+        return parseUtterances(transcriptResult);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> parseSentences(List<Map<String, Object>> sentences) {
+        List<Map<String, Object>> segments = new ArrayList<>();
+        int idx = 0;
+        for (Map<String, Object> sent : sentences) {
+            Map<String, Object> segment = new HashMap<>();
+            int startMs = ((Number) sent.get("start")).intValue();
+            int endMs = ((Number) sent.get("end")).intValue();
+            segment.put("id", "sent_" + idx);
+            segment.put("startTime", startMs / 1000.0);
+            segment.put("endTime", endMs / 1000.0);
+            segment.put("text", sent.get("text"));
+            // sentences API includes speaker if speaker_labels was enabled
+            Object speaker = sent.get("speaker");
+            if (speaker != null) {
+                segment.put("speaker", "Speaker " + speaker);
+            }
+            segments.add(segment);
+            idx++;
+        }
+        return segments;
     }
 
     @SuppressWarnings("unchecked")
