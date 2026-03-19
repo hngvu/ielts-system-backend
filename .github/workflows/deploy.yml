@@ -40,24 +40,13 @@ jobs:
           host: ${{ secrets.VM_IP }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
-          # Cực kỳ quan trọng: Liệt kê biến ở đây để GitHub truyền sang VPS
-          envs:
-            DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-            NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
-            GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-            ASSEMBLYAI_API_KEY: ${{ secrets.ASSEMBLYAI_API_KEY }}
+          envs: DB_PASSWORD,NVIDIA_API_KEY,GEMINI_API_KEY,ASSEMBLYAI_API_KEY
           script: |
             cd ~/app
             mv target/*.jar app.jar || true
-            
-            # Build lại image
             docker build -t moni-app:latest .
-            
-            # Xử lý container cũ
             docker stop moni-container || true
             docker rm moni-container || true
-            
-            # Chạy container với biến môi trường
             docker run -d --name moni-container \
               -p 8080:8080 \
               -e DB_PASSWORD="$DB_PASSWORD" \
@@ -66,6 +55,4 @@ jobs:
               -e ASSEMBLYAI_API_KEY="$ASSEMBLYAI_API_KEY" \
               --restart unless-stopped \
               moni-app:latest
-            
-            # Dọn dẹp rác image cũ
             docker image prune -f
