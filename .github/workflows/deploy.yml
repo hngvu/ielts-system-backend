@@ -1,4 +1,4 @@
-name: CI/CD Spring Boot to Azure (Direct Copy)
+name: CI/CD Spring Boot to VPS
 
 on:
   push:
@@ -30,7 +30,6 @@ jobs:
           host: ${{ secrets.VM_IP }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
-          # Chỉ copy file .jar vừa build xong và file Dockerfile
           source: "target/*.jar,Dockerfile"
           target: "~/app"
           strip_components: 0
@@ -41,20 +40,28 @@ jobs:
           host: ${{ secrets.VM_IP }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
+          # Khai báo các biến lấy từ GitHub Secrets để truyền sang Script
+          envs: DB_PASSWORD, NVIDIA_API_KEY, GEMINI_API_KEY, ASSEMBLYAI_API_KEY
           script: |
             cd ~/app
-            # Di chuyển file jar ra thư mục gốc của app để Dockerfile dễ tìm
             mv target/*.jar app.jar || true
             
-            # Build Image trực tiếp bằng tài nguyên của VM
-            docker build -t my-spring-app:latest .
+            # Build lại image với code mới
+            docker build -t moni-app:latest .
             
-            # Dừng và xóa container cũ nếu đang chạy để tránh tranh chấp cổng 8080
-            docker stop my-app-container || true
-            docker rm my-app-container || true
+            # Dừng và xóa container cũ
+            docker stop moni-container || true
+            docker rm moni-container || true
             
-            # Chạy bản mới
-            docker run -d --name my-app-container -p 8080:8080 my-spring-app:latest
+            # Chạy container mới và truyền toàn bộ biến môi trường vào
+            docker run -d --name moni-container \
+              -p 8080:8080 \
+              -e DB_PASSWORD="$DB_PASSWORD" \
+              -e NVIDIA_API_KEY="$NVIDIA_API_KEY" \
+              -e GEMINI_API_KEY="$GEMINI_API_KEY" \
+              -e ASSEMBLYAI_API_KEY="$ASSEMBLYAI_API_KEY" \
+              --restart unless-stopped \
+              moni-app:latest
             
-            # Dọn dẹp rác (image cũ) để tránh đầy ổ cứng 30GB của Azure
+            # Dọn dẹp image thừa
             docker image prune -f
