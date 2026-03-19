@@ -36,6 +36,11 @@ jobs:
 
       - name: Build and Run Docker on VM
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          DB_PASSWORD: ${{secrets.DB_PASSWORD}}
+          NVIDIA_API_KEY: ${{secrets.NVIDIA_API_KEY}}
+          GEMINI_API_KEY: ${{secrets.GEMINI_API_KEY}}
+          ASSEMBLYAI_API_KEY: ${{secrets.ASSEMBLYAI_API_KEY}}
         with:
           host: ${{ secrets.VM_IP }}
           username: ${{ secrets.VM_USER }}
