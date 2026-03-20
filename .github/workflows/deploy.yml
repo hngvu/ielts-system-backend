@@ -107,143 +107,148 @@ jobs:
 
             # Tạo .env file để Docker Compose nạp biến môi trường
             echo "🔐 Creating environment file..."
-            cat > .env << EOF
-            DB_USERNAME=$DB_USERNAME
-            DB_PASSWORD=$DB_PASSWORD
-            NVIDIA_API_KEY=$NVIDIA_API_KEY
-            GEMINI_API_KEY=$GEMINI_API_KEY
-            ASSEMBLYAI_API_KEY=$ASSEMBLYAI_API_KEY
-            EOF
-            chmod 600 .env
-            
-            # Debug: show env file
-            echo "📝 Environment variables:"
-            cat .env
+            cat > .env << 'ENVFILE'
+  DB_USERNAME=$DB_USERNAME
+  DB_PASSWORD=$DB_PASSWORD
+  NVIDIA_API_KEY=$NVIDIA_API_KEY
+  GEMINI_API_KEY=$GEMINI_API_KEY
+  ASSEMBLYAI_API_KEY=$ASSEMBLYAI_API_KEY
+  ENVFILE
+  
+  # Thay thế variables
+  sed -i "s|\$DB_USERNAME|$DB_USERNAME|g" .env
+  sed -i "s|\$DB_PASSWORD|$DB_PASSWORD|g" .env
+  sed -i "s|\$NVIDIA_API_KEY|$NVIDIA_API_KEY|g" .env
+  sed -i "s|\$GEMINI_API_KEY|$GEMINI_API_KEY|g" .env
+  sed -i "s|\$ASSEMBLYAI_API_KEY|$ASSEMBLYAI_API_KEY|g" .env
+  
+  chmod 600 .env
+  
+  # Debug: show env file
+  echo "📝 Environment file content:"
+  cat .env
+  
+  # Stop and remove old containers
+  echo ""
+  echo "🧹 Cleaning up old containers..."
+  docker compose down --remove-orphans 2>/dev/null || true
+  
+  # Build image
+  echo "🔨 Building Docker image..."
+  docker compose build app
+  
+  # Start with --env-file
+  echo "▶️  Starting services..."
+  docker compose --env-file .env up -d
+  
+  # Debug: Check env in container
+  echo ""
+  echo "🔍 Checking container environment..."
+  sleep 3
+  docker exec moni-container env | grep SPRING_DATASOURCE || echo "❌ SPRING_DATASOURCE not found"
+  docker exec moni-container env | grep DB_USERNAME || echo "❌ DB_USERNAME not found"
+  
+  # Chờ PostgreSQL sẵn sàng
+  echo ""
+  echo "⏳ Waiting for PostgreSQL..."
+  for i in {1..30}; do
+  if docker compose exec -T db pg_isready -U "$DB_USERNAME" > /dev/null 2>&1; then
+  echo "✓ PostgreSQL is ready"
+  break
+  fi
+  if [ $i -eq 30 ]; then
+  echo "❌ PostgreSQL startup timeout"
+  docker compose logs db
+  exit 1
+  fi
+  echo "  Attempt $i/30..."
+  sleep 2
+  done
+  
+  # Chờ Spring Boot app sẵn sàng
+  echo "⏳ Waiting for Spring Boot app..."
+  for i in {1..60}; do
+  if curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+  echo "✓ App is healthy!"
+  break
+  fi
+  if [ $i -eq 60 ]; then
+  echo "❌ App failed to start"
+  docker compose logs app | tail -50
+  exit 1
+  fi
+  if [ $((i % 10)) -eq 0 ]; then
+  echo "  Attempt $i/60..."
+  fi
+  sleep 1
+  done
+  
+  # Hiển thị status
+  echo ""
+  echo "📊 Container status:"
+  docker compose ps
+  
+  # Dọn dẹp: xóa .env và các image cũ
+  echo ""
+  echo "🧹 Cleaning up..."
+  rm .env
+  docker image prune -f
+  
+  echo ""
+  echo "========================================="
+  echo "✅ Deployment completed successfully!"
+  echo "========================================="
+echo "App URL: http://localhost:8080"
+echo "Health: curl http://localhost:8080/health"
+echo "Logs: docker compose logs -f app"
+  echo ""
 
-            # Stop and remove old containers
-            echo "🧹 Cleaning up old containers..."
-            docker compose down --remove-orphans 2>/dev/null || true
+# ============================================
+# 5. VERIFY DEPLOYMENT
+# ============================================
+- name: Verify deployment
+  if: success()
+  uses: appleboy/ssh-action@v1.0.3
+  with:
+    host: ${{ secrets.VM_IP }}
+    username: ${{ secrets.VM_USER }}
+    key: ${{ secrets.VM_SSH_KEY }}
+    script: |
+      cd ~/app
+      
+      echo ""
+      echo "🔍 Post-deployment verification:"
+      echo ""
+      
+      # Check app health
+      echo "Checking app health..."
+      HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health)
+      if [ "$HTTP_CODE" = "200" ]; then
+        echo "✓ App is responding (HTTP $HTTP_CODE)"
+      else
+        echo "⚠️  App returned HTTP $HTTP_CODE"
+      fi
+      
+      # Check disk space
+      echo ""
+      echo "Checking disk space..."
+      DISK_USAGE=$(df ~/app | tail -1 | awk '{print $5}')
+      echo "Disk usage: $DISK_USAGE"
 
-            # Build image và start services
-            echo "🔨 Building Docker image..."
-            docker compose build app
-
-            echo "▶️  Starting services with environment variables..."
-            # Pass env vars directly to docker compose up
-            DB_USERNAME=$DB_USERNAME \
-            DB_PASSWORD=$DB_PASSWORD \
-            NVIDIA_API_KEY=$NVIDIA_API_KEY \
-            GEMINI_API_KEY=$GEMINI_API_KEY \
-            ASSEMBLYAI_API_KEY=$ASSEMBLYAI_API_KEY \
-            docker compose up -d
-
-            # Debug: Check if env vars are in container
-            echo ""
-            echo "🔍 Checking container environment..."
-            sleep 3
-            docker exec moni-container env | grep -E "SPRING_DATASOURCE|DB_|NVIDIA|GEMINI|ASSEMBLYAI" || echo "⚠️ No env vars found!"
-            
-            # Chờ PostgreSQL sẵn sàng
-            echo ""
-            echo "⏳ Waiting for PostgreSQL..."
-            for i in {1..30}; do
-              if docker compose exec -T db pg_isready -U "$DB_USERNAME" > /dev/null 2>&1; then
-                echo "✓ PostgreSQL is ready"
-                break
-              fi
-              if [ $i -eq 30 ]; then
-                echo "❌ PostgreSQL startup timeout"
-                docker compose logs db
-                exit 1
-              fi
-              echo "  Attempt $i/30..."
-              sleep 2
-            done
-
-            # Chờ Spring Boot app sẵn sàng
-            echo "⏳ Waiting for Spring Boot app..."
-            for i in {1..60}; do
-              if curl -sf http://localhost:8080/health > /dev/null 2>&1; then
-                echo "✓ App is healthy!"
-                break
-              fi
-              if [ $i -eq 60 ]; then
-                echo "❌ App failed to start"
-                docker compose logs app | tail -50
-                exit 1
-              fi
-              if [ $((i % 10)) -eq 0 ]; then
-                echo "  Attempt $i/60..."
-              fi
-              sleep 1
-            done
-
-            # Hiển thị status
-            echo ""
-            echo "📊 Container status:"
-            docker compose ps
-
-            # Dọn dẹp: xóa .env và các image cũ
-            echo ""
-            echo "🧹 Cleaning up..."
-            rm .env
-            docker image prune -f
-
-            echo ""
-            echo "========================================="
-            echo "✅ Deployment completed successfully!"
-            echo "========================================="
-            echo "App URL: http://localhost:8080"
-            echo "Health: curl http://localhost:8080/health"
-            echo "Logs: docker compose logs -f app"
-            echo ""
-
-      # ============================================
-      # 5. VERIFY DEPLOYMENT
-      # ============================================
-      - name: Verify deployment
-        if: success()
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VM_IP }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          script: |
-            cd ~/app
-
-            echo ""
-            echo "🔍 Post-deployment verification:"
-            echo ""
-
-            # Check app health
-            echo "Checking app health..."
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health)
-            if [ "$HTTP_CODE" = "200" ]; then
-              echo "✓ App is responding (HTTP $HTTP_CODE)"
-            else
-              echo "⚠️  App returned HTTP $HTTP_CODE"
-            fi
-
-            # Check disk space
-            echo ""
-            echo "Checking disk space..."
-            DISK_USAGE=$(df ~/app | tail -1 | awk '{print $5}')
-            echo "Disk usage: $DISK_USAGE"
-
-      - name: Deployment failed - Show logs
-        if: failure()
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VM_IP }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          script: |
-            echo "❌ Deployment failed!"
-            echo ""
-            echo "📋 Recent app logs:"
-            docker compose logs app --tail=50 2>/dev/null || echo "No logs available"
-            echo ""
-            echo "💡 Troubleshooting:"
-            echo "1. SSH: ssh -i key.pem ${{ secrets.VM_USER }}@${{ secrets.VM_IP }}"
-            echo "2. Logs: cd ~/app && docker compose logs -f app"
-            echo "3. Status: docker compose ps"
+- name: Deployment failed - Show logs
+  if: failure()
+  uses: appleboy/ssh-action@v1.0.3
+  with:
+    host: ${{ secrets.VM_IP }}
+    username: ${{ secrets.VM_USER }}
+    key: ${{ secrets.VM_SSH_KEY }}
+    script: |
+      echo "❌ Deployment failed!"
+      echo ""
+      echo "📋 Recent app logs:"
+      docker compose logs app --tail=50 2>/dev/null || echo "No logs available"
+      echo ""
+      echo "💡 Troubleshooting:"
+      echo "1. SSH: ssh -i key.pem ${{ secrets.VM_USER }}@${{ secrets.VM_IP }}"
+      echo "2. Logs: cd ~/app && docker compose logs -f app"
+      echo "3. Status: docker compose ps"
