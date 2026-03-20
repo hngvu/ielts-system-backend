@@ -45,17 +45,17 @@ jobs:
       # ============================================
       - name: Deploy with Docker Compose
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ASSEMBLYAI_API_KEY: ${{ secrets.ASSEMBLYAI_API_KEY }}
         with:
           host: ${{ secrets.VM_IP }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           envs: DB_USERNAME,DB_PASSWORD,NVIDIA_API_KEY,GEMINI_API_KEY,ASSEMBLYAI_API_KEY
-          env:
-            DB_USERNAME: ${{ secrets.DB_USERNAME }}
-            DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-            NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
-            GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-            ASSEMBLYAI_API_KEY: ${{ secrets.ASSEMBLYAI_API_KEY }}
           script: |
             set -e
 
