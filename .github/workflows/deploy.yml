@@ -57,6 +57,7 @@ jobs:
       - name: Deploy with Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         env:
+          DB_URL: ${{secrets.DB_URL}}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
@@ -66,7 +67,7 @@ jobs:
           host: ${{ secrets.VM_IP }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
-          envs: DB_USERNAME,DB_PASSWORD,NVIDIA_API_KEY,GEMINI_API_KEY,ASSEMBLYAI_API_KEY
+          envs: DB_URL,DB_USERNAME,DB_PASSWORD,NVIDIA_API_KEY,GEMINI_API_KEY,ASSEMBLYAI_API_KEY
           script: |
             set -e
             cd ~/app
@@ -80,8 +81,9 @@ jobs:
 
             # Tạo .env file (SỬA LỖI THỤT LỀ TẠI ĐÂY)
             cat > .env <<EOF
-            DB_USERNAME=$DB_USERNAME
-            DB_PASSWORD=$DB_PASSWORD
+            SPRING_DATASOURCE_URL=$DB_URL
+            SPRING_DATASOURCE_USERNAME=$DB_USERNAME
+            SPRING_DATASOURCE_PASSWORD=$DB_PASSWORD
             NVIDIA_API_KEY=$NVIDIA_API_KEY
             GEMINI_API_KEY=$GEMINI_API_KEY
             ASSEMBLYAI_API_KEY=$ASSEMBLYAI_API_KEY
