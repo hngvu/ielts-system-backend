@@ -1,4 +1,4 @@
-name: CI/CD Spring Boot to VPS
+name: CI/CD Spring Boot to VPS with Postgres
 
 on:
   push:
@@ -11,6 +11,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      # ============================================
+      # 1. BUILD PHASE
+      # ============================================
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -24,40 +27,171 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      - name: Copy Jar and Dockerfile to VM
+      # ============================================
+      # 2. COPY TO VPS
+      # ============================================
+      - name: Copy files to VM
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VM_IP }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
-          source: "target/*.jar,Dockerfile"
+          source: "target/*.jar,Dockerfile,docker-compose.yml"
           target: "~/app"
           strip_components: 0
 
-      - name: Build and Run Docker on VM
+      # ============================================
+      # 3. DEPLOY WITH DOCKER COMPOSE
+      # ============================================
+      - name: Deploy with Docker Compose
         uses: appleboy/ssh-action@v1.0.3
-        env:
-          DB_PASSWORD: ${{secrets.DB_PASSWORD}}
-          NVIDIA_API_KEY: ${{secrets.NVIDIA_API_KEY}}
-          GEMINI_API_KEY: ${{secrets.GEMINI_API_KEY}}
-          ASSEMBLYAI_API_KEY: ${{secrets.ASSEMBLYAI_API_KEY}}
         with:
           host: ${{ secrets.VM_IP }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
-          envs: DB_PASSWORD,NVIDIA_API_KEY,GEMINI_API_KEY,ASSEMBLYAI_API_KEY
+          envs: DB_USERNAME,DB_PASSWORD,NVIDIA_API_KEY,GEMINI_API_KEY,ASSEMBLYAI_API_KEY
+          env:
+            DB_USERNAME: ${{ secrets.DB_USERNAME }}
+            DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+            NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+            GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+            ASSEMBLYAI_API_KEY: ${{ secrets.ASSEMBLYAI_API_KEY }}
+          script: |
+            set -e
+
+            cd ~/app
+
+            echo "========================================="
+            echo "🚀 Starting Deployment at $(date)"
+            echo "========================================="
+
+            # Chuẩn bị JAR file
+            if [ ! -f target/*.jar ]; then
+              echo "❌ JAR file not found!"
+              exit 1
+            fi
+
+            mv target/*.jar app.jar
+            echo "✓ JAR file ready: app.jar"
+
+            # Tạo .env file để Docker Compose nạp biến môi trường
+            echo "🔐 Creating environment file..."
+            cat > .env << EOF
+            DB_USERNAME=$DB_USERNAME
+            DB_PASSWORD=$DB_PASSWORD
+            NVIDIA_API_KEY=$NVIDIA_API_KEY
+            GEMINI_API_KEY=$GEMINI_API_KEY
+            ASSEMBLYAI_API_KEY=$ASSEMBLYAI_API_KEY
+            EOF
+            chmod 600 .env
+
+            # Build image và start services
+            echo "🔨 Building Docker image..."
+            docker compose build app
+
+            echo "▶️  Starting services..."
+            docker compose up -d
+
+            # Chờ PostgreSQL sẵn sàng
+            echo "⏳ Waiting for PostgreSQL..."
+            for i in {1..30}; do
+              if docker compose exec -T db pg_isready -U "$DB_USERNAME" > /dev/null 2>&1; then
+                echo "✓ PostgreSQL is ready"
+                break
+              fi
+              if [ $i -eq 30 ]; then
+                echo "❌ PostgreSQL startup timeout"
+                docker compose logs db
+                exit 1
+              fi
+              echo "  Attempt $i/30..."
+              sleep 2
+            done
+
+            # Chờ Spring Boot app sẵn sàng
+            echo "⏳ Waiting for Spring Boot app..."
+            for i in {1..60}; do
+              if curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+                echo "✓ App is healthy!"
+                break
+              fi
+              if [ $i -eq 60 ]; then
+                echo "❌ App failed to start"
+                docker compose logs app | tail -50
+                exit 1
+              fi
+              if [ $((i % 10)) -eq 0 ]; then
+                echo "  Attempt $i/60..."
+              fi
+              sleep 1
+            done
+
+            # Hiển thị status
+            echo ""
+            echo "📊 Container status:"
+            docker compose ps
+
+            # Dọn dẹp: xóa .env và các image cũ
+            echo ""
+            echo "🧹 Cleaning up..."
+            rm .env
+            docker image prune -f
+
+            echo ""
+            echo "========================================="
+            echo "✅ Deployment completed successfully!"
+            echo "========================================="
+            echo "App URL: http://localhost:8080"
+            echo "Health: curl http://localhost:8080/health"
+            echo "Logs: docker compose logs -f app"
+            echo ""
+
+      # ============================================
+      # 4. VERIFY DEPLOYMENT
+      # ============================================
+      - name: Verify deployment
+        if: success()
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_IP }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
           script: |
             cd ~/app
-            mv target/*.jar app.jar || true
-            docker build -t moni-app:latest .
-            docker stop moni-container || true
-            docker rm moni-container || true
-            docker run -d --name moni-container \
-              -p 8080:8080 \
-              -e DB_PASSWORD="$DB_PASSWORD" \
-              -e NVIDIA_API_KEY="$NVIDIA_API_KEY" \
-              -e GEMINI_API_KEY="$GEMINI_API_KEY" \
-              -e ASSEMBLYAI_API_KEY="$ASSEMBLYAI_API_KEY" \
-              --restart unless-stopped \
-              moni-app:latest
-            docker image prune -f
+
+            echo ""
+            echo "🔍 Post-deployment verification:"
+            echo ""
+
+            # Check app health
+            echo "Checking app health..."
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health)
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✓ App is responding (HTTP $HTTP_CODE)"
+            else
+              echo "⚠️  App returned HTTP $HTTP_CODE"
+            fi
+
+            # Check disk space
+            echo ""
+            echo "Checking disk space..."
+            DISK_USAGE=$(df ~/app | tail -1 | awk '{print $5}')
+            echo "Disk usage: $DISK_USAGE"
+
+      - name: Deployment failed - Show logs
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_IP }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            echo "❌ Deployment failed!"
+            echo ""
+            echo "📋 Recent app logs:"
+            docker compose logs app --tail=50 2>/dev/null || echo "No logs available"
+            echo ""
+            echo "💡 Troubleshooting:"
+            echo "1. SSH: ssh -i key.pem ${{ secrets.VM_USER }}@${{ secrets.VM_IP }}"
+            echo "2. Logs: cd ~/app && docker compose logs -f app"
+            echo "3. Status: docker compose ps"

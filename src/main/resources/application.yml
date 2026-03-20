@@ -21,8 +21,8 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://pg-2e2d5154-moni.f.aivencloud.com:27573/defaultdb?sslmode=require
-    username: avnadmin
+    url: ${DB_URL}
+    username: ${UB_USERNAME}
     password: ${DB_PASSWORD}
     hikari:
       minimum-idle: 2

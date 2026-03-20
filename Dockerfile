@@ -11,4 +11,4 @@ COPY app.jar app.jar
 EXPOSE 8080
 
 # Chạy ứng dụng với cấu hình tối ưu RAM cho máy ảo nhỏ
-ENTRYPOINT ["java", "-Xmx512m", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xmx2g", "-jar", "app.jar"]
