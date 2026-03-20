@@ -57,7 +57,7 @@ jobs:
       - name: Deploy with Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         env:
-          DB_URL: ${{secrets.DB_URL}}
+          DB_URL: ${{ secrets.DB_URL }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
@@ -71,16 +71,9 @@ jobs:
           script: |
             set -e
             cd ~/app
-
-            echo "🚀 Starting Deployment..."
-            
-            # Chuẩn bị JAR file
-            if [ -f target/*.jar ]; then
-              mv target/*.jar app.jar
-            fi
-
-            # Tạo .env file (SỬA LỖI THỤT LỀ TẠI ĐÂY)
-            cat > .env <<EOF
+              
+            # Tạo file .env - QUAN TRỌNG: KHÔNG THỤT LỀ CÁC DÒNG BIẾN
+            cat <<EOF > .env
             SPRING_DATASOURCE_URL=$DB_URL
             SPRING_DATASOURCE_USERNAME=$DB_USERNAME
             SPRING_DATASOURCE_PASSWORD=$DB_PASSWORD
@@ -88,26 +81,11 @@ jobs:
             GEMINI_API_KEY=$GEMINI_API_KEY
             ASSEMBLYAI_API_KEY=$ASSEMBLYAI_API_KEY
             EOF
-            
             chmod 600 .env
-            
-            echo "🧹 Cleaning up old containers..."
-            docker compose down --remove-orphans 2>/dev/null || true
-            
-            echo "🔨 Building and Starting..."
-            docker compose build app
-            docker compose --env-file .env up -d
-            
-            echo "⏳ Waiting for services..."
-            sleep 10
-            
-            # Kiểm tra nhanh app status
-            docker compose ps
-            
-            # Dọn dẹp
-            rm .env
-            docker image prune -f
-            echo "✅ Deployment completed!"
+      
+            # Thay vì build trong compose, ta dùng image đã build từ Dockerfile nếu cần
+            docker compose down --remove-orphans
+            docker compose --env-file .env up -d --build
 
       # 5. VERIFY DEPLOYMENT
       - name: Verify deployment
