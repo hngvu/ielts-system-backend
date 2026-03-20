@@ -101,7 +101,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .id(payment.getId())
                 .amount(payment.getAmount())
                 .txnCode(payment.getTxnCode())
-                .qrCodeUrl("https://qr.sepay.vn/img?" + "acc=" + sepayAcc + "&bank=" + sepayBank + "&amount="
+                .qrCodeUrl("https://qr.sepay.vn/img?" + "acc=" + sepayBank + "&bank=" + sepayAcc + "&amount="
                         + payment.getAmount() + "&des=" + payment.getTxnCode())
                 .expiredAt(payment.getExpiredAt())
                 .build();
