@@ -41,7 +41,38 @@ jobs:
           strip_components: 0
 
       # ============================================
-      # 3. DEPLOY WITH DOCKER COMPOSE
+      # 3. ENSURE DOCKER-COMPOSE IS INSTALLED
+      # ============================================
+      - name: Verify and install docker-compose if needed
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_IP }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            set -e
+            
+            # Check if docker compose works (v2 plugin or v1 standalone)
+            if ! docker compose version &> /dev/null && ! command -v docker-compose &> /dev/null; then
+              echo "📦 Installing docker-compose..."
+              # Try v2 plugin path first
+              mkdir -p ~/.docker/cli-plugins 2>/dev/null || true
+              curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o ~/.docker/cli-plugins/docker-compose 2>/dev/null
+              chmod +x ~/.docker/cli-plugins/docker-compose 2>/dev/null || true
+              # If plugin doesn't work, install standalone
+              if ! docker compose version &> /dev/null; then
+                sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                sudo chmod +x /usr/local/bin/docker-compose
+              fi
+            fi
+            
+            # Verify installation
+            echo "✓ Checking docker compose installation..."
+            docker compose version || docker-compose --version
+            docker --version
+
+      # ============================================
+      # 4. DEPLOY WITH DOCKER COMPOSE
       # ============================================
       - name: Deploy with Docker Compose
         uses: appleboy/ssh-action@v1.0.3
@@ -147,7 +178,7 @@ jobs:
             echo ""
 
       # ============================================
-      # 4. VERIFY DEPLOYMENT
+      # 5. VERIFY DEPLOYMENT
       # ============================================
       - name: Verify deployment
         if: success()
