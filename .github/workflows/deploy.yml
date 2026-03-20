@@ -115,15 +115,36 @@ jobs:
             ASSEMBLYAI_API_KEY=$ASSEMBLYAI_API_KEY
             EOF
             chmod 600 .env
+            
+            # Debug: show env file
+            echo "📝 Environment variables:"
+            cat .env
+
+            # Stop and remove old containers
+            echo "🧹 Cleaning up old containers..."
+            docker compose down --remove-orphans 2>/dev/null || true
 
             # Build image và start services
             echo "🔨 Building Docker image..."
             docker compose build app
 
-            echo "▶️  Starting services..."
+            echo "▶️  Starting services with environment variables..."
+            # Pass env vars directly to docker compose up
+            DB_USERNAME=$DB_USERNAME \
+            DB_PASSWORD=$DB_PASSWORD \
+            NVIDIA_API_KEY=$NVIDIA_API_KEY \
+            GEMINI_API_KEY=$GEMINI_API_KEY \
+            ASSEMBLYAI_API_KEY=$ASSEMBLYAI_API_KEY \
             docker compose up -d
 
+            # Debug: Check if env vars are in container
+            echo ""
+            echo "🔍 Checking container environment..."
+            sleep 3
+            docker exec moni-container env | grep -E "SPRING_DATASOURCE|DB_|NVIDIA|GEMINI|ASSEMBLYAI" || echo "⚠️ No env vars found!"
+            
             # Chờ PostgreSQL sẵn sàng
+            echo ""
             echo "⏳ Waiting for PostgreSQL..."
             for i in {1..30}; do
               if docker compose exec -T db pg_isready -U "$DB_USERNAME" > /dev/null 2>&1; then
