@@ -9,6 +9,7 @@ import jakarta.persistence.*;
 
 import org.hibernate.annotations.Type;
 
+import io.gsp26se16.moni.common.enumeration.QuestionCategory;
 import io.gsp26se16.moni.tag.entity.Tag;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import lombok.*;
@@ -28,6 +29,25 @@ public class Question {
     String content;
     int position;
 
+    /**
+     * Phân loại bản chất câu hỏi: MAIN, FOLLOW_UP, (mở rộng: TRANSITION, OPENING...).
+     * Nullable — các câu hỏi Reading/Listening cũ không cần set giá trị này.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "question_category")
+    QuestionCategory questionCategory;
+
+    /**
+     * Self-reference: câu FOLLOW_UP trỏ về câu MAIN mà nó thuộc về.
+     * Câu MAIN thì parentQuestion = null.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_question_id")
+    Question parentQuestion;
+
+    @OneToMany(mappedBy = "parentQuestion")
+    List<Question> followUpQuestions = new ArrayList<>();
+
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     Map<String, Object> metadata;
@@ -40,7 +60,6 @@ public class Question {
     @JoinColumn(name = "question_group_id")
     QuestionGroup questionGroup;
 
-    // 🔥 THÊM: Để lưu Question là tự lưu luôn Options (A, B, C, D)
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     List<QuestionOption> options = new ArrayList<>();
 

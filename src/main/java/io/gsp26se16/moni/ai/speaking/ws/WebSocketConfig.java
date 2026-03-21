@@ -12,12 +12,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketConfigurer {
 
-    private final SpeakingSocketHandler speakingSocketHandler;
+    private final SpeakingExamHandler speakingExamHandler;
     private final JwtHandshakeInterceptor jwtHandshakeInterceptor;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(speakingSocketHandler, "/ws/speaking")
+
+        // Pipeline thi Speaking mới: examiner AI + ElevenLabs TTS
+        registry.addHandler(speakingExamHandler, "/ws/speaking/exam")
                 .addInterceptors(jwtHandshakeInterceptor)
                 .setAllowedOrigins("*");
     }

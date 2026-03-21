@@ -6,6 +6,7 @@ import java.util.Map;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+import io.gsp26se16.moni.common.enumeration.QuestionCategory;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestMode;
 import io.gsp26se16.moni.common.enumeration.TestType;
@@ -67,6 +68,12 @@ public class TestImportRequest {
     public static class QuestionRequest {
         private String content; // Nội dung câu hỏi
         private Integer position; // Số thứ tự câu (VD: 1, 2, 3...)
+
+        /** MAIN, FOLLOW_UP, (mở rộng: TRANSITION, OPENING...). Null = câu hỏi Reading/Listening bình thường */
+        private QuestionCategory questionCategory;
+
+        /** Position của câu MAIN mà follow-up này thuộc về. Null = câu MAIN hoặc câu không phải Speaking */
+        private Integer parentQuestionPosition;
 
         private Map<String, Object> metadata; // Dữ liệu phụ (JSONB)
         private Map<String, Object> explanation; // Giải thích chi tiết (JSONB)

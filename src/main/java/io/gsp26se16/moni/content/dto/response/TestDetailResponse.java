@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.gsp26se16.moni.common.enumeration.PublishStatus;
+import io.gsp26se16.moni.common.enumeration.QuestionCategory;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestMode;
 import lombok.Builder;
@@ -54,6 +55,8 @@ public class TestDetailResponse {
         private Integer id;
         private String content;
         private Integer position;
+        private QuestionCategory questionCategory;
+        private Integer parentQuestionId;
         private Map<String, Object> explanation;
         private List<Integer> tagIds;
         private List<OptionDetail> options;

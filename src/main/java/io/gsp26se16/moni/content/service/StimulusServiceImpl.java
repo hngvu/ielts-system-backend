@@ -1,5 +1,6 @@
 package io.gsp26se16.moni.content.service;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -59,14 +60,17 @@ public class StimulusServiceImpl implements StimulusService {
                 group.setInstruction(groupReq.getInstruction());
                 QuestionGroup savedGroup = questionGroupRepository.save(group);
 
+                // ── Pass 1: Lưu tất cả questions, track theo position ──
+                Map<Integer, Question> positionToQuestion = new HashMap<>();
+
                 for (var qReq : groupReq.getQuestions()) {
                     Question question = new Question();
                     question.setQuestionGroup(savedGroup);
                     question.setContent(qReq.getContent());
                     question.setPosition(qReq.getPosition());
+                    question.setQuestionCategory(qReq.getQuestionCategory());
                     question.setExplanation(qReq.getExplanation());
 
-                    // Lưu Tag cho Câu hỏi
                     if (qReq.getTagIds() != null) {
                         question.getTags().addAll(tagRepository.findAllById(qReq.getTagIds()));
                     }
@@ -81,7 +85,20 @@ public class StimulusServiceImpl implements StimulusService {
                             question.getOptions().add(option);
                         }
                     }
-                    questionRepository.save(question);
+                    Question saved = questionRepository.save(question);
+                    positionToQuestion.put(saved.getPosition(), saved);
+                }
+
+                // ── Pass 2: Link follow-up → parent theo parentQuestionPosition ──
+                for (var qReq : groupReq.getQuestions()) {
+                    if (qReq.getParentQuestionPosition() != null) {
+                        Question child = positionToQuestion.get(qReq.getPosition());
+                        Question parent = positionToQuestion.get(qReq.getParentQuestionPosition());
+                        if (child != null && parent != null) {
+                            child.setParentQuestion(parent);
+                            questionRepository.save(child);
+                        }
+                    }
                 }
             }
         }

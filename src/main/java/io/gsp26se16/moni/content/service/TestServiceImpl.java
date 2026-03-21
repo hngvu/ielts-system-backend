@@ -1,7 +1,9 @@
 package io.gsp26se16.moni.content.service;
 
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import jakarta.persistence.EntityManager;
@@ -97,11 +99,15 @@ public class TestServiceImpl implements TestService {
                     }
                     QuestionGroup savedGroup = questionGroupRepository.save(group);
 
+                    // ── Pass 1: Lưu tất cả questions, track theo position ──
+                    Map<Integer, Question> positionToQuestion = new HashMap<>();
+
                     for (var qReq : groupReq.getQuestions()) {
                         Question question = new Question();
                         question.setQuestionGroup(savedGroup);
                         question.setContent(qReq.getContent());
                         question.setPosition(qReq.getPosition());
+                        question.setQuestionCategory(qReq.getQuestionCategory());
                         question.setExplanation(qReq.getExplanation());
 
                         if (qReq.getTagIds() != null) {
@@ -118,7 +124,20 @@ public class TestServiceImpl implements TestService {
                                 question.getOptions().add(option);
                             }
                         }
-                        questionRepository.save(question);
+                        Question saved = questionRepository.save(question);
+                        positionToQuestion.put(saved.getPosition(), saved);
+                    }
+
+                    // ── Pass 2: Link follow-up → parent theo parentQuestionPosition ──
+                    for (var qReq : groupReq.getQuestions()) {
+                        if (qReq.getParentQuestionPosition() != null) {
+                            Question child = positionToQuestion.get(qReq.getPosition());
+                            Question parent = positionToQuestion.get(qReq.getParentQuestionPosition());
+                            if (child != null && parent != null) {
+                                child.setParentQuestion(parent);
+                                questionRepository.save(child);
+                            }
+                        }
                     }
                 }
             }
@@ -168,6 +187,12 @@ public class TestServiceImpl implements TestService {
                                                     .id(q.getId())
                                                     .content(q.getContent())
                                                     .position(q.getPosition())
+                                                    .questionCategory(q.getQuestionCategory())
+                                                    .parentQuestionId(
+                                                            q.getParentQuestion() != null
+                                                                    ? q.getParentQuestion()
+                                                                            .getId()
+                                                                    : null)
                                                     .explanation(q.getExplanation())
                                                     .tagIds(q.getTags().stream()
                                                             .map(Tag::getId)

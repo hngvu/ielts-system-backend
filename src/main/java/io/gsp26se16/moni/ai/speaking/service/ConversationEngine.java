@@ -9,12 +9,8 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.gsp26se16.moni.ai.speaking.entity.SpeakingSession;
 import io.gsp26se16.moni.ai.speaking.entity.SpeakingSubmission;
-import io.gsp26se16.moni.ai.speaking.model.ActiveSpeakingSession;
-import io.gsp26se16.moni.ai.speaking.repository.SpeakingSessionRepository;
 import io.gsp26se16.moni.ai.speaking.repository.SpeakingSubmissionRepository;
-import io.gsp26se16.moni.ai.speaking.session.SessionManager;
 import io.gsp26se16.moni.ai.writing.entity.AiEvaluation;
 import io.gsp26se16.moni.ai.writing.repository.AiEvaluationRepository;
 import io.gsp26se16.moni.ai.writing.service.Helper;
@@ -27,27 +23,25 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Central AI orchestrator cho Speaking pipeline.
+ * AI orchestrator cho Speaking exam pipeline.
  *
  * Flow:
- *   1. Lấy transcript từ session
- *   2. Tạo SpeakingSubmission (PROCESSING)
- *   3. Chấm điểm 4 tiêu chí: FC, LR, GRA, PR
- *   4. SpeakingRuleEngine điều chỉnh band
- *   5. Tạo feedback
- *   6. Lưu AiEvaluation + cập nhật SpeakingSubmission → COMPLETED
- *   7. Trả kết quả về WebSocket
+ *   SpeakingExamHandler gọi evaluateFromExam() sau khi user hoàn thành 3 parts.
+ *   1. Tạo SpeakingSubmission (PROCESSING)
+ *   2. Chấm điểm 4 tiêu chí: FC, LR, GRA, PR
+ *   3. SpeakingRuleEngine điều chỉnh band
+ *   4. Tạo feedback
+ *   5. Lưu AiEvaluation + cập nhật SpeakingSubmission → COMPLETED
+ *   6. Trả kết quả về WebSocket
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ConversationEngine {
 
-    private final SessionManager sessionManager;
     private final SpeakingRuleEngine speakingRuleEngine;
     private final AiEvaluationRepository aiEvaluationRepository;
     private final SpeakingSubmissionRepository speakingSubmissionRepository;
-    private final SpeakingSessionRepository speakingSessionRepository;
     private final UsersRepository usersRepository;
     private final PromptLoader promptLoader;
     private final Helper helper;
@@ -57,47 +51,39 @@ public class ConversationEngine {
     // ─────────────────────────────── Public API ───────────────────────────────
 
     /**
-     * Đánh giá toàn bộ transcript đã tích lũy trong session.
+     * Đánh giá toàn bộ transcript 3 parts từ exam pipeline.
+     * Gọi bởi SpeakingExamHandler sau khi user hoàn thành cả 3 parts.
      *
-     * @param sessionId the active speaking session ID
-     * @return kết quả đánh giá gửi về WebSocket
+     * @param examSessionId  WebSocket session ID
+     * @param userId         ID của user
+     * @param fullTranscript toàn bộ transcript 3 parts (từ ActiveExamSession.getFullTranscript())
      */
-    public Map<String, Object> evaluate(String sessionId) {
-        ActiveSpeakingSession active = sessionManager.getSession(sessionId);
-        String transcript = active.getFullTranscript();
-        String question = active.getCurrentQuestion();
-
-        if (transcript.isBlank()) {
-            log.warn("Transcript rỗng cho session {}, trả về kết quả mặc định", sessionId);
+    public Map<String, Object> evaluateFromExam(String examSessionId, String userId, String fullTranscript) {
+        if (fullTranscript == null || fullTranscript.isBlank()) {
+            log.warn("Transcript rỗng cho exam session {}", examSessionId);
             return defaultResult();
         }
 
-        log.info("Bắt đầu đánh giá session {} — độ dài transcript: {}", sessionId, transcript.length());
+        log.info("Bắt đầu đánh giá exam session {} — {} chars", examSessionId, fullTranscript.length());
 
-        // ── Tạo SpeakingSubmission (trạng thái PROCESSING) ───────────────────
-        SpeakingSubmission submission = createSubmission(active, transcript);
+        SpeakingSubmission submission = createSubmission(userId, fullTranscript);
 
         try {
             ChatClient chatClient =
                     chatClientBuilder.defaultAdvisors(new SimpleLoggerAdvisor()).build();
 
-            // ── Chấm điểm 4 tiêu chí ─────────────────────────────────────────
-            Map<String, Object> fc = evaluateCriterion(chatClient, "FC", transcript, question);
-            Map<String, Object> lr = evaluateCriterion(chatClient, "LR", transcript, question);
-            Map<String, Object> gra = evaluateCriterion(chatClient, "GRA", transcript, question);
-            Map<String, Object> pr = evaluateCriterion(chatClient, "PR", transcript, question);
+            // Chấm 4 tiêu chí IELTS Speaking
+            Map<String, Object> fc = evaluateCriterion(chatClient, "FC", fullTranscript, "IELTS Speaking Test");
+            Map<String, Object> lr = evaluateCriterion(chatClient, "LR", fullTranscript, "IELTS Speaking Test");
+            Map<String, Object> gra = evaluateCriterion(chatClient, "GRA", fullTranscript, "IELTS Speaking Test");
+            Map<String, Object> pr = evaluateCriterion(chatClient, "PR", fullTranscript, "IELTS Speaking Test");
 
-            // ── Rule Engine ───────────────────────────────────────────────────
             Map<String, Object> assessment = speakingRuleEngine.calculateBands(fc, lr, gra, pr);
+            Map<String, Object> feedback = generateFeedback(chatClient, fullTranscript, assessment);
 
-            // ── Feedback ──────────────────────────────────────────────────────
-            Map<String, Object> feedback = generateFeedback(chatClient, transcript, assessment);
-
-            // ── Lưu AiEvaluation + cập nhật submission → COMPLETED ────────────
             double finalBand = (double) assessment.get("final_band");
-            persistEvaluation(submission, transcript, assessment, feedback, finalBand);
+            persistEvaluation(submission, fullTranscript, assessment, feedback, finalBand);
 
-            // ── Build response ─────────────────────────────────────────────────
             Map<String, Object> criteriaMap = (Map<String, Object>) assessment.get("criteria");
             return Map.of(
                     "type",
@@ -115,35 +101,29 @@ public class ConversationEngine {
                     "feedback",
                     feedback,
                     "transcript",
-                    transcript);
+                    fullTranscript);
 
         } catch (Exception e) {
-            log.error("Đánh giá thất bại cho session {}: {}", sessionId, e.getMessage(), e);
+            log.error("Đánh giá exam thất bại cho session {}: {}", examSessionId, e.getMessage(), e);
             submission.setEvaluationStatus(EvaluationStatus.FAILED);
             speakingSubmissionRepository.save(submission);
             return defaultResult();
         }
     }
 
-    // ─────────────────────────────── Tạo submission ──────────────────────────
+    // ─────────────────────────────── Private ─────────────────────────────────
 
-    private SpeakingSubmission createSubmission(ActiveSpeakingSession active, String transcript) {
-        Users user = usersRepository.findById(active.getUserId()).orElse(null);
-
-        SpeakingSession speakingSession =
-                speakingSessionRepository.findById(active.getSessionId()).orElse(null);
+    private SpeakingSubmission createSubmission(String userId, String transcript) {
+        Users user = usersRepository.findById(userId).orElse(null);
 
         SpeakingSubmission submission = SpeakingSubmission.builder()
                 .user(user)
-                .speakingSession(speakingSession)
                 .audioTranscript(transcript)
                 .evaluationStatus(EvaluationStatus.PROCESSING)
                 .build();
 
         return speakingSubmissionRepository.save(submission);
     }
-
-    // ─────────────────────────────── Phases ──────────────────────────────────
 
     private Map<String, Object> evaluateCriterion(
             ChatClient chatClient, String criterion, String transcript, String question) {
@@ -188,8 +168,6 @@ public class ConversationEngine {
         }
     }
 
-    // ─────────────────────────────── Persistence ─────────────────────────────
-
     private void persistEvaluation(
             SpeakingSubmission submission,
             String transcript,
@@ -197,7 +175,6 @@ public class ConversationEngine {
             Map<String, Object> feedback,
             double finalBand) {
 
-        // Lưu AiEvaluation
         AiEvaluation evaluation = AiEvaluation.builder()
                 .submissionId(submission.getId())
                 .skill(Skill.SPEAKING)
@@ -210,19 +187,16 @@ public class ConversationEngine {
 
         aiEvaluationRepository.save(evaluation);
 
-        // Cập nhật trạng thái submission → COMPLETED
         submission.setEvaluationStatus(EvaluationStatus.COMPLETED);
         speakingSubmissionRepository.save(submission);
 
-        log.info("Đã lưu AiEvaluation cho submission {} — band: {}", submission.getId(), finalBand);
+        log.info("AiEvaluation saved: submissionId={}, band={}", submission.getId(), finalBand);
     }
-
-    // ─────────────────────────────── Helpers ─────────────────────────────────
 
     private double getBandFromCriterion(Map<String, Object> criteriaMap, String key) {
         if (criteriaMap == null) return 5.0;
-        Object criterionObj = criteriaMap.get(key);
-        if (criterionObj instanceof Map<?, ?> map) {
+        Object obj = criteriaMap.get(key);
+        if (obj instanceof Map<?, ?> map) {
             Object adjusted = map.get("adjusted_band");
             if (adjusted instanceof Number n) return n.doubleValue();
             Object band = map.get("band");

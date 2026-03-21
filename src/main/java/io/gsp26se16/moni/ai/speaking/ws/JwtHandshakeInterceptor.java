@@ -33,7 +33,6 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
             ServerHttpResponse response,
             WebSocketHandler wsHandler,
             Map<String, Object> attributes) {
-
         String query = request.getURI().getQuery();
         String token = extractToken(query);
 

@@ -63,6 +63,10 @@ assemblyai:
   api-key: ${ASSEMBLYAI_API_KEY}
   base-url: https://api.assemblyai.com/v2
 
+elevenlabs:
+  api-key: ${ELEVENLABS_API_KEY}
+  voice-id: UaYTS0wayjmO9KD1LR4R
+
 logging:
   level:
     org.springframework.web.client: DEBUG
