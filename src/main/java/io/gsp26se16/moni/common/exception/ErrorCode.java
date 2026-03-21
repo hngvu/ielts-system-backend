@@ -69,6 +69,14 @@ public enum ErrorCode {
     PLACEMENT_NO_LISTENING_TEST(1051, "Không có bài thi Listening nào được công bố", HttpStatus.NOT_FOUND),
     PLACEMENT_INVALID_BAND(1052, "Điểm band không hợp lệ (0-9, bước 0.5)", HttpStatus.BAD_REQUEST),
     PLACEMENT_NOT_FOUND(1053, "Không tìm thấy kết quả kiểm tra trình độ", HttpStatus.NOT_FOUND),
+
+    // --- CREDIT & PAYMENT ---
+    INSUFFICIENT_CREDIT(1054, "Số dư credit không đủ", HttpStatus.BAD_REQUEST),
+
+    // --- EXPERT MODULE ---
+    EXPERT_NOT_FOUND(1055, "Không tìm thấy chuyên gia", HttpStatus.NOT_FOUND),
+    SCORING_SESSION_NOT_FOUND(1056, "Không tìm thấy phiên chấm điểm", HttpStatus.NOT_FOUND),
+    SESSION_NOT_CANCELLABLE(1057, "Phiên này không thể huỷ", HttpStatus.BAD_REQUEST),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
