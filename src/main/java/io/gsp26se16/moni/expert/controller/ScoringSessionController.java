@@ -7,6 +7,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.expert.dto.CreateSessionRequest;
@@ -22,10 +23,13 @@ public class ScoringSessionController {
     private final ScoringSessionService sessionService;
 
     @PostMapping
-    public ResponseEntity<ScoringSessionResponse> createSession(@RequestBody CreateSessionRequest request) {
+    public ResponseEntity<ApiResponse<ScoringSessionResponse>> createSession(
+            @RequestBody CreateSessionRequest request) {
         String credentialId = getCurrentUserId();
-        return ResponseEntity.ok(sessionService.createSession(
-                credentialId, request.getExpertId(), request.getSkill(), request.getContent()));
+        return ResponseEntity.ok(ApiResponse.<ScoringSessionResponse>builder()
+                .result(sessionService.createSession(
+                        credentialId, request.getExpertId(), request.getSkill(), request.getContent()))
+                .build());
     }
 
     @PatchMapping("/{id}/cancel")
@@ -36,9 +40,11 @@ public class ScoringSessionController {
     }
 
     @GetMapping("/{id}/queue-position")
-    public ResponseEntity<Map<String, Integer>> getQueuePosition(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<Map<String, Integer>>> getQueuePosition(@PathVariable Integer id) {
         int position = sessionService.getQueuePosition(id);
-        return ResponseEntity.ok(Map.of("queuePosition", position));
+        return ResponseEntity.ok(ApiResponse.<Map<String, Integer>>builder()
+                .result(Map.of("queuePosition", position))
+                .build());
     }
 
     private String getCurrentUserId() {

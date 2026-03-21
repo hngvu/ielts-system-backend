@@ -15,6 +15,10 @@ public class ExpertProfileResponse {
     String displayName;
     String avatarUrl;
     Double bandScore;
+    Double bandReading;
+    Double bandListening;
+    Double bandWriting;
+    Double bandSpeaking;
     Integer yearsExperience;
     ExpertSpecialization specialization;
     String bio;

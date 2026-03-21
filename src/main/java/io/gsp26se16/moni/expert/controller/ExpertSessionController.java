@@ -7,6 +7,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.expert.dto.ScoringSessionResponse;
@@ -22,14 +23,18 @@ public class ExpertSessionController {
     private final ScoringSessionService sessionService;
 
     @GetMapping
-    public ResponseEntity<List<ScoringSessionResponse>> listQueuedSessions() {
+    public ResponseEntity<ApiResponse<List<ScoringSessionResponse>>> listQueuedSessions() {
         String credentialId = getCurrentUserId();
-        return ResponseEntity.ok(sessionService.getSessionsForExpert(credentialId));
+        return ResponseEntity.ok(ApiResponse.<List<ScoringSessionResponse>>builder()
+                .result(sessionService.getSessionsForExpert(credentialId))
+                .build());
     }
 
     @PatchMapping("/{id}/start")
-    public ResponseEntity<ScoringSessionResponse> startSession(@PathVariable Integer id) {
-        return ResponseEntity.ok(sessionService.startSession(id));
+    public ResponseEntity<ApiResponse<ScoringSessionResponse>> startSession(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.<ScoringSessionResponse>builder()
+                .result(sessionService.startSession(id))
+                .build());
     }
 
     @PostMapping("/{id}/evaluate")

@@ -66,9 +66,14 @@ public class ExpertServiceImpl implements ExpertService {
                 .build();
         Users savedUser = usersRepository.save(user);
 
+        String rawPassword =
+                (request.getPassword() != null && !request.getPassword().isBlank())
+                        ? request.getPassword()
+                        : "12345678";
+
         UserCredentials credential = UserCredentials.builder()
                 .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
+                .password(passwordEncoder.encode(rawPassword))
                 .role(UserCredentials.Role.EXPERT)
                 .user(savedUser)
                 .build();
@@ -79,6 +84,10 @@ public class ExpertServiceImpl implements ExpertService {
                 .displayName(request.getDisplayName())
                 .avatarUrl(request.getAvatarUrl())
                 .bandScore(request.getBandScore())
+                .bandReading(request.getBandReading())
+                .bandListening(request.getBandListening())
+                .bandWriting(request.getBandWriting())
+                .bandSpeaking(request.getBandSpeaking())
                 .yearsExperience(request.getYearsExperience())
                 .specialization(request.getSpecialization())
                 .bio(request.getBio())
@@ -97,6 +106,37 @@ public class ExpertServiceImpl implements ExpertService {
                 expertProfileRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.EXPERT_NOT_FOUND));
         profile.setStatus(status);
         expertProfileRepository.save(profile);
+
+        // Admin ban/unban: sync isActive on UserCredentials
+        var cred = userCredentialsRepository.findByUser_Id(profile.getUser().getId());
+        if (cred.isPresent()) {
+            cred.get().setActive(status != ExpertStatus.OFFLINE);
+            userCredentialsRepository.save(cred.get());
+        }
+    }
+
+    @Override
+    public ExpertProfileResponse getMyProfile(String credentialId) {
+        var cred = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        ExpertProfile profile = expertProfileRepository
+                .findByUser_Id(cred.getUser().getId())
+                .orElseThrow(() -> new AppException(ErrorCode.EXPERT_NOT_FOUND));
+        return toResponse(profile);
+    }
+
+    @Override
+    @Transactional
+    public void updateMyStatus(String credentialId, ExpertStatus status) {
+        var cred = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        ExpertProfile profile = expertProfileRepository
+                .findByUser_Id(cred.getUser().getId())
+                .orElseThrow(() -> new AppException(ErrorCode.EXPERT_NOT_FOUND));
+        profile.setStatus(status);
+        expertProfileRepository.save(profile);
     }
 
     @Override
@@ -113,6 +153,10 @@ public class ExpertServiceImpl implements ExpertService {
                 .displayName(p.getDisplayName())
                 .avatarUrl(p.getAvatarUrl())
                 .bandScore(p.getBandScore())
+                .bandReading(p.getBandReading())
+                .bandListening(p.getBandListening())
+                .bandWriting(p.getBandWriting())
+                .bandSpeaking(p.getBandSpeaking())
                 .yearsExperience(p.getYearsExperience())
                 .specialization(p.getSpecialization())
                 .bio(p.getBio())
