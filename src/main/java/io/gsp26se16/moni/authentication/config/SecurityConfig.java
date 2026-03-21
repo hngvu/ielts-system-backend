@@ -50,6 +50,8 @@ public class SecurityConfig {
                 .permitAll()
                 .requestMatchers(
                         HttpMethod.GET,
+                        "/api/v1/experts",
+                        "/api/v1/experts/**",
                         "/api/v1/vocab/lookup",
                         "/api/v1/vocab/browse",
                         "/api/v1/vocab/browse/**",

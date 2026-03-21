@@ -28,4 +28,8 @@ public class UserProfileResponse {
     Double targetBand;
 
     LocalDate examDate;
+
+    Double credit;
+
+    String role;
 }

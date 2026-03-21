@@ -20,28 +20,14 @@ import io.gsp26se16.moni.ai.speaking.service.ConversationEngine;
 import io.gsp26se16.moni.ai.speaking.service.ExamSessionManager;
 import io.gsp26se16.moni.ai.speaking.service.ExaminerService;
 import io.gsp26se16.moni.common.enumeration.ExamState;
+import io.gsp26se16.moni.common.exception.AppException;
+import io.gsp26se16.moni.payment.service.CreditService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * WebSocket handler cho buổi thi Speaking với examiner AI + ElevenLabs TTS.
  * Endpoint: /ws/speaking/exam?token=<JWT>
- *
- * ── Messages từ Client ────────────────────────────────────────────────────
- *   { "type": "start_exam",           "testId": 123 }
- *   { "type": "transcript",           "partNumber": 1, "questionId": 5, "text": "..." }
- *   { "type": "start_speaking_part2" }
- *   { "type": "stop_speaking_part2",  "text": "full part 2 transcript" }
- *   { "type": "end_exam" }
- *
- * ── Messages từ Server ────────────────────────────────────────────────────
- *   { "type": "question",     "partNumber": 1, "questionId": 5, "text": "...", "isFollowUp": false }
- *   { "type": "show_cue_card","duration": 60, "questionId": X, "topic": "..." }
- *   { "type": "audio_chunk",  "data": "<base64 mp3>" }
- *   { "type": "audio_end" }
- *   { "type": "evaluating" }
- *   { "type": "evaluation",   "final_band": 7.0, "fluency": ..., "feedback": {...}, "transcript": "..." }
- *   { "type": "error",        "message": "..." }
  */
 @Slf4j
 @Component
@@ -51,6 +37,7 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
     private final ExamSessionManager sessionManager;
     private final ExaminerService examinerService;
     private final ConversationEngine conversationEngine;
+    private final CreditService creditService;
     private final ObjectMapper objectMapper;
 
     private final ExecutorService evalExecutor = Executors.newCachedThreadPool();
@@ -99,6 +86,14 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
 
         if (testId == null) {
             sendError(ws, "testId is required");
+            return;
+        }
+
+        // Check and deduct credit before starting exam
+        try {
+            creditService.checkAndDeduct(userId, "AI_SPEAKING_SCORE");
+        } catch (AppException e) {
+            sendError(ws, "Không đủ credit để bắt đầu thi Speaking");
             return;
         }
 

@@ -14,5 +14,6 @@ public interface UserMapper {
 
     @Mapping(source = "credential.email", target = "email")
     @Mapping(source = "full_name", target = "full_name")
+    @Mapping(source = "credential.role", target = "role")
     UserProfileResponse toUserProfileResponse(Users user);
 }
