@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -43,6 +44,18 @@ public class SecurityConfig {
     }
 
     @Bean
+    @Order(1) // Chạy kiểm tra này trước tiên
+    public SecurityFilterChain sepayFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/payments/sepay/**") // Chỉ áp dụng cho endpoint này
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll()); // Cho phép tất cả
+
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeHttpRequests(request -> request.requestMatchers(HttpMethod.OPTIONS, "/**")
                 .permitAll()
@@ -70,11 +83,6 @@ public class SecurityConfig {
                 .permitAll()
                 .anyRequest()
                 .authenticated());
-
-        httpSecurity.securityMatcher("/payments/sepay")
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-                .csrf(AbstractHttpConfigurer::disable)
-                .oauth2ResourceServer(AbstractHttpConfigurer::disable);
 
         httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
                         .decoder(customJwtDecoder)
