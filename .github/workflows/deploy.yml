@@ -65,7 +65,7 @@ jobs:
           ASSEMBLYAI_API_KEY: ${{ secrets.ASSEMBLYAI_API_KEY }}
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           DAILY_API_KEY: ${{ secrets.DAILY_API_KEY }}
-          SEPAY_API_KEY: ${{ secrets.SEPAY_API_KEY }
+          SEPAY_API_KEY: ${{ secrets.SEPAY_API_KEY }}
         with:
           host: ${{ secrets.VM_IP }}
           username: ${{ secrets.VM_USER }}
