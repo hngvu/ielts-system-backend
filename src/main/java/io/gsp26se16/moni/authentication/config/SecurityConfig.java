@@ -80,7 +80,21 @@ public class SecurityConfig {
                 .anyRequest()
                 .authenticated());
 
-        httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
+        httpSecurity.oauth2ResourceServer(oauth2 ->
+                oauth2
+                        .bearerTokenResolver(request -> {
+                            // Nếu là SePay, trả về null để Spring coi như không có Token (Anonymous)
+                            if (request.getRequestURI().startsWith("/payments/sepay")) {
+                                return null;
+                            }
+                            // Các đường dẫn khác thì lấy Token như bình thường
+                            String bearer = request.getHeader("Authorization");
+                            if (bearer != null && bearer.startsWith("Bearer ")) {
+                                return bearer.substring(7);
+                            }
+                            return null;
+                        })
+                        .jwt(jwtConfigurer -> jwtConfigurer
                         .decoder(customJwtDecoder)
                         .jwtAuthenticationConverter(jwtAuthenticationConverter()))
                 .authenticationEntryPoint(new JwtAuthenticationEntryPoint()));
