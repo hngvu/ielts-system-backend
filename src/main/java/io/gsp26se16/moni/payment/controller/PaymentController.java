@@ -25,11 +25,10 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @PostMapping("/sepay")
-    public ResponseEntity<PaymentResponse> handleSePayWebhook(@RequestHeader (value = "Authorization", required = true) String authHeader, @RequestBody SePayWebhookRequest sePayWebhookRequest) {
+    public ResponseEntity<PaymentResponse> handleSePayWebhook(@RequestHeader (value = "Authorization", required = false) String authHeader, @RequestBody SePayWebhookRequest sePayWebhookRequest) {
         if (authHeader == null || !authHeader.equals("Apikey " + SEPAY_API_KEY)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
         PaymentResponse response = paymentService.handleSePayCallback(sePayWebhookRequest);
         return ResponseEntity.ok(response);
     }
