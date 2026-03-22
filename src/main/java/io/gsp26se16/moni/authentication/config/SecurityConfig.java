@@ -47,8 +47,9 @@ public class SecurityConfig {
     @Order(1) // Chạy kiểm tra này trước tiên
     public SecurityFilterChain sepayFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/payments/sepay/**") // Chỉ áp dụng cho endpoint này
+                .securityMatcher("/payments/sepay") // Chỉ áp dụng cho endpoint này
                 .csrf(AbstractHttpConfigurer::disable)
+                .oauth2ResourceServer(oauth2 -> oauth2.disable()) // Explicitly disable OAuth2
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll()); // Cho phép tất cả
 
         return http.build();
