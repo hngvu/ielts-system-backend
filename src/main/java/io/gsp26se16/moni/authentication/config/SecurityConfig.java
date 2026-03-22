@@ -35,7 +35,7 @@ public class SecurityConfig {
         "/auth/outbound/authentication",
         "/api/v1/ai/writing/score",
         "/api/v1/vocab/lookup",
-         "/payments/sepay"
+        "/payments/sepay"
     };
 
     private final CustomJwtDecoder customJwtDecoder;
@@ -43,12 +43,6 @@ public class SecurityConfig {
     public SecurityConfig(CustomJwtDecoder customJwtDecoder) {
         this.customJwtDecoder = customJwtDecoder;
     }
-
-//    @Bean
-//    public WebSecurityCustomizer webSecurityCustomizer() {
-//        return (web) -> web.ignoring()
-//                .requestMatchers("/payments/sepay");
-//    }
 
     @Bean
     @Order(2)
@@ -80,21 +74,18 @@ public class SecurityConfig {
                 .anyRequest()
                 .authenticated());
 
-        httpSecurity.oauth2ResourceServer(oauth2 ->
-                oauth2
-//                        .bearerTokenResolver(request -> {
-//                            // Nếu là SePay, trả về null để Spring coi như không có Token (Anonymous)
-//                            if (request.getRequestURI().startsWith("/payments/sepay")) {
-//                                return null;
-//                            }
-//                            // Các đường dẫn khác thì lấy Token như bình thường
-//                            String bearer = request.getHeader("Authorization");
-//                            if (bearer != null && bearer.startsWith("Bearer ")) {
-//                                return bearer.substring(7);
-//                            }
-//                            return null;
-//                        })
-                        .jwt(jwtConfigurer -> jwtConfigurer
+        httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.bearerTokenResolver(request -> {
+                    // Safety net: nếu request vào SEpay webhook, trả null để Spring coi như anonymous
+                    if (request.getRequestURI().startsWith("/payments/sepay")) {
+                        return null;
+                    }
+                    String bearer = request.getHeader("Authorization");
+                    if (bearer != null && bearer.startsWith("Bearer ")) {
+                        return bearer.substring(7);
+                    }
+                    return null;
+                })
+                .jwt(jwtConfigurer -> jwtConfigurer
                         .decoder(customJwtDecoder)
                         .jwtAuthenticationConverter(jwtAuthenticationConverter()))
                 .authenticationEntryPoint(new JwtAuthenticationEntryPoint()));
@@ -116,12 +107,13 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", config);
         return source;
     }
+
     @Bean
     @Order(1)
     public SecurityFilterChain webhookFilterChain(HttpSecurity http) throws Exception {
-        http
-                .securityMatcher("/payments/sepay") // Chỉ áp dụng cho route này
+        http.securityMatcher("/payments/sepay")
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }
