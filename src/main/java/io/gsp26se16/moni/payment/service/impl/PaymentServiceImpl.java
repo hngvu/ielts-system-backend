@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import io.gsp26se16.moni.authentication.entity.Users;
+import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import io.gsp26se16.moni.payment.dto.request.PaymentInitRequest;
 import io.gsp26se16.moni.payment.dto.request.SePayWebhookRequest;
 import io.gsp26se16.moni.payment.dto.response.PaymentInitResponse;
@@ -39,6 +40,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final PackagePricingRepository packagePricingRepository;
     private final CreditTransactionRepository creditTransactionRepository;
+    private final UsersRepository usersRepository;
     private final String txnCodePrefix = "MN";
     private final String txnCodeCharset = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"; // exclude 0,1,I,L,O
     private final int txnCodeLength = 6 - txnCodePrefix.length();
@@ -285,17 +287,23 @@ public class PaymentServiceImpl implements PaymentService {
         // Calculate credits based on package pricing
         int creditAmount = payment.getPackagePricing().getCreditAmount();
 
-        // Get current user balance (simplified - in real implementation, you'd track this properly)
-        int currentBalance = 0; // This should come from user's credit balance
+        Users user = payment.getUser();
+        // Get actual current balance from user entity
+        int currentBalance = user.getCredit() != null ? user.getCredit().intValue() : 0;
+        int newBalance = currentBalance + creditAmount;
+
+        // Update user's credit balance
+        user.setCredit((double) newBalance);
+        usersRepository.save(user);
 
         // Create credit transaction
         CreditTransaction creditTransaction = CreditTransaction.builder()
                 .delta(creditAmount)
                 .balanceBefore(currentBalance)
-                .balanceAfter(currentBalance + creditAmount)
+                .balanceAfter(newBalance)
                 .paymentType(PaymentType.TOPUP)
                 .createdAt(LocalDateTime.now())
-                .user(payment.getUser())
+                .user(user)
                 .payment(payment)
                 .build();
 
@@ -307,16 +315,19 @@ public class PaymentServiceImpl implements PaymentService {
             return; // Skip if package or user is null
         }
 
-        // For failed payments, create a zero-delta transaction for tracking
-        int currentBalance = 0; // This should come from user's credit balance
+        Users user = payment.getUser();
+        // Get actual current balance from user entity
+        int currentBalance = user.getCredit() != null ? user.getCredit().intValue() : 0;
 
+        // For failed payments, create a zero-delta transaction for tracking
+        // (no credit change, just record the failed attempt)
         CreditTransaction creditTransaction = CreditTransaction.builder()
-                .delta(0) // No credit change for failed payments
+                .delta(0)
                 .balanceBefore(currentBalance)
                 .balanceAfter(currentBalance)
                 .paymentType(PaymentType.REFUND)
                 .createdAt(LocalDateTime.now())
-                .user(payment.getUser())
+                .user(user)
                 .payment(payment)
                 .build();
 
