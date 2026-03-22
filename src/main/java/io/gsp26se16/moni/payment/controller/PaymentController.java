@@ -3,6 +3,7 @@ package io.gsp26se16.moni.payment.controller;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/payments")
+@Slf4j
 public class PaymentController {
     @Value("${sepay.api-key}")
     private String SEPAY_API_KEY;
@@ -26,6 +28,7 @@ public class PaymentController {
 
     @PostMapping("/sepay")
     public ResponseEntity<PaymentResponse> handleSePayWebhook(@RequestHeader (value = "Authorization", required = false) String authHeader, @RequestBody SePayWebhookRequest sePayWebhookRequest) {
+        log.info("Header ", authHeader);
         if (authHeader == null || !authHeader.equals("Apikey " + SEPAY_API_KEY)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
