@@ -36,7 +36,6 @@ public class SecurityConfig {
         "/auth/outbound/authentication",
         "/api/v1/ai/writing/score",
         "/api/v1/vocab/lookup",
-        "/payments/sepay"
     };
 
     private final CustomJwtDecoder customJwtDecoder;
@@ -52,6 +51,26 @@ public class SecurityConfig {
     }
 
     @Bean
+    @Order(1)
+    public SecurityFilterChain sepayFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/payments/sepay") // Ép FilterChain này CHỈ xử lý SePay
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(AbstractHttpConfigurer::disable)
+                // VÔ HIỆU HÓA TẤT CẢ các bộ lọc mặc định có thể "soi" Header Authorization
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .oauth2ResourceServer(AbstractHttpConfigurer::disable)
+                // Cho phép đi qua tầng AuthZ
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                // Ép buộc không lưu Session
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeHttpRequests(request -> request.requestMatchers(HttpMethod.OPTIONS, "/**")
                 .permitAll()
