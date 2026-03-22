@@ -35,7 +35,8 @@ public class SecurityConfig {
         "/auth/logout",
         "/auth/outbound/authentication",
         "/api/v1/ai/writing/score",
-        "/api/v1/vocab/lookup"
+        "/api/v1/vocab/lookup",
+        "/payments/sepay"
     };
 
     private final CustomJwtDecoder customJwtDecoder;
@@ -47,9 +48,8 @@ public class SecurityConfig {
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring()
-                .requestMatchers("/payments/sepay/**");
+                .requestMatchers("/payments/sepay");
     }
-
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {

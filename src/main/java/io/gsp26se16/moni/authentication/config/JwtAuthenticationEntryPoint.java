@@ -21,6 +21,12 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     public void commence(
             HttpServletRequest request, HttpServletResponse response, AuthenticationException authException)
             throws IOException {
+
+        if (request.getRequestURI().contains("/payments/sepay")) {
+            log.warn("SePay webhook encountered an auth exception but skipping EntryPoint: {}", authException.getMessage());
+            return; // Thoát ra để không ghi đè response 401 vào body
+        }
+
         log.error("Unauthorized error at path: {} - {}", request.getRequestURI(), authException.getMessage());
         ErrorCode errorCode = ErrorCode.UNAUTHENTICATED;
 
@@ -37,4 +43,5 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
         response.flushBuffer();
     }
+
 }
