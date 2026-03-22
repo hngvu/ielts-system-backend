@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.authentication.config;
 
 import java.io.IOException;
+import java.util.Collections;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,7 +23,22 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
             HttpServletRequest request, HttpServletResponse response, AuthenticationException authException)
             throws IOException {
 
-        log.error("Unauthorized error at path: {} - {}", request.getRequestURI(), authException.getMessage());
+        // === DEBUG: Log chi tiết request bị 401 ===
+        log.error("=== 401 UNAUTHORIZED DEBUG ===");
+        log.error("Method: {}", request.getMethod());
+        log.error("RequestURI: {}", request.getRequestURI());
+        log.error("RequestURL: {}", request.getRequestURL());
+        log.error("ServletPath: {}", request.getServletPath());
+        log.error("ContextPath: {}", request.getContextPath());
+        log.error("PathInfo: {}", request.getPathInfo());
+        log.error("QueryString: {}", request.getQueryString());
+        log.error("Exception: {}", authException.getMessage());
+
+        // Log tất cả headers
+        Collections.list(request.getHeaderNames())
+                .forEach(headerName -> log.error("Header [{}]: {}", headerName, request.getHeader(headerName)));
+        log.error("=== END 401 DEBUG ===");
+
         ErrorCode errorCode = ErrorCode.UNAUTHENTICATED;
 
         response.setStatus(errorCode.getStatusCode().value());

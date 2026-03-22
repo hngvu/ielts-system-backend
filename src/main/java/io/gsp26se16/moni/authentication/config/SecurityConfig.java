@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -19,6 +18,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -45,9 +47,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Order(2)
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.authorizeHttpRequests(request -> request.requestMatchers(HttpMethod.OPTIONS, "/**")
+        httpSecurity.authorizeHttpRequests(request -> request
+                // SEpay webhook — cho phép mọi method, không cần auth
+                .requestMatchers("/payments/sepay")
+                .permitAll()
+                .requestMatchers(HttpMethod.OPTIONS, "/**")
                 .permitAll()
                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS)
                 .permitAll()
@@ -75,8 +80,16 @@ public class SecurityConfig {
                 .authenticated());
 
         httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.bearerTokenResolver(request -> {
-                    // Safety net: nếu request vào SEpay webhook, trả null để Spring coi như anonymous
-                    if (request.getRequestURI().startsWith("/payments/sepay")) {
+                    String uri = request.getRequestURI();
+                    String servletPath = request.getServletPath();
+                    log.debug(
+                            "[BearerTokenResolver] URI={}, servletPath={}, Authorization={}",
+                            uri,
+                            servletPath,
+                            request.getHeader("Authorization"));
+                    // SEpay webhook: trả null để Spring coi như anonymous
+                    if (uri.startsWith("/payments/sepay") || servletPath.startsWith("/payments/sepay")) {
+                        log.info("[BearerTokenResolver] Skipping JWT for SEpay webhook: {}", uri);
                         return null;
                     }
                     String bearer = request.getHeader("Authorization");
@@ -106,16 +119,6 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
-    }
-
-    @Bean
-    @Order(1)
-    public SecurityFilterChain webhookFilterChain(HttpSecurity http) throws Exception {
-        http.securityMatcher("/payments/sepay")
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(AbstractHttpConfigurer::disable);
-        return http.build();
     }
 
     @Bean
