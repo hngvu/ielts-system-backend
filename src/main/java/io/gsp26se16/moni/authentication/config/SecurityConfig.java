@@ -37,6 +37,7 @@ public class SecurityConfig {
         "/auth/outbound/authentication",
         "/api/v1/ai/writing/score",
         "/api/v1/vocab/lookup",
+         "/payments/sepay"
     };
 
     private final CustomJwtDecoder customJwtDecoder;
@@ -45,33 +46,13 @@ public class SecurityConfig {
         this.customJwtDecoder = customJwtDecoder;
     }
 
-    @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring()
-                .requestMatchers("/payments/sepay");
-    }
+//    @Bean
+//    public WebSecurityCustomizer webSecurityCustomizer() {
+//        return (web) -> web.ignoring()
+//                .requestMatchers("/payments/sepay");
+//    }
 
     @Bean
-    @Order(1)
-    public SecurityFilterChain sepayFilterChain(HttpSecurity http) throws Exception {
-        http
-                .securityMatcher("/payments/sepay") // Ép FilterChain này CHỈ xử lý SePay
-                .csrf(AbstractHttpConfigurer::disable)
-                .cors(AbstractHttpConfigurer::disable)
-                // VÔ HIỆU HÓA TẤT CẢ các bộ lọc mặc định có thể "soi" Header Authorization
-                .httpBasic(AbstractHttpConfigurer::disable)
-                .formLogin(AbstractHttpConfigurer::disable)
-                .oauth2ResourceServer(AbstractHttpConfigurer::disable)
-                // Cho phép đi qua tầng AuthZ
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-                // Ép buộc không lưu Session
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-
-        return http.build();
-    }
-
-    @Bean
-    @Order(2)
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeHttpRequests(request -> request.requestMatchers(HttpMethod.OPTIONS, "/**")
                 .permitAll()
@@ -102,18 +83,18 @@ public class SecurityConfig {
 
         httpSecurity.oauth2ResourceServer(oauth2 ->
                 oauth2
-                        .bearerTokenResolver(request -> {
-                            // Nếu là SePay, trả về null để Spring coi như không có Token (Anonymous)
-                            if (request.getRequestURI().startsWith("/payments/sepay")) {
-                                return null;
-                            }
-                            // Các đường dẫn khác thì lấy Token như bình thường
-                            String bearer = request.getHeader("Authorization");
-                            if (bearer != null && bearer.startsWith("Bearer ")) {
-                                return bearer.substring(7);
-                            }
-                            return null;
-                        })
+//                        .bearerTokenResolver(request -> {
+//                            // Nếu là SePay, trả về null để Spring coi như không có Token (Anonymous)
+//                            if (request.getRequestURI().startsWith("/payments/sepay")) {
+//                                return null;
+//                            }
+//                            // Các đường dẫn khác thì lấy Token như bình thường
+//                            String bearer = request.getHeader("Authorization");
+//                            if (bearer != null && bearer.startsWith("Bearer ")) {
+//                                return bearer.substring(7);
+//                            }
+//                            return null;
+//                        })
                         .jwt(jwtConfigurer -> jwtConfigurer
                         .decoder(customJwtDecoder)
                         .jwtAuthenticationConverter(jwtAuthenticationConverter()))
