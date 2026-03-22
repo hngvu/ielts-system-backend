@@ -30,9 +30,11 @@ import io.gsp26se16.moni.payment.repository.PackagePricingRepository;
 import io.gsp26se16.moni.payment.repository.PaymentRepository;
 import io.gsp26se16.moni.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final PackagePricingRepository packagePricingRepository;
@@ -110,7 +112,10 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public PaymentResponse handleSePayCallback(SePayWebhookRequest sePayWebhookRequest) {
+        log.info("Handling SEpay callback: {}", sePayWebhookRequest);
+        
         if (sePayWebhookRequest == null || sePayWebhookRequest.content() == null) {
+            log.error("Invalid webhook request: content is null");
             throw new IllegalArgumentException("Invalid webhook request");
         }
 
@@ -118,8 +123,10 @@ public class PaymentServiceImpl implements PaymentService {
                 Pattern.compile(Pattern.quote(txnCodePrefix) + "[" + txnCodeCharset + "]{" + txnCodeLength + "}");
         Matcher matcher = pattern.matcher(sePayWebhookRequest.content());
         String txnCode = matcher.find() ? matcher.group() : null;
+        log.info("Extracted txnCode from content: {}", txnCode);
 
         if (txnCode == null) {
+            log.error("Transaction code not found in webhook content: {}", sePayWebhookRequest.content());
             throw new IllegalArgumentException("Transaction code not found in webhook content");
         }
 

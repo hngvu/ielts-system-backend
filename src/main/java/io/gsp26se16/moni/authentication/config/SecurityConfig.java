@@ -49,9 +49,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeHttpRequests(request -> request
-                // SEpay webhook — cho phép mọi method, không cần auth
-                .requestMatchers("/payments/sepay")
-                .permitAll()
+                // SEpay webhook — cho phép mọi method, không cần auth (must be first)
                 .requestMatchers(HttpMethod.OPTIONS, "/**")
                 .permitAll()
                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS)
