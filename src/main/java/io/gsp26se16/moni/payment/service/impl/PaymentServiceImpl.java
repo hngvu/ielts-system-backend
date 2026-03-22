@@ -132,17 +132,13 @@ public class PaymentServiceImpl implements PaymentService {
             throw new IllegalArgumentException("Transaction code not found in webhook content");
         }
 
-        // repo find by txnCode
-        var payment =
-                paymentRepository
-                        .findAll((root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("txnCode"), txnCode))
-                        .stream()
-                        .findFirst()
-                        .orElse(null);
+        // Find payment by txnCode with user and packagePricing eagerly fetched
+        var payment = paymentRepository
+                .findByTxnCode(txnCode)
+                .orElseThrow(() -> new RuntimeException("Payment not found for transaction code: " + txnCode));
 
-        if (payment == null) {
-            throw new RuntimeException("Payment not found for transaction code: " + txnCode);
-        }
+        log.info("Found payment: id={}, userId={}, status={}", payment.getId(), 
+                payment.getUser() != null ? payment.getUser().getId() : "null", payment.getStatus());
 
         // Check if payment is already processed
         if (payment.getStatus() != PaymentStatus.PENDING) {
@@ -281,7 +277,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     private void createCreditTransaction(Payment payment) {
         if (payment.getPackagePricing() == null || payment.getUser() == null) {
-            return; // Skip if package or user is null
+            log.error("Cannot create credit transaction: packagePricing={}, user={}", 
+                    payment.getPackagePricing(), payment.getUser());
+            return;
         }
 
         // Calculate credits based on package pricing
@@ -291,6 +289,9 @@ public class PaymentServiceImpl implements PaymentService {
         // Get actual current balance from user entity
         int currentBalance = user.getCredit() != null ? user.getCredit().intValue() : 0;
         int newBalance = currentBalance + creditAmount;
+
+        log.info("Updating user credit: userId={}, oldBalance={}, creditAmount={}, newBalance={}", 
+                user.getId(), currentBalance, creditAmount, newBalance);
 
         // Update user's credit balance
         user.setCredit((double) newBalance);
