@@ -58,6 +58,7 @@ jwt:
 sepay:
   acc: 21736271
   bank: ACB
+  api-key: ${SEPAY_API_KEY}
 
 assemblyai:
   api-key: ${ASSEMBLYAI_API_KEY}

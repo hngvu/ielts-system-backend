@@ -3,7 +3,9 @@ package io.gsp26se16.moni.payment.controller;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,10 +20,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @RequestMapping("/payments")
 public class PaymentController {
+    @Value("${sepay.api-key}")
+    private String SEPAY_API_KEY;
     private final PaymentService paymentService;
 
     @PostMapping("/sepay")
-    public ResponseEntity<PaymentResponse> handleSePayWebhook(@RequestBody SePayWebhookRequest sePayWebhookRequest) {
+    public ResponseEntity<PaymentResponse> handleSePayWebhook(@RequestHeader (value = "Authorization", required = true) String authHeader, @RequestBody SePayWebhookRequest sePayWebhookRequest) {
+        if (authHeader == null || !authHeader.equals("Apikey " + SEPAY_API_KEY)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         PaymentResponse response = paymentService.handleSePayCallback(sePayWebhookRequest);
         return ResponseEntity.ok(response);
     }
