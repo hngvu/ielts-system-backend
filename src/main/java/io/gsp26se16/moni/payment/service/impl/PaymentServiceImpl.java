@@ -13,10 +13,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.gsp26se16.moni.authentication.entity.UserCredentials;
 import io.gsp26se16.moni.authentication.entity.Users;
+import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import io.gsp26se16.moni.payment.dto.request.PaymentInitRequest;
 import io.gsp26se16.moni.payment.dto.request.SePayWebhookRequest;
@@ -41,6 +44,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PackagePricingRepository packagePricingRepository;
     private final CreditTransactionRepository creditTransactionRepository;
     private final UsersRepository usersRepository;
+    private final UserCredentialsRepository userCredentialsRepository;
     private final String txnCodePrefix = "MN";
     private final String txnCodeCharset = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"; // exclude 0,1,I,L,O
     private final int txnCodeLength = 6 - txnCodePrefix.length();
@@ -83,11 +87,21 @@ public class PaymentServiceImpl implements PaymentService {
             }
         } while (paymentRepository.existsByTxnCode(txnCode));
 
-        // Get current user from security context
+        // Get current user from JWT claims
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users currentUser = null;
-        if (authentication != null && authentication.getPrincipal() instanceof Users) {
-            currentUser = (Users) authentication.getPrincipal();
+        
+        if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
+            String userId = jwt.getClaim("userId");
+            log.info("Extracted userId from JWT for payment init: {}", userId);
+            
+            if (userId != null) {
+                currentUser = userCredentialsRepository
+                        .findById(userId)
+                        .map(UserCredentials::getUser)
+                        .orElse(null);
+                log.info("Found user for payment: {}", currentUser != null ? currentUser.getId() : "null");
+            }
         }
 
         var payment = paymentRepository.save(Payment.builder()
