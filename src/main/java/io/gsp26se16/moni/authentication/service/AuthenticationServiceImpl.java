@@ -42,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthenticationServiceImpl implements AuthenticationService {
     UserCredentialsRepository userCredentialsRepository;
+    UsersRepository usersRepository;
     InvalidatedTokenRepository invalidatedTokenRepository;
     OutboundAuthenticationClient outboundAuthenticationClient;
     OutboundUserClient outboundUserClient;
@@ -77,11 +78,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         UserCredentials user = userCredentialsRepository
                 .findByEmail(userInfo.getEmail())
                 .orElseGet(() -> {
-                    var newUser = UserCredentials.builder()
+                    // Create Users profile for new Google user
+                    Users newProfile = Users.builder()
+                            .full_name(userInfo.getName())
+                            .avatar_url(userInfo.getPicture())
+                            .credit(0.0)
+                            .build();
+                    usersRepository.save(newProfile);
+
+                    var newCred = UserCredentials.builder()
                             .email(userInfo.getEmail())
                             .provider(UserCredentials.Provider.GOOGLE)
+                            .user(newProfile)
                             .build();
-                    return userCredentialsRepository.save(newUser);
+                    return userCredentialsRepository.save(newCred);
                 });
 
         var token = generateToken(user);
