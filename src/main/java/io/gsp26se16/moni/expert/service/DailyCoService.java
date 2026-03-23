@@ -45,9 +45,9 @@ public class DailyCoService {
                 "name",
                 roomName,
                 "privacy",
-                "private",
+                "public",
                 "properties",
-                Map.of("max_participants", 2, "exp", expiresAt, "eject_at_room_exp", true));
+                Map.of("max_participants", 2, "exp", expiresAt, "eject_at_room_exp", true, "enable_knocking", false));
 
         try {
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
