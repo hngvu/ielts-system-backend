@@ -46,6 +46,14 @@ public class ScoringSessionController {
                 ApiResponse.<Map<String, Object>>builder().result(info).build());
     }
 
+    @PostMapping("/{id}/rate")
+    public ResponseEntity<Void> rateSession(@PathVariable Integer id, @RequestBody Map<String, Object> body) {
+        int rating = ((Number) body.get("rating")).intValue();
+        String comment = (String) body.getOrDefault("comment", "");
+        sessionService.rateSession(id, rating, comment);
+        return ResponseEntity.noContent().build();
+    }
+
     private String getCurrentUserId() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof Jwt jwt) {

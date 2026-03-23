@@ -52,4 +52,7 @@ public class ScoringSession {
 
     LocalDateTime startedAt;
     LocalDateTime endedAt;
+
+    Integer userRating;
+    String userComment;
 }
