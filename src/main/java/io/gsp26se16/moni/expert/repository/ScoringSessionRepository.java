@@ -20,4 +20,6 @@ public interface ScoringSessionRepository extends JpaRepository<ScoringSession, 
     Double averageRatingByExpert(ExpertProfile expert);
 
     List<ScoringSession> findByExpert_IdAndUserRatingIsNotNullOrderByCreatedAtDesc(Integer expertId);
+
+    List<ScoringSession> findByUser_IdOrderByCreatedAtDesc(String userId);
 }

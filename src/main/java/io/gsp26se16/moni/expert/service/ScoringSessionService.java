@@ -27,4 +27,8 @@ public interface ScoringSessionService {
     void rateSession(Integer sessionId, int rating, String comment);
 
     List<Map<String, Object>> getExpertReviews(Integer expertId);
+
+    List<ScoringSessionResponse> getUserSessions(String credentialId);
+
+    Map<String, Object> getEvaluation(Integer sessionId);
 }

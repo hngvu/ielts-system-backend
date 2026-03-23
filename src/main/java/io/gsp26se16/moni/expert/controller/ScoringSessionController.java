@@ -1,5 +1,6 @@
 package io.gsp26se16.moni.expert.controller;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -56,6 +57,21 @@ public class ScoringSessionController {
         String comment = (String) body.getOrDefault("comment", "");
         sessionService.rateSession(id, rating, comment);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<ApiResponse<List<ScoringSessionResponse>>> mySessions() {
+        String credentialId = getCurrentUserId();
+        return ResponseEntity.ok(ApiResponse.<List<ScoringSessionResponse>>builder()
+                .result(sessionService.getUserSessions(credentialId))
+                .build());
+    }
+
+    @GetMapping("/{id}/evaluation")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getEvaluation(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
+                .result(sessionService.getEvaluation(id))
+                .build());
     }
 
     private String getCurrentUserId() {
