@@ -35,7 +35,13 @@ public class VocabLookupService {
     public VocabLookupResponse lookupWord(String word, String sentence) {
         Optional<Dictionary> cached = dictionaryRepository.findFirstByWordIgnoreCase(word);
         if (cached.isPresent()) {
-            return mapToResponse(cached.get());
+            Dictionary dict = cached.get();
+            // Skip stale cache entries with no meaning (from old Gemini failures)
+            if (dict.getMeaning() != null && !dict.getMeaning().isBlank()) {
+                return mapToResponse(dict);
+            }
+            // Delete stale entry so we can re-fetch
+            dictionaryRepository.delete(dict);
         }
 
         VocabLookupResponse result = callDolApi(word);
@@ -58,45 +64,49 @@ public class VocabLookupService {
             ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
             if (response.getBody() == null) return null;
 
-            List<Map<String, Object>> data =
-                    (List<Map<String, Object>>) response.getBody().get("data");
-            if (data == null || data.isEmpty()) return null;
+            // DOL API returns { results: [ { en_word: { raw: "..." }, ... } ] }
+            List<Map<String, Object>> results =
+                    (List<Map<String, Object>>) response.getBody().get("results");
+            if (results == null || results.isEmpty()) return null;
 
-            Map<String, Object> entry = data.get(0);
-            String dictWord = str(entry, "word", word.toLowerCase());
+            Map<String, Object> entry = results.get(0);
+            String dictWord = raw(entry, "en_word", word);
             if (!dictWord.equalsIgnoreCase(word.trim())) return null;
 
-            String phonetic = str(entry, "phoneticAm", str(entry, "phoneticBr", ""));
-            String pos = str(entry, "wordType", "");
-            String meaning = str(entry, "meaningVi", "");
-            String explanation = str(entry, "explanationVi", str(entry, "meaningEn", ""));
+            String phonetic = raw(entry, "pronounce", "");
+            String pos = raw(entry, "type", "");
+            String meaning = raw(entry, "vi_word", "");
+            String synonymsVi = raw(entry, "same_viword", "");
+            String definition = raw(entry, "vn_definition", "");
+            String explanation = definition.isBlank() ? synonymsVi : definition;
 
+            // Examples: array of JSON strings like '{"viExample":"...","enExample":"..."}'
             List<String> examples = new ArrayList<>();
-            Object exObj = entry.get("examples");
-            if (exObj instanceof List) {
-                for (Object ex : (List<?>) exObj) {
-                    if (ex instanceof Map) {
-                        Map<String, Object> exMap = (Map<String, Object>) ex;
-                        String en = str(exMap, "en", "");
-                        String vi = str(exMap, "vi", "");
-                        if (!en.isBlank()) examples.add(vi.isBlank() ? en : en + " (" + vi + ")");
+            Object exRaw = entry.get("examples");
+            if (exRaw instanceof Map) {
+                Object exList = ((Map<String, Object>) exRaw).get("raw");
+                if (exList instanceof List) {
+                    for (Object exItem : (List<?>) exList) {
+                        try {
+                            Map<String, String> parsed = objectMapper.readValue(exItem.toString(), Map.class);
+                            String en = parsed.getOrDefault("enExample", "");
+                            String vi = parsed.getOrDefault("viExample", "");
+                            if (!en.isBlank()) examples.add(vi.isBlank() ? en : en + " (" + vi + ")");
+                        } catch (Exception ignored) {
+                        }
                     }
                 }
             }
 
-            String collocation = "";
-            Object colObj = entry.get("collocations");
-            if (colObj instanceof List && !((List<?>) colObj).isEmpty()) {
-                Object first = ((List<?>) colObj).get(0);
-                if (first instanceof Map) collocation = str((Map<String, Object>) first, "text", "");
-            }
+            // Synonyms as collocation
+            String collocation = raw(entry, "same_enword", "");
 
-            String audioUrl = fetchTtsUrl(dictWord, phonetic);
+            String audioUrl = fetchTtsUrl(dictWord.toLowerCase(), phonetic);
 
             return VocabLookupResponse.builder()
-                    .word(dictWord)
+                    .word(dictWord.toLowerCase())
                     .phonetic(phonetic.isBlank() ? "" : "/" + phonetic + "/")
-                    .pos(pos)
+                    .pos(pos.toLowerCase())
                     .meaning(meaning)
                     .explanation(explanation)
                     .collocation(collocation)
@@ -162,6 +172,17 @@ public class VocabLookupService {
                 .examples(exampleList)
                 .audioUrl(dict.getAudioUrl())
                 .build();
+    }
+
+    /** Extract value from DOL's nested { key: { raw: "value" } } format */
+    @SuppressWarnings("unchecked")
+    private String raw(Map<String, Object> map, String key, String fallback) {
+        Object val = map.get(key);
+        if (val instanceof Map) {
+            Object rawVal = ((Map<String, Object>) val).get("raw");
+            return rawVal != null ? rawVal.toString() : fallback;
+        }
+        return val != null ? val.toString() : fallback;
     }
 
     private String str(Map<String, Object> map, String key, String fallback) {
