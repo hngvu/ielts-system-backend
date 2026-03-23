@@ -213,6 +213,46 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<ScoringSessionResponse> getUserSessions(String credentialId) {
+        var credential = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        return sessionRepository
+                .findByUser_IdOrderByCreatedAtDesc(credential.getUser().getId())
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public java.util.Map<String, Object> getEvaluation(Integer sessionId) {
+        var eval = evaluationRepository
+                .findByScoringSession_Id(sessionId)
+                .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
+
+        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("id", eval.getId());
+        result.put("skill", eval.getSkill());
+        result.put("overallScore", eval.getOverallScore());
+        result.put("fluency", eval.getFluency());
+        result.put("vocabulary", eval.getVocabulary());
+        result.put("grammar", eval.getGrammar());
+        result.put("pronunciation", eval.getPronunciation());
+        result.put("taskResponse", eval.getTaskResponse());
+        result.put("coherence", eval.getCoherence());
+        result.put("lexicalResource", eval.getLexicalResource());
+        result.put("grammaticalRange", eval.getGrammaticalRange());
+        result.put("feedback", eval.getFeedback());
+        result.put("strengths", eval.getStrengths());
+        result.put("areasForImprovement", eval.getAreasForImprovement());
+        result.put(
+                "expertName",
+                eval.getExpertProfile() != null ? eval.getExpertProfile().getDisplayName() : null);
+        result.put("createdAt", eval.getCreatedAt());
+        return result;
+    }
+
     private ScoringSessionResponse toResponse(ScoringSession s) {
         return ScoringSessionResponse.builder()
                 .id(s.getId())
