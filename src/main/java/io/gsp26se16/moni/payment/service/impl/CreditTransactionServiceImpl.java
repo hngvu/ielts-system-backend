@@ -25,7 +25,7 @@ public class CreditTransactionServiceImpl implements CreditTransactionService {
 
     @Override
     public List<CreditTransactionResponse> searchCreditTransactions(
-            Integer userId, String paymentType, LocalDateTime startDate, LocalDateTime endDate) {
+            String userId, String paymentType, LocalDateTime startDate, LocalDateTime endDate) {
         Specification<CreditTransaction> spec = (root, query, criteriaBuilder) -> {
             Predicate predicate = criteriaBuilder.conjunction();
 
@@ -80,6 +80,10 @@ public class CreditTransactionServiceImpl implements CreditTransactionService {
                 .balanceBefore(creditTransaction.getBalanceBefore())
                 .balanceAfter(creditTransaction.getBalanceAfter())
                 .paymentType(creditTransaction.getPaymentType().toString())
+                .serviceName(
+                        creditTransaction.getServicePricing() != null
+                                ? creditTransaction.getServicePricing().getName()
+                                : null)
                 .createdAt(creditTransaction.getCreatedAt())
                 .userId(
                         creditTransaction.getUser() != null

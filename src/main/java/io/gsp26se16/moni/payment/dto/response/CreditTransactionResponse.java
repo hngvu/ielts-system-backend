@@ -11,6 +11,7 @@ public record CreditTransactionResponse(
         Integer balanceBefore,
         Integer balanceAfter,
         String paymentType,
+        String serviceName,
         LocalDateTime createdAt,
         String userId,
         Integer serviceId,
