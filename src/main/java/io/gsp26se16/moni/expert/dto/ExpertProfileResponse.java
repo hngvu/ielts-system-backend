@@ -15,6 +15,7 @@ import lombok.experimental.FieldDefaults;
 public class ExpertProfileResponse {
     Integer id;
     String displayName;
+    String email;
     String avatarUrl;
     Double bandScore;
     Double bandReading;

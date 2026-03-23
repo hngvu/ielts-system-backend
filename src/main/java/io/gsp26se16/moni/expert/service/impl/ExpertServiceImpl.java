@@ -221,9 +221,17 @@ public class ExpertServiceImpl implements ExpertService {
     }
 
     private ExpertProfileResponse toResponse(ExpertProfile p) {
+        // Look up email from UserCredentials
+        String email = null;
+        if (p.getUser() != null) {
+            var cred = userCredentialsRepository.findByUser_Id(p.getUser().getId());
+            if (cred.isPresent()) email = cred.get().getEmail();
+        }
+
         return ExpertProfileResponse.builder()
                 .id(p.getId())
                 .displayName(p.getDisplayName())
+                .email(email)
                 .avatarUrl(p.getAvatarUrl())
                 .bandScore(p.getBandScore())
                 .bandReading(p.getBandReading())
