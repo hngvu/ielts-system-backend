@@ -29,8 +29,30 @@ public class UserCredentialServiceImpl implements UserCredentialService {
 
     @Override
     public UserProfileResponse register(RegisterRequest request) {
-        if (userCredentialsRepository.existsByEmail(request.getEmail()))
+        var existing = userCredentialsRepository.findByEmail(request.getEmail());
+
+        // If email exists from Google login (no password) → link account by setting password
+        if (existing.isPresent()) {
+            UserCredentials cred = existing.get();
+            if (cred.getPassword() == null && cred.getProvider() == UserCredentials.Provider.GOOGLE) {
+                cred.setPassword(passwordEncoder.encode(request.getPassword()));
+                cred.setProvider(UserCredentials.Provider.LOCAL); // now supports both
+                userCredentialsRepository.save(cred);
+
+                // Update name if not set
+                Users user = cred.getUser();
+                if (user != null && request.getFullName() != null) {
+                    user.setFull_name(request.getFullName());
+                    usersRepository.save(user);
+                }
+
+                Users reloaded = usersRepository
+                        .findById(user != null ? user.getId() : "")
+                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                return userMapper.toUserProfileResponse(reloaded);
+            }
             throw new AppException(ErrorCode.EMAIL_EXISTED);
+        }
 
         // Create and save user entity first
         Users user = userMapper.toUser(request);
