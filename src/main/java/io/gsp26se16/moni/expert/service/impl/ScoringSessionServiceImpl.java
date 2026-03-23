@@ -90,6 +90,14 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
     }
 
     @Override
+    public ScoringSessionResponse getSessionById(Integer sessionId) {
+        ScoringSession session = sessionRepository
+                .findById(sessionId)
+                .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
+        return toResponse(session);
+    }
+
+    @Override
     public java.util.Map<String, Object> getQueuePositionWithStatus(Integer sessionId) {
         ScoringSession session = sessionRepository
                 .findById(sessionId)

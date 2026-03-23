@@ -30,6 +30,13 @@ public class ExpertSessionController {
                 .build());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<ScoringSessionResponse>> getSession(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.<ScoringSessionResponse>builder()
+                .result(sessionService.getSessionById(id))
+                .build());
+    }
+
     @PatchMapping("/{id}/start")
     public ResponseEntity<ApiResponse<ScoringSessionResponse>> startSession(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.<ScoringSessionResponse>builder()

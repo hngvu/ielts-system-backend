@@ -100,7 +100,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
 
-        if (!authenticated) throw new AppException(ErrorCode.UNAUTHENTICATED);
+        if (!authenticated) throw new AppException(ErrorCode.PASSWORD_INCORRECT);
 
         if (!user.isActive()) {
             throw new AppException(ErrorCode.USER_NOT_ACTIVE);
