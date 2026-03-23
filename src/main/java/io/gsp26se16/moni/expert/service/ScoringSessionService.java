@@ -15,6 +15,8 @@ public interface ScoringSessionService {
 
     Map<String, Object> getQueuePositionWithStatus(Integer sessionId);
 
+    ScoringSessionResponse getSessionById(Integer sessionId);
+
     ScoringSessionResponse startSession(Integer sessionId);
 
     void completeSession(Integer sessionId, SubmitEvaluationRequest evaluation);
