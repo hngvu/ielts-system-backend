@@ -18,6 +18,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -33,7 +36,8 @@ public class SecurityConfig {
         "/auth/logout",
         "/auth/outbound/authentication",
         "/api/v1/ai/writing/score",
-        "/api/v1/vocab/lookup"
+        "/api/v1/vocab/lookup",
+        "/payments/sepay"
     };
 
     private final CustomJwtDecoder customJwtDecoder;
@@ -44,7 +48,9 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.authorizeHttpRequests(request -> request.requestMatchers(HttpMethod.OPTIONS, "/**")
+        httpSecurity.authorizeHttpRequests(request -> request
+                // SEpay webhook — cho phép mọi method, không cần auth (must be first)
+                .requestMatchers(HttpMethod.OPTIONS, "/**")
                 .permitAll()
                 .requestMatchers(HttpMethod.POST, "/payments/sepay")
                 .permitAll()
@@ -75,7 +81,26 @@ public class SecurityConfig {
                 .anyRequest()
                 .authenticated());
 
-        httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
+        httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.bearerTokenResolver(request -> {
+                    String uri = request.getRequestURI();
+                    String servletPath = request.getServletPath();
+                    log.debug(
+                            "[BearerTokenResolver] URI={}, servletPath={}, Authorization={}",
+                            uri,
+                            servletPath,
+                            request.getHeader("Authorization"));
+                    // SEpay webhook: trả null để Spring coi như anonymous
+                    if (uri.startsWith("/payments/sepay") || servletPath.startsWith("/payments/sepay")) {
+                        log.info("[BearerTokenResolver] Skipping JWT for SEpay webhook: {}", uri);
+                        return null;
+                    }
+                    String bearer = request.getHeader("Authorization");
+                    if (bearer != null && bearer.startsWith("Bearer ")) {
+                        return bearer.substring(7);
+                    }
+                    return null;
+                })
+                .jwt(jwtConfigurer -> jwtConfigurer
                         .decoder(customJwtDecoder)
                         .jwtAuthenticationConverter(jwtAuthenticationConverter()))
                 .authenticationEntryPoint(new JwtAuthenticationEntryPoint()));

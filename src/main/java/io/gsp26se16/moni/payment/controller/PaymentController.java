@@ -3,7 +3,9 @@ package io.gsp26se16.moni.payment.controller;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,18 +21,32 @@ import io.gsp26se16.moni.payment.dto.response.PaymentResponse;
 import io.gsp26se16.moni.payment.service.PaymentNotificationService;
 import io.gsp26se16.moni.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/payments")
+@Slf4j
 public class PaymentController {
+    @Value("${sepay.api-key}")
+    private String SEPAY_API_KEY;
+
     private final PaymentService paymentService;
     private final PaymentNotificationService notificationService;
     private final UserCredentialsRepository userCredentialsRepository;
 
     @PostMapping("/sepay")
-    public ResponseEntity<PaymentResponse> handleSePayWebhook(@RequestBody SePayWebhookRequest sePayWebhookRequest) {
+    public ResponseEntity<PaymentResponse> handleSePayWebhook(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestBody SePayWebhookRequest sePayWebhookRequest) {
+        log.info("=== SEpay Webhook Received ===");
+        log.info("Authorization header: {}", authHeader != null ? "[PRESENT]" : "[ABSENT]");
+        log.info("Webhook request: {}", sePayWebhookRequest);
+        if (authHeader == null || !authHeader.equals("Apikey " + SEPAY_API_KEY)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         PaymentResponse response = paymentService.handleSePayCallback(sePayWebhookRequest);
+        log.info("Webhook processed successfully: {}", response);
         return ResponseEntity.ok(response);
     }
 

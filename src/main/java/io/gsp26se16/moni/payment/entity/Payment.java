@@ -25,6 +25,8 @@ public class Payment {
     int amount;
 
     String gatewayTxnId;
+
+    @Column(columnDefinition = "TEXT")
     String webhookResponse;
 
     LocalDateTime createdAt;

@@ -46,8 +46,8 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final PackagePricingRepository packagePricingRepository;
     private final CreditTransactionRepository creditTransactionRepository;
-    private final UserCredentialsRepository userCredentialsRepository;
     private final UsersRepository usersRepository;
+    private final UserCredentialsRepository userCredentialsRepository;
     private final PaymentNotificationService notificationService;
     private final String txnCodePrefix = "MN";
     private final String txnCodeCharset = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
@@ -80,7 +80,6 @@ public class PaymentServiceImpl implements PaymentService {
             throw new AppException(ErrorCode.INVALID_KEY);
         }
 
-        // Generate unique transaction code
         String txnCode;
         int attempts = 0;
         do {
@@ -90,8 +89,12 @@ public class PaymentServiceImpl implements PaymentService {
             }
         } while (paymentRepository.existsByTxnCode(txnCode));
 
-        // Get current user from JWT
         Users currentUser = getCurrentUser();
+        log.info(
+                "Init payment: userId={}, package={}, amount={}",
+                currentUser.getId(),
+                packagePricing.getId(),
+                paymentInitRequest.amount());
 
         var payment = paymentRepository.save(Payment.builder()
                 .packagePricing(packagePricing)
@@ -117,7 +120,10 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public PaymentResponse handleSePayCallback(SePayWebhookRequest sePayWebhookRequest) {
+        log.info("Handling SEpay callback: {}", sePayWebhookRequest);
+
         if (sePayWebhookRequest == null || sePayWebhookRequest.content() == null) {
+            log.error("Invalid webhook request: content is null");
             throw new AppException(ErrorCode.INVALID_KEY);
         }
 
@@ -125,28 +131,27 @@ public class PaymentServiceImpl implements PaymentService {
                 Pattern.compile(Pattern.quote(txnCodePrefix) + "[" + txnCodeCharset + "]{" + txnCodeLength + "}");
         Matcher matcher = pattern.matcher(sePayWebhookRequest.content());
         String txnCode = matcher.find() ? matcher.group() : null;
+        log.info("Extracted txnCode from content: {}", txnCode);
 
         if (txnCode == null) {
+            log.error("Transaction code not found in webhook content: {}", sePayWebhookRequest.content());
             throw new AppException(ErrorCode.INVALID_KEY);
         }
 
-        var payment =
-                paymentRepository
-                        .findAll((root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("txnCode"), txnCode))
-                        .stream()
-                        .findFirst()
-                        .orElse(null);
+        var payment = paymentRepository
+                .findByTxnCode(txnCode)
+                .orElseThrow(() -> new AppException(ErrorCode.CREDIT_TRANSACTION_NOT_FOUND));
 
-        if (payment == null) {
-            throw new AppException(ErrorCode.CREDIT_TRANSACTION_NOT_FOUND);
-        }
+        log.info(
+                "Found payment: id={}, userId={}, status={}",
+                payment.getId(),
+                payment.getUser() != null ? payment.getUser().getId() : "null",
+                payment.getStatus());
 
-        // Already processed
         if (payment.getStatus() != PaymentStatus.PENDING) {
             return toResponse(payment);
         }
 
-        // Expired
         if (payment.getExpiredAt() != null && LocalDateTime.now().isAfter(payment.getExpiredAt())) {
             payment.setStatus(PaymentStatus.CANCELLED);
             payment.setUpdatedAt(LocalDateTime.now());
@@ -154,7 +159,6 @@ public class PaymentServiceImpl implements PaymentService {
             return toResponse(payment);
         }
 
-        // Validate amount
         if (payment.getAmount() != sePayWebhookRequest.transferAmount().intValue()) {
             payment.setStatus(PaymentStatus.FAILED);
             payment.setUpdatedAt(LocalDateTime.now());
@@ -185,13 +189,11 @@ public class PaymentServiceImpl implements PaymentService {
     public List<PaymentResponse> searchPayments(
             Integer userId, String status, LocalDateTime startDate, LocalDateTime endDate) {
 
-        // Auto-filter by current user (non-admin only sees their own)
         String currentUserId = getCurrentUserIdFromJwt();
 
         Specification<Payment> spec = (root, query, criteriaBuilder) -> {
             Predicate predicate = criteriaBuilder.conjunction();
 
-            // Always filter by current user
             if (currentUserId != null) {
                 predicate = criteriaBuilder.and(
                         predicate, criteriaBuilder.equal(root.get("user").get("id"), currentUserId));
@@ -229,6 +231,10 @@ public class PaymentServiceImpl implements PaymentService {
 
     private void createCreditTransaction(Payment payment) {
         if (payment.getPackagePricing() == null || payment.getUser() == null) {
+            log.error(
+                    "Cannot create credit transaction: packagePricing={}, user={}",
+                    payment.getPackagePricing(),
+                    payment.getUser());
             return;
         }
 
@@ -237,7 +243,13 @@ public class PaymentServiceImpl implements PaymentService {
         int currentBalance = user.getCredit() != null ? user.getCredit().intValue() : 0;
         int newBalance = currentBalance + creditAmount;
 
-        // Update user credit balance
+        log.info(
+                "Updating user credit: userId={}, oldBalance={}, creditAmount={}, newBalance={}",
+                user.getId(),
+                currentBalance,
+                creditAmount,
+                newBalance);
+
         user.setCredit((double) newBalance);
         usersRepository.save(user);
 

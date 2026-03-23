@@ -49,7 +49,7 @@ outbound:
   identity:
     client-id: 1010429030946-7rpjhtpauni9gim1ihfrbjeh79d21ddc.apps.googleusercontent.com
     client-secret: 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
-    redirect-uri: http://localhost:3000/oauth/callback
+    redirect-uri: https://moni-fe.vercel.app/oauth/callback
 
 
 jwt:
@@ -58,6 +58,7 @@ jwt:
 sepay:
   acc: 21736271
   bank: ACB
+  api-key: ${SEPAY_API_KEY}
 
 assemblyai:
   api-key: ${ASSEMBLYAI_API_KEY}
@@ -74,3 +75,4 @@ logging:
   level:
     org.springframework.web.client: DEBUG
     org.springframework.ai: DEBUG
+    org.springframework.security: DEBUG

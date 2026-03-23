@@ -4,8 +4,8 @@ FROM eclipse-temurin:17-jre-alpine
 # Thiết lập thư mục làm việc
 WORKDIR /app
 
-# Copy file app.jar (đã được GitHub Actions build sẵn và copy sang VM)
-COPY app.jar app.jar
+# Tìm và copy file jar có trong thư mục target
+COPY target/*.jar app.jar
 
 # Mở cổng 8080
 EXPOSE 8080
