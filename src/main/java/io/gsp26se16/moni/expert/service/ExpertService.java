@@ -4,6 +4,7 @@ import java.util.List;
 
 import io.gsp26se16.moni.expert.dto.CreateExpertRequest;
 import io.gsp26se16.moni.expert.dto.ExpertProfileResponse;
+import io.gsp26se16.moni.expert.dto.UpdateExpertRequest;
 import io.gsp26se16.moni.expert.enumeration.ExpertSpecialization;
 import io.gsp26se16.moni.expert.enumeration.ExpertStatus;
 
@@ -13,6 +14,8 @@ public interface ExpertService {
     ExpertProfileResponse getExpert(Integer id);
 
     ExpertProfileResponse createExpert(CreateExpertRequest request);
+
+    ExpertProfileResponse updateExpert(Integer id, UpdateExpertRequest request);
 
     void updateStatus(Integer id, ExpertStatus status);
 
