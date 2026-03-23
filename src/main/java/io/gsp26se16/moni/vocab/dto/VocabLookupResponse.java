@@ -18,4 +18,5 @@ public class VocabLookupResponse {
     String explanation;
     String collocation;
     List<String> examples;
+    String audioUrl;
 }

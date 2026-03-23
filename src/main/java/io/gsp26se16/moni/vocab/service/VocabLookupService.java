@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -17,7 +16,9 @@ import io.gsp26se16.moni.vocab.dto.VocabLookupResponse;
 import io.gsp26se16.moni.vocab.entity.Dictionary;
 import io.gsp26se16.moni.vocab.repository.DictionaryRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VocabLookupService {
@@ -26,50 +27,121 @@ public class VocabLookupService {
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${GEMINI_API_KEY:}")
-    private String apiKey;
-
-    @Value("${GEMINI_MODEL:gemini-2.0-flash}")
-    private String model;
+    private static final String DOL_API =
+            "https://apigateway.dolenglish.vn/public/search-transform/api/dictionary/result";
+    private static final String DOL_TTS_API =
+            "https://apigateway.dolenglish.vn/public/tts/api/generate-with-download-url";
 
     public VocabLookupResponse lookupWord(String word, String sentence) {
-        // 1. Check cache first
         Optional<Dictionary> cached = dictionaryRepository.findFirstByWordIgnoreCase(word);
         if (cached.isPresent()) {
             return mapToResponse(cached.get());
         }
 
-        // 2. Call Gemini API
-        Map<String, Object> geminiResult = callGeminiForVocab(word, sentence);
-
-        // 3. Save to DB
-        Dictionary entry = new Dictionary();
-        entry.setWord(getString(geminiResult, "word", word.toLowerCase()));
-        entry.setPhonetic(getString(geminiResult, "phonetic", ""));
-        entry.setPos(getString(geminiResult, "pos", ""));
-        entry.setMeaning(getString(geminiResult, "meaning", ""));
-        entry.setExplanation(getString(geminiResult, "explanation", ""));
-        entry.setCollocation(getString(geminiResult, "collocation", ""));
-
-        List<String> exampleList = extractExamples(geminiResult);
-        try {
-            entry.setExamples(objectMapper.writeValueAsString(exampleList));
-        } catch (Exception e) {
-            entry.setExamples("[]");
+        VocabLookupResponse result = callDolApi(word);
+        if (result != null) {
+            saveToDictionary(result);
+            return result;
         }
 
-        dictionaryRepository.save(entry);
+        return VocabLookupResponse.builder()
+                .word(word.toLowerCase())
+                .meaning("Không tìm thấy từ này")
+                .examples(List.of())
+                .build();
+    }
 
-        // 4. Return response
-        VocabLookupResponse response = new VocabLookupResponse();
-        response.setWord(entry.getWord());
-        response.setPhonetic(entry.getPhonetic());
-        response.setPos(entry.getPos());
-        response.setMeaning(entry.getMeaning());
-        response.setExplanation(entry.getExplanation());
-        response.setCollocation(entry.getCollocation());
-        response.setExamples(exampleList);
-        return response;
+    @SuppressWarnings("unchecked")
+    private VocabLookupResponse callDolApi(String word) {
+        try {
+            String url = DOL_API + "?query=" + word.trim().toLowerCase() + "&size=1&page=1";
+            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            if (response.getBody() == null) return null;
+
+            List<Map<String, Object>> data =
+                    (List<Map<String, Object>>) response.getBody().get("data");
+            if (data == null || data.isEmpty()) return null;
+
+            Map<String, Object> entry = data.get(0);
+            String dictWord = str(entry, "word", word.toLowerCase());
+            if (!dictWord.equalsIgnoreCase(word.trim())) return null;
+
+            String phonetic = str(entry, "phoneticAm", str(entry, "phoneticBr", ""));
+            String pos = str(entry, "wordType", "");
+            String meaning = str(entry, "meaningVi", "");
+            String explanation = str(entry, "explanationVi", str(entry, "meaningEn", ""));
+
+            List<String> examples = new ArrayList<>();
+            Object exObj = entry.get("examples");
+            if (exObj instanceof List) {
+                for (Object ex : (List<?>) exObj) {
+                    if (ex instanceof Map) {
+                        Map<String, Object> exMap = (Map<String, Object>) ex;
+                        String en = str(exMap, "en", "");
+                        String vi = str(exMap, "vi", "");
+                        if (!en.isBlank()) examples.add(vi.isBlank() ? en : en + " (" + vi + ")");
+                    }
+                }
+            }
+
+            String collocation = "";
+            Object colObj = entry.get("collocations");
+            if (colObj instanceof List && !((List<?>) colObj).isEmpty()) {
+                Object first = ((List<?>) colObj).get(0);
+                if (first instanceof Map) collocation = str((Map<String, Object>) first, "text", "");
+            }
+
+            String audioUrl = fetchTtsUrl(dictWord, phonetic);
+
+            return VocabLookupResponse.builder()
+                    .word(dictWord)
+                    .phonetic(phonetic.isBlank() ? "" : "/" + phonetic + "/")
+                    .pos(pos)
+                    .meaning(meaning)
+                    .explanation(explanation)
+                    .collocation(collocation)
+                    .examples(examples)
+                    .audioUrl(audioUrl)
+                    .build();
+        } catch (Exception e) {
+            log.warn("DOL API failed for '{}': {}", word, e.getMessage());
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private String fetchTtsUrl(String word, String ipa) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            String body = "[{\"word\":\"" + word + "\",\"ipa\":\"" + (ipa != null ? ipa : "") + "\"}]";
+            HttpEntity<String> entity = new HttpEntity<>(body, headers);
+            ResponseEntity<List> res = restTemplate.exchange(DOL_TTS_API, HttpMethod.POST, entity, List.class);
+            if (res.getBody() != null && !res.getBody().isEmpty()) {
+                Object first = res.getBody().get(0);
+                if (first instanceof Map) return str((Map<String, Object>) first, "downloadUrl", null);
+            }
+        } catch (Exception e) {
+            log.debug("TTS failed for '{}': {}", word, e.getMessage());
+        }
+        return null;
+    }
+
+    private void saveToDictionary(VocabLookupResponse r) {
+        try {
+            Dictionary entry = new Dictionary();
+            entry.setWord(r.getWord());
+            entry.setPhonetic(r.getPhonetic());
+            entry.setPos(r.getPos());
+            entry.setMeaning(r.getMeaning());
+            entry.setExplanation(r.getExplanation());
+            entry.setCollocation(r.getCollocation());
+            entry.setAudioUrl(r.getAudioUrl());
+            entry.setExamples(objectMapper.writeValueAsString(r.getExamples()));
+            dictionaryRepository.save(entry);
+        } catch (Exception e) {
+            log.warn("Failed to cache for '{}': {}", r.getWord(), e.getMessage());
+        }
     }
 
     private VocabLookupResponse mapToResponse(Dictionary dict) {
@@ -78,10 +150,8 @@ public class VocabLookupService {
             try {
                 exampleList = objectMapper.readValue(dict.getExamples(), new TypeReference<List<String>>() {});
             } catch (Exception ignored) {
-                // fallback: return empty list
             }
         }
-
         return VocabLookupResponse.builder()
                 .word(dict.getWord())
                 .phonetic(dict.getPhonetic())
@@ -90,109 +160,11 @@ public class VocabLookupService {
                 .explanation(dict.getExplanation())
                 .collocation(dict.getCollocation())
                 .examples(exampleList)
+                .audioUrl(dict.getAudioUrl())
                 .build();
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> callGeminiForVocab(String word, String sentence) {
-        String ctx = (sentence != null && !sentence.isBlank()) ? sentence : "(no sentence provided)";
-        String prompt = String.format(
-                """
-				You are an English-Vietnamese dictionary for IELTS learners.
-				Given the word and the sentence it appears in, return VALID JSON ONLY with these exact keys:
-				- word: the word in lowercase
-				- phonetic: IPA pronunciation (e.g. "/\\u02cck\\u0252mpj\\u028a\\u02c8te\\u026a\\u0283n/")
-				- pos: part of speech (noun, verb, adjective, etc.)
-				- meaning: Vietnamese translation (short, 1-3 words)
-				- explanation: Vietnamese explanation of how this word is used in the given sentence context (2-3 sentences)
-				- collocation: one common collocation with this word
-				- examples: array of exactly 2 example sentences using this word, each followed by Vietnamese translation in parentheses
-
-				Word: %s
-				Sentence: %s
-				""",
-                word, ctx);
-
-        try {
-            String url = String.format(
-                    "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", model, apiKey);
-
-            Map<String, Object> requestBody =
-                    Map.of("contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))));
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-
-            ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
-
-            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                String responseText = extractTextFromGeminiResponse(response.getBody());
-                return parseJsonFromResponse(responseText);
-            }
-
-            throw new RuntimeException("Gemini API returned non-OK status");
-        } catch (Exception e) {
-            String msg = e.getMessage();
-            if (msg != null && msg.contains("429")) {
-                throw new RuntimeException("Đã vượt giới hạn API. Vui lòng thử lại sau 30 giây.", e);
-            }
-            throw new RuntimeException(
-                    "Lỗi khi gọi AI: " + (msg != null ? msg.substring(0, Math.min(msg.length(), 100)) : "unknown"), e);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private String extractTextFromGeminiResponse(Map<String, Object> response) {
-        try {
-            List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
-            if (candidates != null && !candidates.isEmpty()) {
-                Map<String, Object> content =
-                        (Map<String, Object>) candidates.get(0).get("content");
-                List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
-                if (parts != null && !parts.isEmpty()) {
-                    return (String) parts.get(0).get("text");
-                }
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to extract text from Gemini response", e);
-        }
-        throw new RuntimeException("No text found in Gemini response");
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> parseJsonFromResponse(String text) {
-        try {
-            // Strip markdown code fences if present
-            if (text.contains("```")) {
-                int start = text.indexOf("{");
-                int end = text.lastIndexOf("}");
-                if (start >= 0 && end > start) {
-                    text = text.substring(start, end + 1);
-                }
-            } else if (text.contains("{")) {
-                text = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
-            }
-            return objectMapper.readValue(text, Map.class);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to parse JSON from Gemini response: " + text, e);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private List<String> extractExamples(Map<String, Object> result) {
-        Object raw = result.get("examples");
-        if (raw instanceof List) {
-            List<String> list = new ArrayList<>();
-            for (Object item : (List<?>) raw) {
-                if (item != null) list.add(item.toString());
-            }
-            return list;
-        }
-        return new ArrayList<>();
-    }
-
-    private String getString(Map<String, Object> map, String key, String fallback) {
+    private String str(Map<String, Object> map, String key, String fallback) {
         Object val = map.get(key);
         return val != null ? val.toString() : fallback;
     }
