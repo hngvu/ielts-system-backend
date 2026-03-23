@@ -18,4 +18,6 @@ public interface ScoringSessionRepository extends JpaRepository<ScoringSession, 
 
     @Query("SELECT AVG(s.userRating) FROM ScoringSession s WHERE s.expert = ?1 AND s.userRating IS NOT NULL")
     Double averageRatingByExpert(ExpertProfile expert);
+
+    List<ScoringSession> findByExpert_IdAndUserRatingIsNotNullOrderByCreatedAtDesc(Integer expertId);
 }

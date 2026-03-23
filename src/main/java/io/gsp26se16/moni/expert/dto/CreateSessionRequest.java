@@ -11,4 +11,5 @@ public class CreateSessionRequest {
     Integer expertId;
     String skill;
     String content;
+    Integer testId;
 }

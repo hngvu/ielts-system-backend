@@ -21,4 +21,5 @@ public class ScoringSessionResponse {
     String roomName;
     Integer queuePosition;
     Timestamp createdAt;
+    Integer testId;
 }
