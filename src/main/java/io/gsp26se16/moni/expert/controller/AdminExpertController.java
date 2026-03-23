@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.expert.dto.CreateExpertRequest;
 import io.gsp26se16.moni.expert.dto.ExpertProfileResponse;
+import io.gsp26se16.moni.expert.dto.UpdateExpertRequest;
 import io.gsp26se16.moni.expert.dto.UpdateExpertStatusRequest;
 import io.gsp26se16.moni.expert.service.ExpertService;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,21 @@ public class AdminExpertController {
     public ResponseEntity<ApiResponse<ExpertProfileResponse>> createExpert(@RequestBody CreateExpertRequest request) {
         return ResponseEntity.ok(ApiResponse.<ExpertProfileResponse>builder()
                 .result(expertService.createExpert(request))
+                .build());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<ExpertProfileResponse>> getExpert(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.<ExpertProfileResponse>builder()
+                .result(expertService.getExpert(id))
+                .build());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<ExpertProfileResponse>> updateExpert(
+            @PathVariable Integer id, @RequestBody UpdateExpertRequest request) {
+        return ResponseEntity.ok(ApiResponse.<ExpertProfileResponse>builder()
+                .result(expertService.updateExpert(id, request))
                 .build());
     }
 

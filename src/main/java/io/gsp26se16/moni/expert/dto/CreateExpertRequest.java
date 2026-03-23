@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.expert.dto;
 
-import io.gsp26se16.moni.expert.enumeration.ExpertSpecialization;
+import java.util.List;
+
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -14,12 +15,11 @@ public class CreateExpertRequest {
     String password;
     String displayName;
     String avatarUrl;
-    Double bandScore; // overall
     Double bandReading;
     Double bandListening;
     Double bandWriting;
     Double bandSpeaking;
     Integer yearsExperience;
-    ExpertSpecialization specialization;
     String bio;
+    List<String> certificates;
 }

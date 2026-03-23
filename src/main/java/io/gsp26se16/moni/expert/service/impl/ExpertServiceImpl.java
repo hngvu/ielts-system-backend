@@ -1,11 +1,15 @@
 package io.gsp26se16.moni.expert.service.impl;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.gsp26se16.moni.authentication.entity.UserCredentials;
 import io.gsp26se16.moni.authentication.entity.Users;
@@ -15,6 +19,7 @@ import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.expert.dto.CreateExpertRequest;
 import io.gsp26se16.moni.expert.dto.ExpertProfileResponse;
+import io.gsp26se16.moni.expert.dto.UpdateExpertRequest;
 import io.gsp26se16.moni.expert.entity.ExpertProfile;
 import io.gsp26se16.moni.expert.enumeration.ExpertSpecialization;
 import io.gsp26se16.moni.expert.enumeration.ExpertStatus;
@@ -23,7 +28,9 @@ import io.gsp26se16.moni.expert.service.ExpertService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -33,6 +40,7 @@ public class ExpertServiceImpl implements ExpertService {
     UserCredentialsRepository userCredentialsRepository;
     UsersRepository usersRepository;
     PasswordEncoder passwordEncoder;
+    ObjectMapper objectMapper;
 
     @Override
     public List<ExpertProfileResponse> listExperts(ExpertSpecialization filter) {
@@ -79,22 +87,54 @@ public class ExpertServiceImpl implements ExpertService {
                 .build();
         userCredentialsRepository.save(credential);
 
+        double bandScore = calcBandScore(
+                request.getBandReading(),
+                request.getBandListening(),
+                request.getBandWriting(),
+                request.getBandSpeaking());
+
         ExpertProfile profile = ExpertProfile.builder()
                 .user(savedUser)
                 .displayName(request.getDisplayName())
                 .avatarUrl(request.getAvatarUrl())
-                .bandScore(request.getBandScore())
+                .bandScore(bandScore)
                 .bandReading(request.getBandReading())
                 .bandListening(request.getBandListening())
                 .bandWriting(request.getBandWriting())
                 .bandSpeaking(request.getBandSpeaking())
                 .yearsExperience(request.getYearsExperience())
-                .specialization(request.getSpecialization())
                 .bio(request.getBio())
-                .status(ExpertStatus.OFFLINE)
+                .certificates(serializeCertificates(request.getCertificates()))
                 .rating(0.0)
                 .totalSessions(0)
                 .build();
+
+        return toResponse(expertProfileRepository.save(profile));
+    }
+
+    @Override
+    @Transactional
+    public ExpertProfileResponse updateExpert(Integer id, UpdateExpertRequest request) {
+        ExpertProfile profile =
+                expertProfileRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.EXPERT_NOT_FOUND));
+
+        if (request.getDisplayName() != null) profile.setDisplayName(request.getDisplayName());
+        if (request.getAvatarUrl() != null) profile.setAvatarUrl(request.getAvatarUrl());
+        if (request.getBandReading() != null) profile.setBandReading(request.getBandReading());
+        if (request.getBandListening() != null) profile.setBandListening(request.getBandListening());
+        if (request.getBandWriting() != null) profile.setBandWriting(request.getBandWriting());
+        if (request.getBandSpeaking() != null) profile.setBandSpeaking(request.getBandSpeaking());
+        if (request.getYearsExperience() != null) profile.setYearsExperience(request.getYearsExperience());
+        if (request.getBio() != null) profile.setBio(request.getBio());
+        if (request.getCertificates() != null)
+            profile.setCertificates(serializeCertificates(request.getCertificates()));
+
+        // Recalculate bandScore from current values
+        profile.setBandScore(calcBandScore(
+                profile.getBandReading(),
+                profile.getBandListening(),
+                profile.getBandWriting(),
+                profile.getBandSpeaking()));
 
         return toResponse(expertProfileRepository.save(profile));
     }
@@ -147,6 +187,39 @@ public class ExpertServiceImpl implements ExpertService {
         expertProfileRepository.delete(profile);
     }
 
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    /** Round average of 4 band scores to nearest 0.5. Returns 0.0 if all nulls. */
+    private double calcBandScore(Double reading, Double listening, Double writing, Double speaking) {
+        double r = reading != null ? reading : 0.0;
+        double l = listening != null ? listening : 0.0;
+        double w = writing != null ? writing : 0.0;
+        double s = speaking != null ? speaking : 0.0;
+        return Math.round((r + l + w + s) / 4.0 * 2) / 2.0;
+    }
+
+    private String serializeCertificates(List<String> certificates) {
+        if (certificates == null || certificates.isEmpty()) return null;
+        try {
+            return objectMapper.writeValueAsString(certificates);
+        } catch (Exception e) {
+            log.warn("Failed to serialize certificates", e);
+            return null;
+        }
+    }
+
+    private List<String> deserializeCertificates(String json) {
+        if (json == null || json.isBlank()) return Collections.emptyList();
+        try {
+            return objectMapper.readValue(json, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            log.warn("Failed to deserialize certificates: {}", json);
+            return Collections.emptyList();
+        }
+    }
+
     private ExpertProfileResponse toResponse(ExpertProfile p) {
         return ExpertProfileResponse.builder()
                 .id(p.getId())
@@ -163,6 +236,7 @@ public class ExpertServiceImpl implements ExpertService {
                 .status(p.getStatus())
                 .rating(p.getRating())
                 .totalSessions(p.getTotalSessions())
+                .certificates(deserializeCertificates(p.getCertificates()))
                 .build();
     }
 }

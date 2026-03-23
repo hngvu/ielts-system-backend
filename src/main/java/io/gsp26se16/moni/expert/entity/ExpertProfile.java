@@ -45,9 +45,12 @@ public class ExpertProfile {
     @Column(columnDefinition = "TEXT")
     String bio;
 
+    @Column(columnDefinition = "TEXT")
+    String certificates; // JSON array of certificate image URLs, e.g. ["url1","url2"]
+
     @Enumerated(EnumType.STRING)
     @Builder.Default
-    ExpertStatus status = ExpertStatus.OFFLINE;
+    ExpertStatus status = ExpertStatus.AVAILABLE;
 
     @Builder.Default
     Double rating = 0.0;
