@@ -40,8 +40,7 @@ public class UserCredentials {
     @Column(nullable = false, unique = true)
     String email;
 
-    @Column(nullable = false)
-    String password;
+    String password; // nullable for Google OAuth users
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
