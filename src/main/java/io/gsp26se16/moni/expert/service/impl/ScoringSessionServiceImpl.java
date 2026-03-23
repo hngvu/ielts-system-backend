@@ -177,6 +177,29 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional
+    public void rateSession(Integer sessionId, int rating, String comment) {
+        ScoringSession session = sessionRepository
+                .findById(sessionId)
+                .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
+        session.setUserRating(rating);
+        session.setUserComment(comment);
+        sessionRepository.save(session);
+
+        // Update expert average rating
+        if (session.getExpert() != null) {
+            ExpertProfile expert = session.getExpert();
+            double currentRating = expert.getRating() != null ? expert.getRating() : 0.0;
+            int totalSessions = expert.getTotalSessions() != null ? expert.getTotalSessions() : 0;
+            // Recalculate average: (old_avg * count + new_rating) / (count + 1)
+            // But totalSessions already incremented on completeSession, so use it directly
+            double newAvg = totalSessions > 0 ? (currentRating * (totalSessions - 1) + rating) / totalSessions : rating;
+            expert.setRating(Math.round(newAvg * 10) / 10.0);
+            expertProfileRepository.save(expert);
+        }
+    }
+
     private ScoringSessionResponse toResponse(ScoringSession s) {
         return ScoringSessionResponse.builder()
                 .id(s.getId())

@@ -22,4 +22,6 @@ public interface ScoringSessionService {
     void completeSession(Integer sessionId, SubmitEvaluationRequest evaluation);
 
     List<ScoringSessionResponse> getSessionsForExpert(String credentialId);
+
+    void rateSession(Integer sessionId, int rating, String comment);
 }
