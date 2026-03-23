@@ -79,3 +79,4 @@ application-secret.yml
 ### OS Specific ###
 .DS_Store
 Thumbs.db
+.next/
