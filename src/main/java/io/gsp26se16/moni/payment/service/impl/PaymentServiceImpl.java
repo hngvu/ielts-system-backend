@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import io.gsp26se16.moni.authentication.entity.Users;
+import io.gsp26se16.moni.common.exception.AppException;
+import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.payment.dto.request.PaymentInitRequest;
 import io.gsp26se16.moni.payment.dto.request.SePayWebhookRequest;
 import io.gsp26se16.moni.payment.dto.response.PaymentInitResponse;
@@ -62,7 +64,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         var packagePricing = packagePricingRepository
                 .findById(paymentInitRequest.packageId())
-                .orElseThrow(() -> new RuntimeException("Package pricing not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.PACKAGE_PRICING_NOT_FOUND));
 
         if (packagePricing.getPrice() != paymentInitRequest.amount()) {
             throw new RuntimeException("Amount does not match package pricing. Expected: " + packagePricing.getPrice()

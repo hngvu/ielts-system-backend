@@ -101,12 +101,12 @@ public class TagServiceImpl implements TagService {
     public void assignTagsToQuestion(Integer questionId, TagAssignRequest request) {
         Question question = questionRepository
                 .findById(questionId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy Câu hỏi với ID: " + questionId));
+                .orElseThrow(() -> new AppException(ErrorCode.QUESTION_NOT_FOUND));
 
         // Lấy danh sách Tag từ DB dựa trên list IDs gửi lên
         List<Tag> tags = tagRepository.findAllById(request.getTagIds());
         if (tags.size() != request.getTagIds().size()) {
-            throw new RuntimeException("Một hoặc nhiều Tag không tồn tại trong hệ thống!");
+            throw new AppException(ErrorCode.TAG_NOT_FOUND);
         }
 
         // Ghi đè list Tag mới vào (Nhờ Set và Hibernate, nó sẽ tự động tính toán cái nào cần thêm/xóa trong bảng trung
@@ -120,11 +120,11 @@ public class TagServiceImpl implements TagService {
     public void assignTagsToStimulus(Integer stimulusId, TagAssignRequest request) {
         Stimulus stimulus = stimulusRepository
                 .findById(stimulusId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy Đoạn văn/Audio với ID: " + stimulusId));
+                .orElseThrow(() -> new AppException(ErrorCode.STIMULUS_NOT_FOUND));
 
         List<Tag> tags = tagRepository.findAllById(request.getTagIds());
         if (tags.size() != request.getTagIds().size()) {
-            throw new RuntimeException("Một hoặc nhiều Tag không tồn tại trong hệ thống!");
+            throw new AppException(ErrorCode.TAG_NOT_FOUND);
         }
 
         stimulus.setTags(new HashSet<>(tags));
@@ -134,13 +134,11 @@ public class TagServiceImpl implements TagService {
     @Override
     @Transactional
     public void assignTagsToTest(Integer testId, TagAssignRequest request) {
-        Test test = testRepository
-                .findById(testId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy Đề thi với ID: " + testId));
+        Test test = testRepository.findById(testId).orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_FOUND));
 
         List<Tag> tags = tagRepository.findAllById(request.getTagIds());
         if (tags.size() != request.getTagIds().size()) {
-            throw new RuntimeException("Một hoặc nhiều Tag không tồn tại trong hệ thống!");
+            throw new AppException(ErrorCode.TAG_NOT_FOUND);
         }
 
         test.setTags(new HashSet<>(tags));

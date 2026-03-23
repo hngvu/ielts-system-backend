@@ -3,6 +3,8 @@ package io.gsp26se16.moni.content.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.gsp26se16.moni.common.exception.AppException;
+import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.dto.request.QuestionCreateRequest;
 import io.gsp26se16.moni.content.dto.request.QuestionGroupCreateRequest;
 import io.gsp26se16.moni.content.entity.Question;
@@ -31,7 +33,7 @@ public class QuestionGroupServiceImpl implements QuestionGroupService {
     public Integer createForStimulus(Integer stimulusId, QuestionGroupCreateRequest request) {
         Stimulus stimulus = stimulusRepository
                 .findById(stimulusId)
-                .orElseThrow(() -> new RuntimeException("Stimulus not found: " + stimulusId));
+                .orElseThrow(() -> new AppException(ErrorCode.STIMULUS_NOT_FOUND));
 
         QuestionGroup group = new QuestionGroup();
         group.setStimulus(stimulus);
@@ -60,7 +62,7 @@ public class QuestionGroupServiceImpl implements QuestionGroupService {
     public void deleteQuestionGroup(Integer id) {
         QuestionGroup group = questionGroupRepository
                 .findById(id)
-                .orElseThrow(() -> new RuntimeException("QuestionGroup not found: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.QUESTION_GROUP_NOT_FOUND));
         questionGroupRepository.delete(group);
     }
 
@@ -69,7 +71,7 @@ public class QuestionGroupServiceImpl implements QuestionGroupService {
     public void updateImageUrl(Integer id, String imageUrl) {
         QuestionGroup group = questionGroupRepository
                 .findById(id)
-                .orElseThrow(() -> new RuntimeException("QuestionGroup not found: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.QUESTION_GROUP_NOT_FOUND));
         group.setImageUrl(imageUrl);
         questionGroupRepository.save(group);
     }
@@ -79,7 +81,7 @@ public class QuestionGroupServiceImpl implements QuestionGroupService {
     public void updateGroupContent(Integer id, String groupContent) {
         QuestionGroup group = questionGroupRepository
                 .findById(id)
-                .orElseThrow(() -> new RuntimeException("QuestionGroup not found: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.QUESTION_GROUP_NOT_FOUND));
         group.setGroupContent(groupContent);
         questionGroupRepository.save(group);
     }

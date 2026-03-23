@@ -14,6 +14,8 @@ import io.gsp26se16.moni.authentication.entity.UserCredentials;
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 import io.gsp26se16.moni.common.enumeration.Skill;
+import io.gsp26se16.moni.common.exception.AppException;
+import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.entity.Stimulus;
 import io.gsp26se16.moni.content.entity.TestStructure;
 import io.gsp26se16.moni.content.repository.StimulusRepository;
@@ -56,7 +58,7 @@ public class GoalServiceImpl implements GoalService {
         Users learner = getCurrentUser();
 
         if (request.getTargetBand() <= request.getStartingBand()) {
-            throw new RuntimeException("Điểm mục tiêu phải lớn hơn điểm xuất phát!");
+            throw new AppException(ErrorCode.INVALID_IELTS_BAND);
         }
 
         // 1. LƯU TRỮ GOAL CŨ (Cùng kỹ năng)
@@ -138,17 +140,16 @@ public class GoalServiceImpl implements GoalService {
     public GoalCreateResponse updateGoal(Integer goalId, GoalUpdateRequest request) {
         Users learner = getCurrentUser();
 
-        Goal goal = goalRepository.findById(goalId).orElseThrow(() -> new RuntimeException("Không tìm thấy Mục tiêu!"));
+        Goal goal = goalRepository.findById(goalId).orElseThrow(() -> new AppException(ErrorCode.GOAL_NOT_FOUND));
 
         if (!goal.getUser().getId().equals(learner.getId())) {
-            throw new RuntimeException("Bạn không có quyền sửa mục tiêu này");
+            throw new AppException(ErrorCode.UNAUTHORIZED);
         }
         if (!"ACTIVE".equals(goal.getStatus())) {
-            throw new RuntimeException("Chỉ có thể sửa mục tiêu đang ACTIVE");
+            throw new AppException(ErrorCode.INVALID_KEY);
         }
         if (request.getTargetBand() <= goal.getStartingBand()) {
-            throw new RuntimeException("Điểm mục tiêu (" + request.getTargetBand() + ") phải lớn hơn điểm xuất phát ("
-                    + goal.getStartingBand() + ")!");
+            throw new AppException(ErrorCode.INVALID_IELTS_BAND);
         }
 
         goal.setTargetBand(request.getTargetBand());
@@ -157,7 +158,7 @@ public class GoalServiceImpl implements GoalService {
 
         Roadmap oldRoadmap = roadmapRepository
                 .findByGoalAndStatus(savedGoal, "ACTIVE")
-                .orElseThrow(() -> new RuntimeException("Lỗi: Không tìm thấy Lộ trình đang chạy cho Mục tiêu này"));
+                .orElseThrow(() -> new AppException(ErrorCode.ACTIVE_ROADMAP_NOT_FOUND));
         oldRoadmap.setStatus("ARCHIVED");
         roadmapRepository.save(oldRoadmap);
 
@@ -182,10 +183,10 @@ public class GoalServiceImpl implements GoalService {
     public void updateTaskStatus(Integer taskId, TaskStatusUpdateRequest request) {
         Users learner = getCurrentUser();
 
-        Task task = taskRepository.findById(taskId).orElseThrow(() -> new RuntimeException("Không tìm thấy bài tập!"));
+        Task task = taskRepository.findById(taskId).orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
 
         if (!task.getRoadmap().getGoal().getUser().getId().equals(learner.getId())) {
-            throw new RuntimeException("Bạn không có quyền cập nhật bài tập này");
+            throw new AppException(ErrorCode.UNAUTHORIZED);
         }
 
         task.setStatus(request.getStatus().toUpperCase());
@@ -398,7 +399,7 @@ public class GoalServiceImpl implements GoalService {
     private Users getCurrentUser() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("Chưa xác thực (Unauthenticated)");
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
 
         String credentialId = null;
@@ -407,15 +408,15 @@ public class GoalServiceImpl implements GoalService {
         }
 
         if (credentialId == null) {
-            throw new RuntimeException("Token không hợp lệ (Không tìm thấy userId)");
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
 
         UserCredentials credentials = userCredentialsRepository
                 .findById(credentialId)
-                .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         if (credentials.getUser() == null) {
-            throw new RuntimeException("Lỗi dữ liệu: UserCredentials không gắn với Users nào");
+            throw new AppException(ErrorCode.USER_NOT_EXISTED);
         }
         return credentials.getUser();
     }

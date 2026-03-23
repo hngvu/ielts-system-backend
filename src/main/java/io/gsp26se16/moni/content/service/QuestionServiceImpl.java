@@ -6,6 +6,8 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.gsp26se16.moni.common.exception.AppException;
+import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.dto.request.QuestionCreateRequest;
 import io.gsp26se16.moni.content.dto.request.QuestionUpdateRequest;
 import io.gsp26se16.moni.content.entity.Question;
@@ -29,7 +31,7 @@ public class QuestionServiceImpl implements QuestionService {
     @Transactional
     public void updateQuestion(Integer id, QuestionUpdateRequest request) {
         Question question =
-                questionRepository.findById(id).orElseThrow(() -> new RuntimeException("Question not found"));
+                questionRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.QUESTION_NOT_FOUND));
 
         if (request.getContent() != null) question.setContent(request.getContent());
         if (request.getExplanation() != null) question.setExplanation(request.getExplanation());
@@ -84,7 +86,7 @@ public class QuestionServiceImpl implements QuestionService {
     public Integer createForGroup(Integer groupId, QuestionCreateRequest request) {
         QuestionGroup group = questionGroupRepository
                 .findById(groupId)
-                .orElseThrow(() -> new RuntimeException("QuestionGroup not found: " + groupId));
+                .orElseThrow(() -> new AppException(ErrorCode.QUESTION_GROUP_NOT_FOUND));
 
         Question question = new Question();
         question.setQuestionGroup(group);
@@ -115,7 +117,7 @@ public class QuestionServiceImpl implements QuestionService {
     @Transactional
     public void deleteQuestion(Integer id) {
         Question question =
-                questionRepository.findById(id).orElseThrow(() -> new RuntimeException("Question not found: " + id));
+                questionRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.QUESTION_NOT_FOUND));
         questionRepository.delete(question);
     }
 }

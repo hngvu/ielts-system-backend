@@ -19,6 +19,8 @@ import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
+import io.gsp26se16.moni.common.exception.AppException;
+import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.dto.request.TestImportRequest;
 import io.gsp26se16.moni.content.dto.request.TestStructureRequest;
 import io.gsp26se16.moni.content.dto.request.TestUpdateRequest;
@@ -161,7 +163,7 @@ public class TestServiceImpl implements TestService {
 
     @Override
     public TestDetailResponse getTestDetail(Integer id) {
-        Test test = testRepository.findById(id).orElseThrow(() -> new RuntimeException("Test not found"));
+        Test test = testRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_FOUND));
 
         List<TestStructure> structures = testStructureRepository.findByTestId(test.getId());
         structures.sort(Comparator.comparingInt(TestStructure::getSection));
@@ -246,7 +248,7 @@ public class TestServiceImpl implements TestService {
     @Override
     @Transactional
     public void updateTest(Integer id, TestUpdateRequest request) {
-        Test test = testRepository.findById(id).orElseThrow(() -> new RuntimeException("Test not found"));
+        Test test = testRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_FOUND));
 
         if (request.getTitle() != null) test.setTitle(request.getTitle());
         if (request.getDescription() != null) test.setDescription(request.getDescription());
@@ -269,7 +271,7 @@ public class TestServiceImpl implements TestService {
     @Override
     @Transactional
     public void deleteTest(Integer id) {
-        Test test = testRepository.findById(id).orElseThrow(() -> new RuntimeException("Test not found"));
+        Test test = testRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_FOUND));
         // attempt_answer → attempt → test_session → test_structure → test_tags → test
         entityManager
                 .createNativeQuery("DELETE FROM attempt_answer WHERE attempt_id IN ("
@@ -294,7 +296,7 @@ public class TestServiceImpl implements TestService {
     @Override
     @Transactional
     public void addStimulusToTest(Integer testId, TestStructureRequest request) {
-        Test test = testRepository.findById(testId).orElseThrow(() -> new RuntimeException("Test not found"));
+        Test test = testRepository.findById(testId).orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_FOUND));
         Stimulus stimulus = stimulusRepository.getReferenceById(request.getStimulusId());
 
         TestStructure structure = new TestStructure();

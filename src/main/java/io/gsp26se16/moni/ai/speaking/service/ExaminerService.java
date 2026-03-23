@@ -19,6 +19,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.gsp26se16.moni.ai.speaking.model.ActiveExamSession;
 import io.gsp26se16.moni.common.enumeration.ExamState;
 import io.gsp26se16.moni.common.enumeration.Skill;
+import io.gsp26se16.moni.common.exception.AppException;
+import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.entity.Question;
 import io.gsp26se16.moni.content.entity.Test;
 import io.gsp26se16.moni.content.entity.TestStructure;
@@ -61,7 +63,7 @@ public class ExaminerService {
         // ── Fix 4: Validate test ──────────────────────────────────────────
         Test test = testRepository
                 .findById(session.getTestId())
-                .orElseThrow(() -> new IllegalArgumentException("Test not found: " + session.getTestId()));
+                .orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_FOUND));
 
         if (test.getSkill() != Skill.SPEAKING) {
             throw new IllegalArgumentException(
