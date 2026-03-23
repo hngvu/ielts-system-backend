@@ -7,7 +7,7 @@ import io.gsp26se16.moni.payment.dto.response.CreditTransactionResponse;
 
 public interface CreditTransactionService {
     List<CreditTransactionResponse> searchCreditTransactions(
-            Integer userId, String paymentType, LocalDateTime startDate, LocalDateTime endDate);
+            String userId, String paymentType, LocalDateTime startDate, LocalDateTime endDate);
 
     CreditTransactionResponse getCreditTransactionDetail(Integer id);
 }
