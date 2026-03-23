@@ -55,4 +55,6 @@ public class ScoringSession {
 
     Integer userRating;
     String userComment;
+
+    Integer testId; // The speaking test ID so expert can see the questions
 }

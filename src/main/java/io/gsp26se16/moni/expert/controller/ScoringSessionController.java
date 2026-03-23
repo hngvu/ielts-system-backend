@@ -28,7 +28,11 @@ public class ScoringSessionController {
         String credentialId = getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.<ScoringSessionResponse>builder()
                 .result(sessionService.createSession(
-                        credentialId, request.getExpertId(), request.getSkill(), request.getContent()))
+                        credentialId,
+                        request.getExpertId(),
+                        request.getSkill(),
+                        request.getContent(),
+                        request.getTestId()))
                 .build());
     }
 

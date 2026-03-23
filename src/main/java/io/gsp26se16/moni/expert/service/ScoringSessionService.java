@@ -7,7 +7,8 @@ import io.gsp26se16.moni.expert.dto.ScoringSessionResponse;
 import io.gsp26se16.moni.expert.dto.SubmitEvaluationRequest;
 
 public interface ScoringSessionService {
-    ScoringSessionResponse createSession(String credentialId, Integer expertId, String skill, String content);
+    ScoringSessionResponse createSession(
+            String credentialId, Integer expertId, String skill, String content, Integer testId);
 
     void cancelSession(Integer sessionId, String credentialId);
 
@@ -24,4 +25,6 @@ public interface ScoringSessionService {
     List<ScoringSessionResponse> getSessionsForExpert(String credentialId);
 
     void rateSession(Integer sessionId, int rating, String comment);
+
+    List<Map<String, Object>> getExpertReviews(Integer expertId);
 }

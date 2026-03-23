@@ -40,7 +40,8 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
 
     @Override
     @Transactional
-    public ScoringSessionResponse createSession(String credentialId, Integer expertId, String skill, String content) {
+    public ScoringSessionResponse createSession(
+            String credentialId, Integer expertId, String skill, String content, Integer testId) {
         var credential = userCredentialsRepository
                 .findById(credentialId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
@@ -59,6 +60,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                 .expert(expert)
                 .skill(skill)
                 .content(content)
+                .testId(testId)
                 .status(SessionStatus.QUEUED)
                 .queuePosition(queuePos)
                 .build();
@@ -196,6 +198,21 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
         }
     }
 
+    @Override
+    public java.util.List<java.util.Map<String, Object>> getExpertReviews(Integer expertId) {
+        return sessionRepository.findByExpert_IdAndUserRatingIsNotNullOrderByCreatedAtDesc(expertId).stream()
+                .limit(10)
+                .map(s -> {
+                    java.util.Map<String, Object> map = new java.util.LinkedHashMap<>();
+                    map.put("rating", s.getUserRating());
+                    map.put("comment", s.getUserComment());
+                    map.put("createdAt", s.getCreatedAt());
+                    map.put("userName", s.getUser() != null ? s.getUser().getFull_name() : null);
+                    return map;
+                })
+                .collect(Collectors.toList());
+    }
+
     private ScoringSessionResponse toResponse(ScoringSession s) {
         return ScoringSessionResponse.builder()
                 .id(s.getId())
@@ -207,6 +224,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                 .roomName(s.getRoomName())
                 .queuePosition(s.getQueuePosition())
                 .createdAt(s.getCreatedAt())
+                .testId(s.getTestId())
                 .build();
     }
 }

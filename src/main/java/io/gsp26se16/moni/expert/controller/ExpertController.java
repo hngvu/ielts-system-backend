@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.expert.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -14,6 +15,7 @@ import io.gsp26se16.moni.expert.dto.ExpertProfileResponse;
 import io.gsp26se16.moni.expert.dto.UpdateExpertStatusRequest;
 import io.gsp26se16.moni.expert.enumeration.ExpertSpecialization;
 import io.gsp26se16.moni.expert.service.ExpertService;
+import io.gsp26se16.moni.expert.service.ScoringSessionService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -22,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class ExpertController {
 
     private final ExpertService expertService;
+    private final ScoringSessionService sessionService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<ExpertProfileResponse>>> listExperts(
@@ -42,6 +45,13 @@ public class ExpertController {
     public ResponseEntity<ApiResponse<ExpertProfileResponse>> getMyProfile() {
         return ResponseEntity.ok(ApiResponse.<ExpertProfileResponse>builder()
                 .result(expertService.getMyProfile(getCurrentUserId()))
+                .build());
+    }
+
+    @GetMapping("/{id}/reviews")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getExpertReviews(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.<List<Map<String, Object>>>builder()
+                .result(sessionService.getExpertReviews(id))
                 .build());
     }
 
