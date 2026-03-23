@@ -187,15 +187,11 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
         session.setUserComment(comment);
         sessionRepository.save(session);
 
-        // Update expert average rating
+        // Update expert average rating (only from sessions that have a rating)
         if (session.getExpert() != null) {
             ExpertProfile expert = session.getExpert();
-            double currentRating = expert.getRating() != null ? expert.getRating() : 0.0;
-            int totalSessions = expert.getTotalSessions() != null ? expert.getTotalSessions() : 0;
-            // Recalculate average: (old_avg * count + new_rating) / (count + 1)
-            // But totalSessions already incremented on completeSession, so use it directly
-            double newAvg = totalSessions > 0 ? (currentRating * (totalSessions - 1) + rating) / totalSessions : rating;
-            expert.setRating(Math.round(newAvg * 10) / 10.0);
+            Double avg = sessionRepository.averageRatingByExpert(expert);
+            expert.setRating(avg != null ? Math.round(avg * 10) / 10.0 : 0.0);
             expertProfileRepository.save(expert);
         }
     }
