@@ -40,11 +40,10 @@ public class ScoringSessionController {
     }
 
     @GetMapping("/{id}/queue-position")
-    public ResponseEntity<ApiResponse<Map<String, Integer>>> getQueuePosition(@PathVariable Integer id) {
-        int position = sessionService.getQueuePosition(id);
-        return ResponseEntity.ok(ApiResponse.<Map<String, Integer>>builder()
-                .result(Map.of("queuePosition", position))
-                .build());
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getQueuePosition(@PathVariable Integer id) {
+        var info = sessionService.getQueuePositionWithStatus(id);
+        return ResponseEntity.ok(
+                ApiResponse.<Map<String, Object>>builder().result(info).build());
     }
 
     private String getCurrentUserId() {
