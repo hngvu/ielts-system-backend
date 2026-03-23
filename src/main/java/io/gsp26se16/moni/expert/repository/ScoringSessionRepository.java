@@ -1,5 +1,6 @@
 package io.gsp26se16.moni.expert.repository;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,4 +23,6 @@ public interface ScoringSessionRepository extends JpaRepository<ScoringSession, 
     List<ScoringSession> findByExpert_IdAndUserRatingIsNotNullOrderByCreatedAtDesc(Integer expertId);
 
     List<ScoringSession> findByUser_IdOrderByCreatedAtDesc(String userId);
+
+    List<ScoringSession> findByStatusAndCreatedAtBefore(SessionStatus status, Timestamp cutoff);
 }

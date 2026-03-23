@@ -135,11 +135,35 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                 .findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
 
+        // Auto-calculate overall from criteria scores
+        double overall = 0;
+        int count = 0;
+        if ("SPEAKING".equalsIgnoreCase(session.getSkill())) {
+            Double[] scores = {req.getFluency(), req.getVocabulary(), req.getGrammar(), req.getPronunciation()};
+            for (Double s : scores) {
+                if (s != null) {
+                    overall += s;
+                    count++;
+                }
+            }
+        } else {
+            Double[] scores = {
+                req.getTaskResponse(), req.getCoherence(), req.getLexicalResource(), req.getGrammaticalRange()
+            };
+            for (Double s : scores) {
+                if (s != null) {
+                    overall += s;
+                    count++;
+                }
+            }
+        }
+        double overallScore = count > 0 ? Math.round((overall / count) * 2) / 2.0 : 0;
+
         ExpertEvaluation eval = ExpertEvaluation.builder()
                 .scoringSession(session)
                 .expertProfile(session.getExpert())
                 .skill(session.getSkill())
-                .overallScore(req.getOverallScore())
+                .overallScore(overallScore)
                 .fluency(req.getFluency())
                 .vocabulary(req.getVocabulary())
                 .grammar(req.getGrammar())
