@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
+import io.gsp26se16.moni.common.enumeration.TestMode;
 import io.gsp26se16.moni.content.entity.Test;
 
 @Repository
@@ -54,4 +55,11 @@ public interface TestRepository extends JpaRepository<Test, Integer> {
             value = "SELECT * FROM test WHERE skill = :skill AND status = 'PUBLISHED' ORDER BY RANDOM() LIMIT 1",
             nativeQuery = true)
     Optional<Test> findRandomPublishedTest(@Param("skill") String skill);
+
+    List<Test> findByTestModeOrderByIdDesc(TestMode testMode);
+
+    List<Test> findByTestModeAndSkill(TestMode testMode, Skill skill);
+
+    @Query("SELECT COUNT(t) FROM Test t WHERE t.testMode = :testMode AND t.skill = :skill")
+    long countByTestModeAndSkill(@Param("testMode") TestMode testMode, @Param("skill") Skill skill);
 }
