@@ -35,7 +35,13 @@ public class VocabLookupService {
     public VocabLookupResponse lookupWord(String word, String sentence) {
         Optional<Dictionary> cached = dictionaryRepository.findFirstByWordIgnoreCase(word);
         if (cached.isPresent()) {
-            return mapToResponse(cached.get());
+            Dictionary dict = cached.get();
+            // Skip stale cache entries with no meaning (from old Gemini failures)
+            if (dict.getMeaning() != null && !dict.getMeaning().isBlank()) {
+                return mapToResponse(dict);
+            }
+            // Delete stale entry so we can re-fetch
+            dictionaryRepository.delete(dict);
         }
 
         VocabLookupResponse result = callDolApi(word);
