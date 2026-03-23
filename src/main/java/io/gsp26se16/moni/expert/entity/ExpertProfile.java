@@ -32,7 +32,11 @@ public class ExpertProfile {
 
     String displayName;
     String avatarUrl;
-    Double bandScore;
+    Double bandScore; // overall
+    Double bandReading;
+    Double bandListening;
+    Double bandWriting;
+    Double bandSpeaking;
     Integer yearsExperience;
 
     @Enumerated(EnumType.STRING)

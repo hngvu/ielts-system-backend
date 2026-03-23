@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import io.gsp26se16.moni.common.exception.AppException;
+import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.payment.dto.request.PackagePricingCreateRequest;
 import io.gsp26se16.moni.payment.dto.request.PackagePricingUpdateRequest;
 import io.gsp26se16.moni.payment.dto.response.PackagePricingResponse;
@@ -118,7 +120,7 @@ public class PackagePricingImpl implements PackagePricingService {
         log.info("Fetching package pricing by id: {}", id);
         PackagePricing packagePricing = packagePricingRepository
                 .findById(id)
-                .orElseThrow(() -> new RuntimeException("Package pricing not found with id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.PACKAGE_PRICING_NOT_FOUND));
         return convertToResponse(packagePricing);
     }
 
@@ -149,7 +151,7 @@ public class PackagePricingImpl implements PackagePricingService {
 
         PackagePricing packagePricing = packagePricingRepository
                 .findById(id)
-                .orElseThrow(() -> new RuntimeException("Package pricing not found with id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.PACKAGE_PRICING_NOT_FOUND));
 
         if (!packagePricing.getName().equals(request.name()) && packagePricingRepository.existsByName(request.name())) {
             throw new RuntimeException("Package pricing already exists with name: " + request.name());
@@ -173,7 +175,7 @@ public class PackagePricingImpl implements PackagePricingService {
         log.info("Deleting package pricing with id: {}", id);
 
         if (!packagePricingRepository.existsById(id)) {
-            throw new RuntimeException("Package pricing not found with id: " + id);
+            throw new AppException(ErrorCode.PACKAGE_PRICING_NOT_FOUND);
         }
 
         packagePricingRepository.deleteById(id);

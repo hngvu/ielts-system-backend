@@ -3,9 +3,15 @@ package io.gsp26se16.moni.expert.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import io.gsp26se16.moni.common.dto.ApiResponse;
+import io.gsp26se16.moni.common.exception.AppException;
+import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.expert.dto.ExpertProfileResponse;
+import io.gsp26se16.moni.expert.dto.UpdateExpertStatusRequest;
 import io.gsp26se16.moni.expert.enumeration.ExpertSpecialization;
 import io.gsp26se16.moni.expert.service.ExpertService;
 import lombok.RequiredArgsConstructor;
@@ -18,13 +24,38 @@ public class ExpertController {
     private final ExpertService expertService;
 
     @GetMapping
-    public ResponseEntity<List<ExpertProfileResponse>> listExperts(
+    public ResponseEntity<ApiResponse<List<ExpertProfileResponse>>> listExperts(
             @RequestParam(required = false) ExpertSpecialization specialization) {
-        return ResponseEntity.ok(expertService.listExperts(specialization));
+        return ResponseEntity.ok(ApiResponse.<List<ExpertProfileResponse>>builder()
+                .result(expertService.listExperts(specialization))
+                .build());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ExpertProfileResponse> getExpert(@PathVariable Integer id) {
-        return ResponseEntity.ok(expertService.getExpert(id));
+    public ResponseEntity<ApiResponse<ExpertProfileResponse>> getExpert(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.<ExpertProfileResponse>builder()
+                .result(expertService.getExpert(id))
+                .build());
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<ExpertProfileResponse>> getMyProfile() {
+        return ResponseEntity.ok(ApiResponse.<ExpertProfileResponse>builder()
+                .result(expertService.getMyProfile(getCurrentUserId()))
+                .build());
+    }
+
+    @PatchMapping("/me/status")
+    public ResponseEntity<Void> updateMyStatus(@RequestBody UpdateExpertStatusRequest request) {
+        expertService.updateMyStatus(getCurrentUserId(), request.getStatus());
+        return ResponseEntity.noContent().build();
+    }
+
+    private String getCurrentUserId() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof Jwt jwt) {
+            return jwt.getClaim("userId");
+        }
+        throw new AppException(ErrorCode.UNAUTHENTICATED);
     }
 }

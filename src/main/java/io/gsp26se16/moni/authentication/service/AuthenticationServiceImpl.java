@@ -137,7 +137,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         invalidatedTokenRepository.save(invalidatedToken);
 
-        var email = signedJWT.getJWTClaimsSet().getSubject();
+        var email = signedJWT.getJWTClaimsSet().getStringClaim("email");
 
         var user = userCredentialsRepository
                 .findByEmail(email)

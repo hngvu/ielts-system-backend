@@ -1,8 +1,11 @@
 package io.gsp26se16.moni.expert.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.expert.dto.CreateExpertRequest;
 import io.gsp26se16.moni.expert.dto.ExpertProfileResponse;
 import io.gsp26se16.moni.expert.dto.UpdateExpertStatusRequest;
@@ -16,9 +19,18 @@ public class AdminExpertController {
 
     private final ExpertService expertService;
 
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<ExpertProfileResponse>>> listExperts() {
+        return ResponseEntity.ok(ApiResponse.<List<ExpertProfileResponse>>builder()
+                .result(expertService.listExperts(null))
+                .build());
+    }
+
     @PostMapping
-    public ResponseEntity<ExpertProfileResponse> createExpert(@RequestBody CreateExpertRequest request) {
-        return ResponseEntity.ok(expertService.createExpert(request));
+    public ResponseEntity<ApiResponse<ExpertProfileResponse>> createExpert(@RequestBody CreateExpertRequest request) {
+        return ResponseEntity.ok(ApiResponse.<ExpertProfileResponse>builder()
+                .result(expertService.createExpert(request))
+                .build());
     }
 
     @PatchMapping("/{id}/status")

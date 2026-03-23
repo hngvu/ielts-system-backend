@@ -52,6 +52,10 @@ public class SecurityConfig {
                 // SEpay webhook — cho phép mọi method, không cần auth (must be first)
                 .requestMatchers(HttpMethod.OPTIONS, "/**")
                 .permitAll()
+                .requestMatchers(HttpMethod.POST, "/payments/sepay")
+                .permitAll()
+                .requestMatchers(HttpMethod.GET, "/payments/subscribe")
+                .permitAll()
                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS)
                 .permitAll()
                 .requestMatchers(
@@ -110,7 +114,7 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:3000", "https://moni-fe.vercel.app"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 

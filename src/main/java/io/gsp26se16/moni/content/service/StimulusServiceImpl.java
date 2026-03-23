@@ -13,6 +13,8 @@ import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
+import io.gsp26se16.moni.common.exception.AppException;
+import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.dto.request.StimulusCreateRequest;
 import io.gsp26se16.moni.content.dto.response.StimulusResponse;
 import io.gsp26se16.moni.content.entity.Question;
@@ -110,7 +112,7 @@ public class StimulusServiceImpl implements StimulusService {
     @SuppressWarnings("unchecked")
     public void updateStimulus(Integer id, String content, String mediaUrl, Object transcript) {
         Stimulus stimulus =
-                stimulusRepository.findById(id).orElseThrow(() -> new RuntimeException("Stimulus not found: " + id));
+                stimulusRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.STIMULUS_NOT_FOUND));
         if (content != null) stimulus.setContent(content);
         if (mediaUrl != null) stimulus.setMediaUrl(mediaUrl);
         if (transcript != null) stimulus.setTranscript((List<Map<String, Object>>) transcript);
@@ -134,7 +136,7 @@ public class StimulusServiceImpl implements StimulusService {
     public List<Map<String, Object>> transcribeAndSave(Integer stimulusId) {
         Stimulus stimulus = stimulusRepository
                 .findById(stimulusId)
-                .orElseThrow(() -> new RuntimeException("Stimulus not found: " + stimulusId));
+                .orElseThrow(() -> new AppException(ErrorCode.STIMULUS_NOT_FOUND));
         if (stimulus.getMediaUrl() == null || stimulus.getMediaUrl().isBlank()) {
             throw new RuntimeException("Stimulus không có audio URL");
         }
@@ -156,7 +158,7 @@ public class StimulusServiceImpl implements StimulusService {
     public List<Map<String, Object>> getTranscript(Integer stimulusId) {
         Stimulus stimulus = stimulusRepository
                 .findById(stimulusId)
-                .orElseThrow(() -> new RuntimeException("Stimulus not found: " + stimulusId));
+                .orElseThrow(() -> new AppException(ErrorCode.STIMULUS_NOT_FOUND));
         return stimulus.getTranscript();
     }
 }

@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import io.gsp26se16.moni.common.exception.AppException;
+import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.payment.dto.request.ServicePricingCreateRequest;
 import io.gsp26se16.moni.payment.dto.request.ServicePricingUpdateRequest;
 import io.gsp26se16.moni.payment.dto.response.ServicePricingResponse;
@@ -102,7 +104,7 @@ public class ServicePricingImpl implements ServicePricingService {
         log.info("Fetching service pricing by id: {}", id);
         ServicePricing servicePricing = servicePricingRepository
                 .findById(id)
-                .orElseThrow(() -> new RuntimeException("Service pricing not found with id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.SERVICE_PRICING_NOT_FOUND));
         return convertToResponse(servicePricing);
     }
 
@@ -132,7 +134,7 @@ public class ServicePricingImpl implements ServicePricingService {
 
         ServicePricing servicePricing = servicePricingRepository
                 .findById(id)
-                .orElseThrow(() -> new RuntimeException("Service pricing not found with id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.SERVICE_PRICING_NOT_FOUND));
 
         if (!servicePricing.getServiceCode().equals(request.serviceCode())
                 && servicePricingRepository.existsByServiceCode(request.serviceCode())) {
@@ -155,7 +157,7 @@ public class ServicePricingImpl implements ServicePricingService {
         log.info("Deleting service pricing with id: {}", id);
 
         if (!servicePricingRepository.existsById(id)) {
-            throw new RuntimeException("Service pricing not found with id: " + id);
+            throw new AppException(ErrorCode.SERVICE_PRICING_NOT_FOUND);
         }
 
         servicePricingRepository.deleteById(id);

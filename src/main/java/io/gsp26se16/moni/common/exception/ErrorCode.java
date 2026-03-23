@@ -53,6 +53,9 @@ public enum ErrorCode {
     TEST_NOT_FOUND(1041, "Không tìm thấy bài thi IELTS", HttpStatus.NOT_FOUND),
     VOCAB_COLLECTION_NOT_FOUND(1042, "Không tìm thấy bộ từ vựng", HttpStatus.NOT_FOUND),
     VOCAB_NOT_FOUND(1049, "Không tìm thấy từ vựng", HttpStatus.NOT_FOUND),
+    GOAL_NOT_FOUND(1058, "Không tìm thấy mục tiêu học tập", HttpStatus.NOT_FOUND),
+    TASK_NOT_FOUND(1059, "Không tìm thấy bài tập", HttpStatus.NOT_FOUND),
+    ACTIVE_ROADMAP_NOT_FOUND(1060, "Không tìm thấy lộ trình đang chạy", HttpStatus.NOT_FOUND),
 
     // --- TAG MODULE ---
     TAG_EXISTED(1043, "Mã hoặc tên tag đã tồn tại", HttpStatus.BAD_REQUEST),
@@ -63,6 +66,7 @@ public enum ErrorCode {
     QUESTION_NOT_FOUND(1046, "Không tìm thấy câu hỏi", HttpStatus.NOT_FOUND),
     OPTION_NOT_FOUND(1047, "Không tìm thấy đáp án", HttpStatus.NOT_FOUND),
     ATTEMPT_NOT_FOUND(1048, "Không tìm thấy lần làm bài", HttpStatus.NOT_FOUND),
+    QUESTION_GROUP_NOT_FOUND(1061, "Không tìm thấy nhóm câu hỏi", HttpStatus.NOT_FOUND),
 
     // --- PLACEMENT MODULE ---
     PLACEMENT_NO_READING_TEST(1050, "Không có bài thi Reading nào được công bố", HttpStatus.NOT_FOUND),
@@ -72,6 +76,13 @@ public enum ErrorCode {
 
     // --- CREDIT & PAYMENT ---
     INSUFFICIENT_CREDIT(1054, "Số dư credit không đủ", HttpStatus.BAD_REQUEST),
+    PACKAGE_PRICING_NOT_FOUND(1062, "Không tìm thấy gói nạp", HttpStatus.NOT_FOUND),
+    SERVICE_PRICING_NOT_FOUND(1063, "Không tìm thấy bảng giá dịch vụ", HttpStatus.NOT_FOUND),
+    CREDIT_TRANSACTION_NOT_FOUND(1064, "Không tìm thấy giao dịch credit", HttpStatus.NOT_FOUND),
+
+    // --- AI MODULE ---
+    AI_EVALUATION_FAILED(1070, "Đánh giá AI thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
+    AI_SERVICE_UNAVAILABLE(1071, "Dịch vụ AI tạm thời không khả dụng", HttpStatus.SERVICE_UNAVAILABLE),
 
     // --- EXPERT MODULE ---
     EXPERT_NOT_FOUND(1055, "Không tìm thấy chuyên gia", HttpStatus.NOT_FOUND),

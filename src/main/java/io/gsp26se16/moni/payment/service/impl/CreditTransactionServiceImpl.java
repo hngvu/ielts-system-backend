@@ -9,6 +9,8 @@ import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import io.gsp26se16.moni.common.exception.AppException;
+import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.payment.dto.response.CreditTransactionResponse;
 import io.gsp26se16.moni.payment.entity.CreditTransaction;
 import io.gsp26se16.moni.payment.enumeration.PaymentType;
@@ -66,7 +68,7 @@ public class CreditTransactionServiceImpl implements CreditTransactionService {
     public CreditTransactionResponse getCreditTransactionDetail(Integer id) {
         CreditTransaction creditTransaction = creditTransactionRepository
                 .findById(id)
-                .orElseThrow(() -> new RuntimeException("Credit transaction not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.CREDIT_TRANSACTION_NOT_FOUND));
 
         return mapToCreditTransactionResponse(creditTransaction);
     }

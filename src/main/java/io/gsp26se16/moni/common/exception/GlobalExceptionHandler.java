@@ -5,11 +5,14 @@ import java.util.Objects;
 
 import jakarta.validation.ConstraintViolation;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import io.gsp26se16.moni.common.dto.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -22,13 +25,47 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleException(Exception exception) {
-        log.error("Exception: ", exception);
-        ApiResponse apiResponse = new ApiResponse();
+        log.error(
+                "Unhandled exception [{}]: {}",
+                exception.getClass().getSimpleName(),
+                exception.getMessage(),
+                exception);
+        ErrorCode errorCode = ErrorCode.UNCATEGORIZED_EXCEPTION;
 
-        apiResponse.setCode(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode());
-        apiResponse.setMessage(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage());
+        return ResponseEntity.status(errorCode.getStatusCode())
+                .body(ApiResponse.builder()
+                        .code(errorCode.getCode())
+                        .message(errorCode.getMessage())
+                        .build());
+    }
 
-        return ResponseEntity.badRequest().body(apiResponse);
+    @ExceptionHandler(value = IllegalArgumentException.class)
+    ResponseEntity<ApiResponse> handlingIllegalArgument(IllegalArgumentException exception) {
+        log.error("IllegalArgumentException: {}", exception.getMessage(), exception);
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.builder()
+                        .code(ErrorCode.INVALID_KEY.getCode())
+                        .message(exception.getMessage())
+                        .build());
+    }
+
+    @ExceptionHandler(value = MethodArgumentTypeMismatchException.class)
+    ResponseEntity<ApiResponse> handlingTypeMismatch(MethodArgumentTypeMismatchException exception) {
+        log.error("Type mismatch: {}", exception.getMessage());
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.builder()
+                        .code(ErrorCode.INVALID_KEY.getCode())
+                        .message("Tham số không hợp lệ: " + exception.getName())
+                        .build());
+    }
+
+    @ExceptionHandler(value = NoResourceFoundException.class)
+    ResponseEntity<ApiResponse> handlingNotFound(NoResourceFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.builder()
+                        .code(1404)
+                        .message("Không tìm thấy tài nguyên: " + exception.getResourcePath())
+                        .build());
     }
 
     @ExceptionHandler(value = AppException.class)

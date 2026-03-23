@@ -25,6 +25,8 @@ import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import io.gsp26se16.moni.common.enumeration.EvaluationStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.WritingTaskType;
+import io.gsp26se16.moni.common.exception.AppException;
+import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.entity.Stimulus;
 import io.gsp26se16.moni.content.repository.StimulusRepository;
 import lombok.RequiredArgsConstructor;
@@ -309,7 +311,7 @@ public class WritingTask1Service {
     private Map<String, Object> getOrCacheVisionAnalysis(Integer stimulusId, MultipartFile chartImage) {
         Stimulus stimulus = stimulusRepository
                 .findById(stimulusId)
-                .orElseThrow(() -> new RuntimeException("QuestionGroup not found: " + stimulusId));
+                .orElseThrow(() -> new AppException(ErrorCode.QUESTION_GROUP_NOT_FOUND));
 
         if (stimulus.getVisonAnalysisResult() != null
                 && !stimulus.getVisonAnalysisResult().isEmpty()) {
