@@ -24,7 +24,7 @@ public interface ScoringSessionService {
 
     List<ScoringSessionResponse> getSessionsForExpert(String credentialId);
 
-    void rateSession(Integer sessionId, int rating, String comment);
+    void rateSession(Integer sessionId, int rating, String comment, String recordingUrl);
 
     List<Map<String, Object>> getExpertReviews(Integer expertId);
 

@@ -205,12 +205,15 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
 
     @Override
     @Transactional
-    public void rateSession(Integer sessionId, int rating, String comment) {
+    public void rateSession(Integer sessionId, int rating, String comment, String recordingUrl) {
         ScoringSession session = sessionRepository
                 .findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
         session.setUserRating(rating);
         session.setUserComment(comment);
+        if (recordingUrl != null && !recordingUrl.isBlank()) {
+            session.setRecordingUrl(recordingUrl);
+        }
         sessionRepository.save(session);
 
         // Update expert average rating (only from sessions that have a rating)
