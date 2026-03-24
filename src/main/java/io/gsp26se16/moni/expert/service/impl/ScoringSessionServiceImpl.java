@@ -210,15 +210,18 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
         ScoringSession session = sessionRepository
                 .findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
-        session.setUserRating(rating);
-        session.setUserComment(comment);
+        // rating=0 means user skipped rating, only save recordingUrl
+        if (rating > 0) {
+            session.setUserRating(rating);
+            session.setUserComment(comment);
+        }
         if (recordingUrl != null && !recordingUrl.isBlank()) {
             session.setRecordingUrl(recordingUrl);
         }
         sessionRepository.save(session);
 
         // Update expert average rating (only from sessions that have a rating)
-        if (session.getExpert() != null) {
+        if (rating > 0 && session.getExpert() != null) {
             ExpertProfile expert = session.getExpert();
             Double avg = sessionRepository.averageRatingByExpert(expert);
             expert.setRating(avg != null ? Math.round(avg * 10) / 10.0 : 0.0);
