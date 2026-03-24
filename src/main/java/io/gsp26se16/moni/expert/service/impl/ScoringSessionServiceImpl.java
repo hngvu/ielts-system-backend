@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -205,12 +206,15 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
 
     @Override
     @Transactional
-    public void rateSession(Integer sessionId, int rating, String comment) {
+    public void rateSession(Integer sessionId, int rating, String comment, String recordingUrl) {
         ScoringSession session = sessionRepository
                 .findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
         session.setUserRating(rating);
         session.setUserComment(comment);
+        if (recordingUrl != null && !recordingUrl.isBlank()) {
+            session.setRecordingUrl(recordingUrl);
+        }
         sessionRepository.save(session);
 
         // Update expert average rating (only from sessions that have a rating)
@@ -289,6 +293,15 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                 .queuePosition(s.getQueuePosition())
                 .createdAt(s.getCreatedAt())
                 .testId(s.getTestId())
+                .recordingUrl(s.getRecordingUrl())
+                .userRating(s.getUserRating())
                 .build();
+    }
+
+    @Override
+    public List<ScoringSessionResponse> getAllSessions() {
+        return sessionRepository.findAll(Sort.by(Sort.Direction.DESC, "id")).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 }

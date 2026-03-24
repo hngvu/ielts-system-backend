@@ -55,8 +55,16 @@ public class ScoringSessionController {
     public ResponseEntity<Void> rateSession(@PathVariable Integer id, @RequestBody Map<String, Object> body) {
         int rating = ((Number) body.get("rating")).intValue();
         String comment = (String) body.getOrDefault("comment", "");
-        sessionService.rateSession(id, rating, comment);
+        String recordingUrl = (String) body.getOrDefault("recordingUrl", null);
+        sessionService.rateSession(id, rating, comment, recordingUrl);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/admin/all")
+    public ResponseEntity<ApiResponse<List<ScoringSessionResponse>>> allSessions() {
+        return ResponseEntity.ok(ApiResponse.<List<ScoringSessionResponse>>builder()
+                .result(sessionService.getAllSessions())
+                .build());
     }
 
     @GetMapping("/my")

@@ -57,4 +57,6 @@ public class ScoringSession {
     String userComment;
 
     Integer testId; // The speaking test ID so expert can see the questions
+
+    String recordingUrl; // Cloudinary URL of the client-side audio recording
 }
