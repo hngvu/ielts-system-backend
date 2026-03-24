@@ -1,5 +1,7 @@
 package io.gsp26se16.moni.content.controller;
 
+import java.util.Map;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -44,29 +46,41 @@ public class QuestionGroupController {
 
     @PatchMapping("/question-groups/{id}/image-url")
     @Operation(summary = "Update QuestionGroup imageUrl")
-    public ResponseEntity<ApiResponse<Void>> updateImageUrl(
-            @PathVariable Integer id, @RequestBody java.util.Map<String, String> body) {
-        questionGroupService.updateImageUrl(id, body.get("imageUrl"));
-        return ResponseEntity.ok(
-                ApiResponse.<Void>builder().code(1000).message("Updated").build());
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateImageUrl(
+            @PathVariable Integer id, @RequestBody Map<String, String> body) {
+        String imageUrl = body.get("imageUrl");
+        questionGroupService.updateImageUrl(id, imageUrl);
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
+                .code(1000)
+                .message("Updated")
+                .result(Map.of("id", id, "imageUrl", imageUrl != null ? imageUrl : ""))
+                .build());
     }
 
     @PatchMapping("/question-groups/{id}/group-content")
     @Operation(summary = "Update QuestionGroup groupContent (gap-fill paragraph)")
-    public ResponseEntity<ApiResponse<Void>> updateGroupContent(
-            @PathVariable Integer id, @RequestBody java.util.Map<String, String> body) {
-        questionGroupService.updateGroupContent(id, body.get("groupContent"));
-        return ResponseEntity.ok(
-                ApiResponse.<Void>builder().code(1000).message("Updated").build());
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateGroupContent(
+            @PathVariable Integer id, @RequestBody Map<String, String> body) {
+        String groupContent = body.get("groupContent");
+        questionGroupService.updateGroupContent(id, groupContent);
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
+                .code(1000)
+                .message("Updated")
+                .result(Map.of("id", id, "groupContent", groupContent != null ? groupContent : ""))
+                .build());
     }
 
     @PatchMapping("/question-groups/{id}/question-type-code")
     @Operation(summary = "Update QuestionGroup questionTypeCode")
-    public ResponseEntity<ApiResponse<Void>> updateQuestionTypeCode(
-            @PathVariable Integer id, @RequestBody java.util.Map<String, String> body) {
-        questionGroupService.updateQuestionTypeCode(id, body.get("questionTypeCode"));
-        return ResponseEntity.ok(
-                ApiResponse.<Void>builder().code(1000).message("Updated").build());
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateQuestionTypeCode(
+            @PathVariable Integer id, @RequestBody Map<String, String> body) {
+        String questionTypeCode = body.get("questionTypeCode");
+        questionGroupService.updateQuestionTypeCode(id, questionTypeCode);
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
+                .code(1000)
+                .message("Updated")
+                .result(Map.of("id", id, "questionTypeCode", questionTypeCode != null ? questionTypeCode : ""))
+                .build());
     }
 
     @PostMapping("/question-groups/{groupId}/questions")

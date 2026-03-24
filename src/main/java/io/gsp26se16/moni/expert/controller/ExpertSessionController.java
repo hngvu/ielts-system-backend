@@ -53,10 +53,11 @@ public class ExpertSessionController {
     }
 
     @PostMapping("/{id}/evaluate")
-    public ResponseEntity<Void> submitEvaluation(
+    public ResponseEntity<ApiResponse<ScoringSessionResponse>> submitEvaluation(
             @PathVariable Integer id, @RequestBody SubmitEvaluationRequest request) {
-        sessionService.completeSession(id, request);
-        return ResponseEntity.noContent().build();
+        ScoringSessionResponse completed = sessionService.completeSession(id, request);
+        return ResponseEntity.ok(
+                ApiResponse.<ScoringSessionResponse>builder().result(completed).build());
     }
 
     private String getCurrentUserId() {

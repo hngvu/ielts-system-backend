@@ -24,25 +24,27 @@ public class QuestionController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update Question & Tags")
-    public ResponseEntity<ApiResponse<Void>> updateQuestion(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateQuestion(
             @PathVariable Integer id, @RequestBody @Valid QuestionUpdateRequest request) {
 
         questionService.updateQuestion(id, request);
 
-        return ResponseEntity.ok(ApiResponse.<Void>builder()
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .code(1000)
                 .message("Update question and Tag successfully")
+                .result(Map.of("id", id))
                 .build());
     }
 
     @PutMapping("/batch")
     @Operation(summary = "Batch Update Questions")
-    public ResponseEntity<ApiResponse<Void>> batchUpdateQuestions(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> batchUpdateQuestions(
             @RequestBody Map<Integer, QuestionUpdateRequest> updates) {
         questionService.batchUpdateQuestions(updates);
-        return ResponseEntity.ok(ApiResponse.<Void>builder()
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .code(1000)
                 .message("Batch update successfully")
+                .result(Map.of("updatedCount", updates.size()))
                 .build());
     }
 

@@ -38,13 +38,14 @@ public class StimulusController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> updateStimulus(
+    public ResponseEntity<ApiResponse<StimulusResponse>> updateStimulus(
             @PathVariable Integer id, @RequestBody Map<String, Object> body) {
-        stimulusService.updateStimulus(
+        StimulusResponse updated = stimulusService.updateStimulus(
                 id, (String) body.get("content"), (String) body.get("mediaUrl"), body.get("transcript"));
-        return ResponseEntity.ok(ApiResponse.<Void>builder()
+        return ResponseEntity.ok(ApiResponse.<StimulusResponse>builder()
                 .code(1000)
                 .message("Cập nhật ngữ liệu thành công")
+                .result(updated)
                 .build());
     }
 

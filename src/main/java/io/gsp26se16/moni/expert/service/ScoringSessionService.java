@@ -10,7 +10,7 @@ public interface ScoringSessionService {
     ScoringSessionResponse createSession(
             String credentialId, Integer expertId, String skill, String content, Integer testId);
 
-    void cancelSession(Integer sessionId, String credentialId);
+    ScoringSessionResponse cancelSession(Integer sessionId, String credentialId);
 
     int getQueuePosition(Integer sessionId);
 
@@ -20,11 +20,11 @@ public interface ScoringSessionService {
 
     ScoringSessionResponse startSession(Integer sessionId);
 
-    void completeSession(Integer sessionId, SubmitEvaluationRequest evaluation);
+    ScoringSessionResponse completeSession(Integer sessionId, SubmitEvaluationRequest evaluation);
 
     List<ScoringSessionResponse> getSessionsForExpert(String credentialId);
 
-    void rateSession(Integer sessionId, int rating, String comment, String recordingUrl);
+    ScoringSessionResponse rateSession(Integer sessionId, int rating, String comment, String recordingUrl);
 
     List<Map<String, Object>> getExpertReviews(Integer expertId);
 

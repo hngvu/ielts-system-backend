@@ -50,9 +50,11 @@ public class AdminExpertController {
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<Void> updateStatus(@PathVariable Integer id, @RequestBody UpdateExpertStatusRequest request) {
-        expertService.updateStatus(id, request.getStatus());
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<ApiResponse<ExpertProfileResponse>> updateStatus(
+            @PathVariable Integer id, @RequestBody UpdateExpertStatusRequest request) {
+        ExpertProfileResponse updated = expertService.updateStatus(id, request.getStatus());
+        return ResponseEntity.ok(
+                ApiResponse.<ExpertProfileResponse>builder().result(updated).build());
     }
 
     @DeleteMapping("/{id}")
