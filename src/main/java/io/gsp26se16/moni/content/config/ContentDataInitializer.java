@@ -48,10 +48,26 @@ public class ContentDataInitializer {
             created += upsertType("Form Completion", "FORM_COMPLETION", Skill.LISTENING, false);
             created += upsertType("Note Completion", "NOTE_COMPLETION", Skill.LISTENING, false);
             created += upsertType("Table Completion", "TABLE_COMPLETION", Skill.LISTENING, false);
+            created += upsertType("Gap Filling (Listening)", "GAP_FILLING_L", Skill.LISTENING, false);
 
             // --- WRITING ---
             created += upsertType("Writing Task 1", "WRITING_TASK_1", Skill.WRITING, false);
             created += upsertType("Writing Task 2", "WRITING_TASK_2", Skill.WRITING, false);
+            // Writing Task 1 sub-types
+            created += upsertType("Line Graph", "LINE_GRAPH", Skill.WRITING, false);
+            created += upsertType("Bar Chart", "BAR_CHART", Skill.WRITING, false);
+            created += upsertType("Pie Chart", "PIE_CHART", Skill.WRITING, false);
+            created += upsertType("Table", "TABLE", Skill.WRITING, false);
+            created += upsertType("Mixed Graph", "MIXED_GRAPH", Skill.WRITING, false);
+            created += upsertType("Map", "MAP", Skill.WRITING, false);
+            created += upsertType("Process", "PROCESS", Skill.WRITING, false);
+            // Writing Task 2 sub-types
+            created += upsertType("Agree or Disagree", "AGREE_DISAGREE", Skill.WRITING, false);
+            created += upsertType("Discussion", "DISCUSSION", Skill.WRITING, false);
+            created += upsertType("Advantages & Disadvantages", "ADVANTAGES_DISADVANTAGES", Skill.WRITING, false);
+            created += upsertType("Causes, Problems & Solutions", "CAUSES_PROBLEMS_SOLUTIONS", Skill.WRITING, false);
+            created += upsertType("Two-Part Question", "TWO_PART_QUESTION", Skill.WRITING, false);
+            created += upsertType("Positive or Negative Development", "POSITIVE_NEGATIVE", Skill.WRITING, false);
 
             // --- SPEAKING ---
             created += upsertType("Speaking Part 1", "SPEAKING_PART_1", Skill.SPEAKING, false);
