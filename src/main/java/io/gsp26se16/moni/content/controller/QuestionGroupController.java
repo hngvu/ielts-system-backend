@@ -60,6 +60,15 @@ public class QuestionGroupController {
                 ApiResponse.<Void>builder().code(1000).message("Updated").build());
     }
 
+    @PatchMapping("/question-groups/{id}/question-type-code")
+    @Operation(summary = "Update QuestionGroup questionTypeCode")
+    public ResponseEntity<ApiResponse<Void>> updateQuestionTypeCode(
+            @PathVariable Integer id, @RequestBody java.util.Map<String, String> body) {
+        questionGroupService.updateQuestionTypeCode(id, body.get("questionTypeCode"));
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder().code(1000).message("Updated").build());
+    }
+
     @PostMapping("/question-groups/{groupId}/questions")
     @Operation(summary = "Create Question under a QuestionGroup")
     public ResponseEntity<ApiResponse<Integer>> createQuestion(

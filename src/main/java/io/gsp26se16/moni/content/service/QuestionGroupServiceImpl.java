@@ -86,6 +86,18 @@ public class QuestionGroupServiceImpl implements QuestionGroupService {
         questionGroupRepository.save(group);
     }
 
+    @Override
+    @Transactional
+    public void updateQuestionTypeCode(Integer id, String questionTypeCode) {
+        QuestionGroup group = questionGroupRepository
+                .findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.QUESTION_GROUP_NOT_FOUND));
+        if (questionTypeCode != null) {
+            questionTypeRepository.findByCode(questionTypeCode).ifPresent(group::setQuestionType);
+        }
+        questionGroupRepository.save(group);
+    }
+
     // shared helper — also used by QuestionServiceImpl via QuestionGroupServiceImpl injection
     void saveQuestion(QuestionGroup group, QuestionCreateRequest qReq) {
         Question question = new Question();
