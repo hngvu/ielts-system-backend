@@ -56,9 +56,15 @@ public class ExpertController {
     }
 
     @PatchMapping("/me/status")
-    public ResponseEntity<Void> updateMyStatus(@RequestBody UpdateExpertStatusRequest request) {
-        expertService.updateMyStatus(getCurrentUserId(), request.getStatus());
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<ApiResponse<ExpertProfileResponse>> updateMyStatus(
+            @RequestBody UpdateExpertStatusRequest request) {
+        String userId = getCurrentUserId();
+        expertService.updateMyStatus(userId, request.getStatus());
+        ExpertProfileResponse profile = expertService.getMyProfile(userId);
+        return ResponseEntity.ok(ApiResponse.<ExpertProfileResponse>builder()
+                .result(profile)
+                .message("Cập nhật trạng thái thành công")
+                .build());
     }
 
     private String getCurrentUserId() {

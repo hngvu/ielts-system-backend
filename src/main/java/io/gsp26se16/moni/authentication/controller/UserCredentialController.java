@@ -1,5 +1,7 @@
 package io.gsp26se16.moni.authentication.controller;
 
+import java.util.Map;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -33,23 +35,27 @@ public class UserCredentialController {
     }
 
     @PutMapping("/change-password")
-    public ResponseEntity<ApiResponse<Void>> changePassword(@RequestBody @Valid ChangePassWordRequest request) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> changePassword(
+            @RequestBody @Valid ChangePassWordRequest request) {
         var context = SecurityContextHolder.getContext();
         String userId = context.getAuthentication().getName();
 
         userCredentialService.changePassword(userId, request);
 
-        return ResponseEntity.ok(ApiResponse.<Void>builder()
+        return ResponseEntity.ok(ApiResponse.<Map<String, String>>builder()
                 .message("Password changed successfully")
+                .result(Map.of("status", "success", "message", "Password changed successfully"))
                 .build());
     }
 
     @PutMapping("/{id}/ban")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> banUser(@PathVariable String id) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> banUser(@PathVariable String id) {
         userCredentialService.banUser(id);
 
-        return ResponseEntity.ok(
-                ApiResponse.<Void>builder().message("User has been banned").build());
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
+                .message("User has been banned")
+                .result(Map.of("userId", id, "active", false, "status", "banned"))
+                .build());
     }
 }
