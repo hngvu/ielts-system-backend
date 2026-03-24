@@ -1,5 +1,7 @@
 package io.gsp26se16.moni.content.controller;
 
+import java.util.Map;
+
 import jakarta.validation.Valid;
 
 import org.springframework.data.domain.Page;
@@ -88,14 +90,14 @@ public class TestController {
     // API 4: CẬP NHẬT ĐỀ THI
     @PutMapping("/{id}")
     @Operation(summary = "Update Test Info")
-    public ResponseEntity<ApiResponse<Void>> updateTest(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateTest(
             @PathVariable Integer id, @RequestBody @Valid TestUpdateRequest request) {
         testService.updateTest(id, request);
-        ApiResponse<Void> response = ApiResponse.<Void>builder()
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .code(1000)
                 .message("Cập nhật thông tin đề thi thành công")
-                .build();
-        return ResponseEntity.ok(response);
+                .result(Map.of("id", id, "status", "updated"))
+                .build());
     }
 
     @DeleteMapping("/{id}")
@@ -110,13 +112,14 @@ public class TestController {
 
     @PostMapping("/{id}/structure")
     @Operation(summary = "Add Stimulus to Test")
-    public ResponseEntity<ApiResponse<Void>> addStimulusToTest(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> addStimulusToTest(
             @PathVariable Integer id, @RequestBody @Valid TestStructureRequest request) {
         testService.addStimulusToTest(id, request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.<Void>builder()
+                .body(ApiResponse.<Map<String, Object>>builder()
                         .code(1000)
                         .message("Ghép ngữ liệu vào đề thi thành công")
+                        .result(Map.of("testId", id, "stimulusId", request.getStimulusId()))
                         .build());
     }
 

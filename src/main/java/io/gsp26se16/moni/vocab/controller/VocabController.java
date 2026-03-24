@@ -120,11 +120,14 @@ public class VocabController {
     }
 
     @PatchMapping("/{id}/move")
-    public ResponseEntity<ApiResponse<Void>> moveWord(@PathVariable Integer id, @RequestBody MoveVocabRequest request) {
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> moveWord(
+            @PathVariable Integer id, @RequestBody MoveVocabRequest request) {
         String credentialId = getCredentialId();
         vocabService.moveWord(credentialId, id, request.getVocabListId());
-        return ResponseEntity.ok(
-                ApiResponse.<Void>builder().message("Đã chuyển từ vựng").build());
+        return ResponseEntity.ok(ApiResponse.<java.util.Map<String, Object>>builder()
+                .message("Đã chuyển từ vựng")
+                .result(java.util.Map.of("vocabId", id, "targetListId", request.getVocabListId()))
+                .build());
     }
 
     // --- Collection management ---
@@ -183,12 +186,14 @@ public class VocabController {
     }
 
     @PatchMapping("/{id}/review")
-    public ResponseEntity<ApiResponse<Void>> submitReview(
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> submitReview(
             @PathVariable Integer id, @RequestBody ReviewRequest request) {
         String credentialId = getCredentialId();
         vocabLearningService.submitReview(credentialId, id, request.getQuality());
-        return ResponseEntity.ok(
-                ApiResponse.<Void>builder().message("Đã lưu kết quả ôn tập").build());
+        return ResponseEntity.ok(ApiResponse.<java.util.Map<String, Object>>builder()
+                .message("Đã lưu kết quả ôn tập")
+                .result(java.util.Map.of("vocabId", id, "quality", request.getQuality()))
+                .build());
     }
 
     @GetMapping("/review-stats")

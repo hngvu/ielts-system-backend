@@ -141,11 +141,11 @@ public class ExpertServiceImpl implements ExpertService {
 
     @Override
     @Transactional
-    public void updateStatus(Integer id, ExpertStatus status) {
+    public ExpertProfileResponse updateStatus(Integer id, ExpertStatus status) {
         ExpertProfile profile =
                 expertProfileRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.EXPERT_NOT_FOUND));
         profile.setStatus(status);
-        expertProfileRepository.save(profile);
+        ExpertProfile saved = expertProfileRepository.save(profile);
 
         // Admin ban/unban: sync isActive on UserCredentials
         var cred = userCredentialsRepository.findByUser_Id(profile.getUser().getId());
@@ -153,6 +153,8 @@ public class ExpertServiceImpl implements ExpertService {
             cred.get().setActive(status != ExpertStatus.OFFLINE);
             userCredentialsRepository.save(cred.get());
         }
+
+        return toResponse(saved);
     }
 
     @Override

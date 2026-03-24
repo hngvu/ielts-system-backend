@@ -71,7 +71,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
 
     @Override
     @Transactional
-    public void cancelSession(Integer sessionId, String credentialId) {
+    public ScoringSessionResponse cancelSession(Integer sessionId, String credentialId) {
         ScoringSession session = sessionRepository
                 .findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
@@ -81,7 +81,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
         }
 
         session.setStatus(SessionStatus.CANCELLED);
-        sessionRepository.save(session);
+        return toResponse(sessionRepository.save(session));
     }
 
     @Override
@@ -131,7 +131,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
 
     @Override
     @Transactional
-    public void completeSession(Integer sessionId, SubmitEvaluationRequest req) {
+    public ScoringSessionResponse completeSession(Integer sessionId, SubmitEvaluationRequest req) {
         ScoringSession session = sessionRepository
                 .findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
@@ -185,8 +185,9 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
         expert.setTotalSessions(expert.getTotalSessions() + 1);
         expertProfileRepository.save(expert);
 
-        sessionRepository.save(session);
+        ScoringSession saved = sessionRepository.save(session);
         evaluationRepository.save(eval);
+        return toResponse(saved);
     }
 
     @Override
@@ -221,7 +222,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
 
     @Override
     @Transactional
-    public void rateSession(Integer sessionId, int rating, String comment, String recordingUrl) {
+    public ScoringSessionResponse rateSession(Integer sessionId, int rating, String comment, String recordingUrl) {
         ScoringSession session = sessionRepository
                 .findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
@@ -233,7 +234,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
         if (recordingUrl != null && !recordingUrl.isBlank()) {
             session.setRecordingUrl(recordingUrl);
         }
-        sessionRepository.save(session);
+        ScoringSession saved = sessionRepository.save(session);
 
         // Update expert average rating (only from sessions that have a rating)
         if (rating > 0 && session.getExpert() != null) {
@@ -242,6 +243,8 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
             expert.setRating(avg != null ? Math.round(avg * 10) / 10.0 : 0.0);
             expertProfileRepository.save(expert);
         }
+
+        return toResponse(saved);
     }
 
     @Override

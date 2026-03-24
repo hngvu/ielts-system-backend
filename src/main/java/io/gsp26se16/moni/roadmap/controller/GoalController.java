@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.roadmap.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import jakarta.validation.Valid;
 
@@ -67,14 +68,15 @@ public class GoalController {
 
     @PatchMapping("/tasks/{taskId}/status")
     @Operation(summary = "6. Cập nhật trạng thái Bài tập (Tự động đẻ Lộ trình mới nếu làm hết bài)")
-    public ResponseEntity<ApiResponse<Void>> updateTaskStatus(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateTaskStatus(
             @PathVariable Integer taskId, @RequestBody @Valid TaskStatusUpdateRequest request) {
 
         goalService.updateTaskStatus(taskId, request);
 
-        return ResponseEntity.ok(ApiResponse.<Void>builder()
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .code(1000)
                 .message("Đã cập nhật trạng thái bài tập thành công")
+                .result(Map.of("taskId", taskId, "status", request.getStatus().toUpperCase()))
                 .build());
     }
 

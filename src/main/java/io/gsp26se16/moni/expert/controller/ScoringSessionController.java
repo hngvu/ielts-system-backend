@@ -38,10 +38,11 @@ public class ScoringSessionController {
     }
 
     @PatchMapping("/{id}/cancel")
-    public ResponseEntity<Void> cancelSession(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<ScoringSessionResponse>> cancelSession(@PathVariable Integer id) {
         String credentialId = getCurrentUserId();
-        sessionService.cancelSession(id, credentialId);
-        return ResponseEntity.noContent().build();
+        ScoringSessionResponse cancelled = sessionService.cancelSession(id, credentialId);
+        return ResponseEntity.ok(
+                ApiResponse.<ScoringSessionResponse>builder().result(cancelled).build());
     }
 
     @GetMapping("/{id}/queue-position")
@@ -52,12 +53,14 @@ public class ScoringSessionController {
     }
 
     @PostMapping("/{id}/rate")
-    public ResponseEntity<Void> rateSession(@PathVariable Integer id, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<ApiResponse<ScoringSessionResponse>> rateSession(
+            @PathVariable Integer id, @RequestBody Map<String, Object> body) {
         int rating = ((Number) body.get("rating")).intValue();
         String comment = (String) body.getOrDefault("comment", "");
         String recordingUrl = (String) body.getOrDefault("recordingUrl", null);
-        sessionService.rateSession(id, rating, comment, recordingUrl);
-        return ResponseEntity.noContent().build();
+        ScoringSessionResponse rated = sessionService.rateSession(id, rating, comment, recordingUrl);
+        return ResponseEntity.ok(
+                ApiResponse.<ScoringSessionResponse>builder().result(rated).build());
     }
 
     @GetMapping("/admin/all")

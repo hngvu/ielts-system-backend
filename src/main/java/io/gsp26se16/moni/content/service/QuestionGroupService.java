@@ -10,4 +10,6 @@ public interface QuestionGroupService {
     void updateImageUrl(Integer id, String imageUrl);
 
     void updateGroupContent(Integer id, String groupContent);
+
+    void updateQuestionTypeCode(Integer id, String questionTypeCode);
 }

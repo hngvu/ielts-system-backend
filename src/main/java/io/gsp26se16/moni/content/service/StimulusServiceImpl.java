@@ -110,13 +110,19 @@ public class StimulusServiceImpl implements StimulusService {
     @Override
     @Transactional
     @SuppressWarnings("unchecked")
-    public void updateStimulus(Integer id, String content, String mediaUrl, Object transcript) {
+    public StimulusResponse updateStimulus(Integer id, String content, String mediaUrl, Object transcript) {
         Stimulus stimulus =
                 stimulusRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.STIMULUS_NOT_FOUND));
         if (content != null) stimulus.setContent(content);
         if (mediaUrl != null) stimulus.setMediaUrl(mediaUrl);
         if (transcript != null) stimulus.setTranscript((List<Map<String, Object>>) transcript);
-        stimulusRepository.save(stimulus);
+        Stimulus saved = stimulusRepository.save(stimulus);
+        return StimulusResponse.builder()
+                .id(saved.getId())
+                .title(saved.getTitle())
+                .skill(saved.getSkill())
+                .status(saved.getStatus())
+                .build();
     }
 
     @Override

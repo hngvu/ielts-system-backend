@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.tag.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import jakarta.validation.Valid;
 
@@ -73,38 +74,41 @@ public class TagController {
     }
 
     @PostMapping("/questions/{questionId}/tags")
-    public ResponseEntity<ApiResponse<Void>> assignToQuestion(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> assignToQuestion(
             @PathVariable Integer questionId, @RequestBody @Valid TagAssignRequest request) {
 
         tagService.assignTagsToQuestion(questionId, request);
 
-        return ResponseEntity.ok(ApiResponse.<Void>builder()
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .code(1000)
                 .message("Đã cập nhật Tag cho Câu hỏi thành công")
+                .result(Map.of("assigned", true, "targetId", questionId, "tagIds", request.getTagIds()))
                 .build());
     }
 
     @PostMapping("/stimulus/{stimulusId}/tags")
-    public ResponseEntity<ApiResponse<Void>> assignToStimulus(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> assignToStimulus(
             @PathVariable Integer stimulusId, @RequestBody @Valid TagAssignRequest request) {
 
         tagService.assignTagsToStimulus(stimulusId, request);
 
-        return ResponseEntity.ok(ApiResponse.<Void>builder()
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .code(1000)
                 .message("Đã cập nhật Tag cho Đoạn văn/Audio thành công")
+                .result(Map.of("assigned", true, "targetId", stimulusId, "tagIds", request.getTagIds()))
                 .build());
     }
 
     @PostMapping("/tests/{testId}/tags")
-    public ResponseEntity<ApiResponse<Void>> assignToTest(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> assignToTest(
             @PathVariable Integer testId, @RequestBody @Valid TagAssignRequest request) {
 
         tagService.assignTagsToTest(testId, request);
 
-        return ResponseEntity.ok(ApiResponse.<Void>builder()
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .code(1000)
                 .message("Đã cập nhật Tag cho Đề thi thành công")
+                .result(Map.of("assigned", true, "targetId", testId, "tagIds", request.getTagIds()))
                 .build());
     }
 }
