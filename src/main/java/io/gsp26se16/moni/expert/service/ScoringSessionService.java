@@ -33,4 +33,6 @@ public interface ScoringSessionService {
     Map<String, Object> getEvaluation(Integer sessionId);
 
     List<ScoringSessionResponse> getAllSessions();
+
+    List<ScoringSessionResponse> getAllSessionsForExpert(String credentialId);
 }
