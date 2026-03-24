@@ -31,4 +31,6 @@ public interface ScoringSessionService {
     List<ScoringSessionResponse> getUserSessions(String credentialId);
 
     Map<String, Object> getEvaluation(Integer sessionId);
+
+    List<ScoringSessionResponse> getAllSessions();
 }

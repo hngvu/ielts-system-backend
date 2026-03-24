@@ -60,6 +60,13 @@ public class ScoringSessionController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/admin/all")
+    public ResponseEntity<ApiResponse<List<ScoringSessionResponse>>> allSessions() {
+        return ResponseEntity.ok(ApiResponse.<List<ScoringSessionResponse>>builder()
+                .result(sessionService.getAllSessions())
+                .build());
+    }
+
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<List<ScoringSessionResponse>>> mySessions() {
         String credentialId = getCurrentUserId();

@@ -22,4 +22,6 @@ public class ScoringSessionResponse {
     Integer queuePosition;
     Timestamp createdAt;
     Integer testId;
+    String recordingUrl;
+    Integer userRating;
 }

@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -292,6 +293,15 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                 .queuePosition(s.getQueuePosition())
                 .createdAt(s.getCreatedAt())
                 .testId(s.getTestId())
+                .recordingUrl(s.getRecordingUrl())
+                .userRating(s.getUserRating())
                 .build();
+    }
+
+    @Override
+    public List<ScoringSessionResponse> getAllSessions() {
+        return sessionRepository.findAll(Sort.by(Sort.Direction.DESC, "id")).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 }
