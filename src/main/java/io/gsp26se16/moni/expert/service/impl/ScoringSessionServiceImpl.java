@@ -205,6 +205,21 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
     }
 
     @Override
+    public List<ScoringSessionResponse> getAllSessionsForExpert(String credentialId) {
+        var credential = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        ExpertProfile expert = expertProfileRepository
+                .findByUser_Id(credential.getUser().getId())
+                .orElseThrow(() -> new AppException(ErrorCode.EXPERT_NOT_FOUND));
+
+        return sessionRepository.findByExpertOrderByCreatedAtDesc(expert).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public void rateSession(Integer sessionId, int rating, String comment, String recordingUrl) {
         ScoringSession session = sessionRepository

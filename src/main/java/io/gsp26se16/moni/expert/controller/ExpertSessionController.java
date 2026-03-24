@@ -30,6 +30,14 @@ public class ExpertSessionController {
                 .build());
     }
 
+    @GetMapping("/history")
+    public ResponseEntity<ApiResponse<List<ScoringSessionResponse>>> listAllSessions() {
+        String credentialId = getCurrentUserId();
+        return ResponseEntity.ok(ApiResponse.<List<ScoringSessionResponse>>builder()
+                .result(sessionService.getAllSessionsForExpert(credentialId))
+                .build());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ScoringSessionResponse>> getSession(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.<ScoringSessionResponse>builder()
