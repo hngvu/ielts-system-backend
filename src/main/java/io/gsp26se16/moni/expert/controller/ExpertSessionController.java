@@ -60,6 +60,14 @@ public class ExpertSessionController {
                 ApiResponse.<ScoringSessionResponse>builder().result(completed).build());
     }
 
+    @PostMapping("/{id}/recording")
+    public ResponseEntity<ApiResponse<ScoringSessionResponse>> saveExpertRecording(
+            @PathVariable Integer id, @RequestBody java.util.Map<String, String> body) {
+        return ResponseEntity.ok(ApiResponse.<ScoringSessionResponse>builder()
+                .result(sessionService.saveExpertRecording(id, body.get("expertRecordingUrl")))
+                .build());
+    }
+
     private String getCurrentUserId() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof Jwt jwt) {

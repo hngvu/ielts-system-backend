@@ -23,5 +23,6 @@ public class ScoringSessionResponse {
     Timestamp createdAt;
     Integer testId;
     String recordingUrl;
+    String expertRecordingUrl;
     Integer userRating;
 }
