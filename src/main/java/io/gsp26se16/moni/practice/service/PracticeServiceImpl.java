@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import io.gsp26se16.moni.authentication.entity.UserCredentials;
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
+import io.gsp26se16.moni.common.enumeration.TestSessionStatus;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.entity.Question;
@@ -77,6 +78,7 @@ public class PracticeServiceImpl implements PracticeService {
         testSession.setStartedAt(startedAt);
         testSession.setEndedAt(now);
         testSession.setBandScore(0.0);
+        testSession.setStatus(TestSessionStatus.SUBMITTED);
         testSession = testSessionRepository.save(testSession);
 
         Attempt attempt = new Attempt();

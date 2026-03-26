@@ -222,6 +222,18 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
 
     @Override
     @Transactional
+    public ScoringSessionResponse saveExpertRecording(Integer sessionId, String expertRecordingUrl) {
+        ScoringSession session = sessionRepository
+                .findById(sessionId)
+                .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
+        if (expertRecordingUrl != null && !expertRecordingUrl.isBlank()) {
+            session.setExpertRecordingUrl(expertRecordingUrl);
+        }
+        return toResponse(sessionRepository.save(session));
+    }
+
+    @Override
+    @Transactional
     public ScoringSessionResponse rateSession(Integer sessionId, int rating, String comment, String recordingUrl) {
         ScoringSession session = sessionRepository
                 .findById(sessionId)
@@ -315,6 +327,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                 .createdAt(s.getCreatedAt())
                 .testId(s.getTestId())
                 .recordingUrl(s.getRecordingUrl())
+                .expertRecordingUrl(s.getExpertRecordingUrl())
                 .userRating(s.getUserRating())
                 .build();
     }
