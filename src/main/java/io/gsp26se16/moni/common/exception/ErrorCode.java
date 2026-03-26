@@ -88,6 +88,13 @@ public enum ErrorCode {
     EXPERT_NOT_FOUND(1055, "Không tìm thấy chuyên gia", HttpStatus.NOT_FOUND),
     SCORING_SESSION_NOT_FOUND(1056, "Không tìm thấy phiên chấm điểm", HttpStatus.NOT_FOUND),
     SESSION_NOT_CANCELLABLE(1057, "Phiên này không thể huỷ", HttpStatus.BAD_REQUEST),
+
+    // --- EXAM SESSION MODULE ---
+    EXAM_SESSION_ALREADY_EXISTS(1080, "Đã có phiên thi đang diễn ra cho bài thi này", HttpStatus.CONFLICT),
+    EXAM_SESSION_NOT_FOUND(1081, "Không tìm thấy phiên thi", HttpStatus.NOT_FOUND),
+    EXAM_SESSION_EXPIRED(1082, "Phiên thi đã hết hạn", HttpStatus.GONE),
+    EXAM_SESSION_ALREADY_SUBMITTED(1083, "Phiên thi đã được nộp", HttpStatus.CONFLICT),
+    TEST_NO_DURATION(1084, "Bài thi không có thời gian giới hạn", HttpStatus.BAD_REQUEST),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

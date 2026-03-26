@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import jakarta.persistence.*;
 
 import io.gsp26se16.moni.authentication.entity.Users;
+import io.gsp26se16.moni.common.enumeration.TestSessionStatus;
 import io.gsp26se16.moni.content.entity.Test;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -23,6 +24,13 @@ public class TestSession {
     LocalDateTime startedAt;
     LocalDateTime endedAt;
     double bandScore;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    TestSessionStatus status;
+
+    @Column(name = "duration_seconds")
+    Integer durationSeconds;
 
     @ManyToOne
     @JoinColumn(name = "test_id")
