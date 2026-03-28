@@ -15,7 +15,9 @@ import io.gsp26se16.moni.ai.writing.entity.AiEvaluation;
 import io.gsp26se16.moni.ai.writing.repository.AiEvaluationRepository;
 import io.gsp26se16.moni.ai.writing.service.Helper;
 import io.gsp26se16.moni.ai.writing.service.PromptLoader;
+import io.gsp26se16.moni.authentication.entity.UserCredentials;
 import io.gsp26se16.moni.authentication.entity.Users;
+import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import io.gsp26se16.moni.common.enumeration.EvaluationStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
@@ -43,6 +45,7 @@ public class ConversationEngine {
     private final AiEvaluationRepository aiEvaluationRepository;
     private final SpeakingSubmissionRepository speakingSubmissionRepository;
     private final UsersRepository usersRepository;
+    private final UserCredentialsRepository userCredentialsRepository;
     private final PromptLoader promptLoader;
     private final Helper helper;
     private final ObjectMapper objectMapper;
@@ -205,8 +208,18 @@ public class ConversationEngine {
 
     // ─────────────────────────────── Private ─────────────────────────────────
 
-    private SpeakingSubmission createSubmission(String userId, String transcript) {
-        Users user = usersRepository.findById(userId).orElse(null);
+    private SpeakingSubmission createSubmission(String credentialId, String transcript) {
+        // userId from JWT is credential ID, need to resolve to Users entity
+        Users user = null;
+        if (credentialId != null) {
+            UserCredentials cred =
+                    userCredentialsRepository.findById(credentialId).orElse(null);
+            if (cred != null) user = cred.getUser();
+        }
+        if (user == null) {
+            // Fallback: try direct lookup
+            user = usersRepository.findById(credentialId).orElse(null);
+        }
 
         SpeakingSubmission submission = SpeakingSubmission.builder()
                 .user(user)
