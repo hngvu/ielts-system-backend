@@ -44,5 +44,6 @@ public class QuestionGroup {
     QuestionType questionType;
 
     @OneToMany(mappedBy = "questionGroup", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("position ASC")
     List<Question> questions = new ArrayList<>();
 }
