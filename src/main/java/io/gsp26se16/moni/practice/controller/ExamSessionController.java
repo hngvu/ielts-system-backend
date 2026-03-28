@@ -1,5 +1,7 @@
 package io.gsp26se16.moni.practice.controller;
 
+import java.util.List;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -44,6 +46,17 @@ public class ExamSessionController {
         return ResponseEntity.ok(ApiResponse.<ExamSessionResponse>builder()
                 .code(1000)
                 .message(result != null ? "Tìm thấy phiên thi" : "Không có phiên thi đang diễn ra")
+                .result(result)
+                .build());
+    }
+
+    @GetMapping("/active-sessions")
+    @Operation(summary = "Lấy tất cả phiên thi đang diễn ra của user")
+    public ResponseEntity<ApiResponse<List<ExamSessionResponse>>> getAllActiveSessions() {
+        List<ExamSessionResponse> result = examSessionService.getAllActiveSessions();
+        return ResponseEntity.ok(ApiResponse.<List<ExamSessionResponse>>builder()
+                .code(1000)
+                .message("OK")
                 .result(result)
                 .build());
     }
