@@ -71,39 +71,45 @@ public class AiController {
             return ResponseEntity.badRequest().body(Map.of("code", 1086, "message", "Thiếu câu hỏi."));
         }
 
-        // Step 1: Transcribe audio via AssemblyAI
-        log.info(
-                "Speaking practice scoring: audio={} bytes, type={}, question={} chars",
-                audio.getSize(),
-                audio.getContentType(),
-                question.length());
-        String transcript = transcriptService.transcribeAudioBytes(audio.getBytes(), audio.getContentType());
+        try {
+            // Step 1: Transcribe audio via AssemblyAI
+            log.info(
+                    "Speaking practice scoring: audio={} bytes, type={}, question={} chars",
+                    audio.getSize(),
+                    audio.getContentType(),
+                    question.length());
+            String transcript = transcriptService.transcribeAudioBytes(audio.getBytes(), audio.getContentType());
 
-        if (transcript == null || transcript.isBlank()) {
-            return ResponseEntity.ok(Map.of(
-                    "overallScore",
-                    0.0,
-                    "fluency",
-                    0.0,
-                    "pronunciation",
-                    0.0,
-                    "vocabulary",
-                    0.0,
-                    "grammar",
-                    0.0,
-                    "comments",
-                    "Không phát hiện giọng nói. Vui lòng thử lại."));
+            if (transcript == null || transcript.isBlank()) {
+                return ResponseEntity.ok(Map.of(
+                        "overallScore",
+                        0.0,
+                        "fluency",
+                        0.0,
+                        "pronunciation",
+                        0.0,
+                        "vocabulary",
+                        0.0,
+                        "grammar",
+                        0.0,
+                        "comments",
+                        "Không phát hiện giọng nói. Vui lòng thử lại."));
+            }
+
+            // Step 2: Evaluate with AI
+            Map<String, Object> result = conversationEngine.evaluatePractice(userId, question, transcript);
+
+            // Step 3: Deduct credit AFTER successful evaluation
+            if (userId != null) {
+                creditService.checkAndDeduct(userId, "AI_SPEAKING_SCORE");
+            }
+
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Speaking scoring failed: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("code", 9998, "message", "Chấm điểm thất bại: " + e.getMessage()));
         }
-
-        // Step 2: Evaluate with AI
-        Map<String, Object> result = conversationEngine.evaluatePractice(userId, question, transcript);
-
-        // Step 3: Deduct credit AFTER successful evaluation
-        if (userId != null) {
-            creditService.checkAndDeduct(userId, "AI_SPEAKING_SCORE");
-        }
-
-        return ResponseEntity.ok(result);
     }
 
     private String getCurrentUserId() {
