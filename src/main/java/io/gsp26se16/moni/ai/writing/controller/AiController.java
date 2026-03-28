@@ -51,11 +51,8 @@ public class AiController {
     @PostMapping(value = "/speaking/score", consumes = "multipart/form-data")
     public ResponseEntity<Map<String, Object>> scoreSpeaking(
             @RequestPart("audio") MultipartFile audio, @RequestPart("question") String question) throws IOException {
-        String userId = getCurrentUserId();
-        if (userId != null) {
-            creditService.checkAndDeduct(userId, "AI_SPEAKING_SCORE");
-        }
-        // Placeholder for Speaking Service integration
+        // TODO: Integrate actual Speaking scoring service
+        // Credit deduction disabled until scoring is implemented
         return ResponseEntity.ok(Map.of("message", "Speaking scoring is pending implementation"));
     }
 
