@@ -28,6 +28,10 @@ public class WritingSubmission {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
+    /** ID của bài test (để tra cứu nhanh không qua TestSession) */
+    @Column(name = "test_id")
+    Integer testId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id")
     TestSession testSession;
