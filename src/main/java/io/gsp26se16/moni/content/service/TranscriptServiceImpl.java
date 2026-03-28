@@ -49,6 +49,7 @@ public class TranscriptServiceImpl implements TranscriptService {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("audio_url", uploadUrl);
         requestBody.put("language_detection", true);
+        requestBody.put("speech_models", List.of("universal-3-pro", "universal-2"));
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
         ResponseEntity<Map<String, Object>> submitResponse = restTemplate.exchange(
