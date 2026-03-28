@@ -243,8 +243,13 @@ public class PracticeServiceImpl implements PracticeService {
                                 .getSeconds();
                     }
                     Stimulus s = a.getStimulus();
+                    Integer testId =
+                            (a.getTestSession() != null && a.getTestSession().getTest() != null)
+                                    ? a.getTestSession().getTest().getId()
+                                    : null;
                     return AttemptHistoryResponse.builder()
                             .attemptId(a.getId())
+                            .testId(testId)
                             .stimulusId(s != null ? s.getId() : null)
                             .stimulusTitle(s != null ? s.getTitle() : null)
                             .skill(

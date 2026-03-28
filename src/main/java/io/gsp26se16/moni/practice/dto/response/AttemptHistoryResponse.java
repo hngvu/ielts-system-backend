@@ -12,6 +12,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AttemptHistoryResponse {
     Integer attemptId;
+    Integer testId;
     Integer stimulusId;
     String stimulusTitle;
     String skill;
