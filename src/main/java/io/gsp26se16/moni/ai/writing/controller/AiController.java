@@ -56,11 +56,27 @@ public class AiController {
 
     @PostMapping(value = "/speaking/score", consumes = "multipart/form-data")
     public ResponseEntity<Map<String, Object>> scoreSpeaking(
-            @RequestPart("audio") MultipartFile audio, @RequestPart("question") String question) throws IOException {
+            @RequestPart(value = "audio", required = false) MultipartFile audio,
+            @RequestPart(value = "question", required = false) String question)
+            throws IOException {
         String userId = getCurrentUserId();
 
+        if (audio == null || audio.isEmpty()) {
+            log.warn("Speaking score: no audio file received");
+            return ResponseEntity.badRequest()
+                    .body(Map.of("code", 1085, "message", "Không nhận được file audio. Vui lòng ghi âm và thử lại."));
+        }
+
+        if (question == null || question.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("code", 1086, "message", "Thiếu câu hỏi."));
+        }
+
         // Step 1: Transcribe audio via AssemblyAI
-        log.info("Speaking practice scoring: transcribing audio ({} bytes)", audio.getSize());
+        log.info(
+                "Speaking practice scoring: audio={} bytes, type={}, question={} chars",
+                audio.getSize(),
+                audio.getContentType(),
+                question.length());
         String transcript = transcriptService.transcribeAudioBytes(audio.getBytes(), audio.getContentType());
 
         if (transcript == null || transcript.isBlank()) {
