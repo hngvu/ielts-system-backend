@@ -111,6 +111,98 @@ public class ConversationEngine {
         }
     }
 
+    /**
+     * Đánh giá practice mode: 1 câu hỏi + 1 transcript.
+     * Dùng bởi REST endpoint /ai/speaking/score.
+     * Trả format FE expects: { overallScore, fluency, pronunciation, vocabulary, grammar, comments }
+     */
+    public Map<String, Object> evaluatePractice(String userId, String question, String transcript) {
+        if (transcript == null || transcript.isBlank()) {
+            log.warn("Empty transcript for practice scoring, userId={}", userId);
+            return Map.of(
+                    "overallScore",
+                    0.0,
+                    "fluency",
+                    0.0,
+                    "pronunciation",
+                    0.0,
+                    "vocabulary",
+                    0.0,
+                    "grammar",
+                    0.0,
+                    "comments",
+                    "Không phát hiện giọng nói.");
+        }
+
+        log.info(
+                "Practice speaking scoring for userId={}, question='{}', transcript={} chars",
+                userId,
+                question.substring(0, Math.min(50, question.length())),
+                transcript.length());
+
+        String formattedTranscript = "Question: " + question + "\nAnswer: " + transcript;
+        SpeakingSubmission submission = createSubmission(userId, formattedTranscript);
+
+        try {
+            ChatClient chatClient =
+                    chatClientBuilder.defaultAdvisors(new SimpleLoggerAdvisor()).build();
+
+            Map<String, Object> fc = evaluateCriterion(chatClient, "FC", formattedTranscript, question);
+            Map<String, Object> lr = evaluateCriterion(chatClient, "LR", formattedTranscript, question);
+            Map<String, Object> gra = evaluateCriterion(chatClient, "GRA", formattedTranscript, question);
+            Map<String, Object> pr = evaluateCriterion(chatClient, "PR", formattedTranscript, question);
+
+            Map<String, Object> assessment = speakingRuleEngine.calculateBands(fc, lr, gra, pr);
+            Map<String, Object> feedback = generateFeedback(chatClient, formattedTranscript, assessment);
+
+            double finalBand = (double) assessment.get("final_band");
+            persistEvaluation(submission, formattedTranscript, assessment, feedback, finalBand);
+
+            Map<String, Object> criteriaMap = (Map<String, Object>) assessment.get("criteria");
+
+            // Extract comments from feedback
+            String comments = extractComments(feedback);
+
+            return Map.of(
+                    "overallScore", finalBand,
+                    "fluency", getBandFromCriterion(criteriaMap, "FC"),
+                    "pronunciation", getBandFromCriterion(criteriaMap, "PR"),
+                    "vocabulary", getBandFromCriterion(criteriaMap, "LR"),
+                    "grammar", getBandFromCriterion(criteriaMap, "GRA"),
+                    "comments", comments);
+
+        } catch (Exception e) {
+            log.error("Practice scoring failed for userId={}: {}", userId, e.getMessage(), e);
+            submission.setEvaluationStatus(EvaluationStatus.FAILED);
+            speakingSubmissionRepository.save(submission);
+            throw new RuntimeException("Speaking evaluation failed: " + e.getMessage(), e);
+        }
+    }
+
+    private String extractComments(Map<String, Object> feedback) {
+        if (feedback == null) return "";
+        Object summary = feedback.get("summary");
+        if (summary != null) return summary.toString();
+        Object strategy = feedback.get("overall_strategy");
+        if (strategy != null) return strategy.toString();
+        // Try improvements array
+        Object improvements = feedback.get("improvements");
+        if (improvements instanceof java.util.List<?> list && !list.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            for (Object item : list) {
+                if (item instanceof Map<?, ?> map) {
+                    sb.append("[")
+                            .append(map.get("criterion"))
+                            .append("] ")
+                            .append(map.get("reason"))
+                            .append("\n");
+                }
+            }
+            return sb.toString().trim();
+        }
+        return feedback.toString();
+    }
+
     // ─────────────────────────────── Private ─────────────────────────────────
 
     private SpeakingSubmission createSubmission(String userId, String transcript) {

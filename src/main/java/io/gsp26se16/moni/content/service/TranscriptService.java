@@ -5,4 +5,7 @@ import java.util.Map;
 
 public interface TranscriptService {
     List<Map<String, Object>> transcribeAudio(String audioUrl);
+
+    /** Upload raw audio bytes to AssemblyAI, transcribe, return plain text. */
+    String transcribeAudioBytes(byte[] audioBytes, String contentType);
 }
