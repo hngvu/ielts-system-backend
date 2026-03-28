@@ -13,6 +13,9 @@ public interface WritingSubmissionRepository extends JpaRepository<WritingSubmis
     /** Lấy tất cả bài Writing của một user */
     List<WritingSubmission> findByUserId(String userId);
 
+    /** Lấy tất cả bài Writing của một user, sắp xếp theo thời gian nộp mới nhất */
+    List<WritingSubmission> findByUserIdOrderBySubmittedAtDesc(String userId);
+
     /** Lấy tất cả bài Writing trong một TestSession */
     List<WritingSubmission> findByTestSessionId(Integer sessionId);
 }
