@@ -35,6 +35,7 @@ public class AiController {
     private final TranscriptService transcriptService;
     private final ConversationEngine conversationEngine;
     private final io.gsp26se16.moni.ai.writing.repository.WritingSubmissionRepository writingSubmissionRepository;
+    private final io.gsp26se16.moni.ai.writing.repository.AiEvaluationRepository aiEvaluationRepository;
 
     @PostMapping(value = "/writing/score", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> scoreWriting(@ModelAttribute WritingRequest request)
@@ -55,12 +56,28 @@ public class AiController {
             result = task2Service.score(request);
         }
 
-        // Update original submission status if submissionId provided
+        // Update original submission status + re-link AiEvaluation if submissionId provided
         if (request.getSubmissionId() != null) {
-            writingSubmissionRepository.findById(request.getSubmissionId()).ifPresent(sub -> {
+            Long origId = request.getSubmissionId();
+            writingSubmissionRepository.findById(origId).ifPresent(sub -> {
                 sub.setEvaluationStatus(io.gsp26se16.moni.common.enumeration.EvaluationStatus.COMPLETED);
                 writingSubmissionRepository.save(sub);
             });
+            // Re-link the most recent AiEvaluation to original submission
+            var recentEvals = aiEvaluationRepository.findBySubmissionId(origId);
+            if (recentEvals.isEmpty()) {
+                // Find eval created by scoring (linked to the NEW submission created by Task1/2Service)
+                // Get all evals sorted by creation, take latest WRITING one
+                var allEvals = aiEvaluationRepository.findAll();
+                allEvals.stream()
+                        .filter(e -> io.gsp26se16.moni.common.enumeration.Skill.WRITING.equals(e.getSkill()))
+                        .max(java.util.Comparator.comparing(
+                                e -> e.getCreatedAt() != null ? e.getCreatedAt() : java.time.LocalDateTime.MIN))
+                        .ifPresent(e -> {
+                            e.setSubmissionId(origId);
+                            aiEvaluationRepository.save(e);
+                        });
+            }
         }
 
         return ResponseEntity.ok(result);
