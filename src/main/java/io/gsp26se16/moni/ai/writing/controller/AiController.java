@@ -34,6 +34,7 @@ public class AiController {
     private final CreditService creditService;
     private final TranscriptService transcriptService;
     private final ConversationEngine conversationEngine;
+    private final io.gsp26se16.moni.ai.writing.repository.WritingSubmissionRepository writingSubmissionRepository;
 
     @PostMapping(value = "/writing/score", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> scoreWriting(@ModelAttribute WritingRequest request)
@@ -47,11 +48,22 @@ public class AiController {
                 && !request.getChartImage().isEmpty()
                 && request.getChartImage().getSize() > 0);
 
+        Map<String, Object> result;
         if (isTask1) {
-            return ResponseEntity.ok(task1Service.score(request));
+            result = task1Service.score(request);
         } else {
-            return ResponseEntity.ok(task2Service.score(request));
+            result = task2Service.score(request);
         }
+
+        // Update original submission status if submissionId provided
+        if (request.getSubmissionId() != null) {
+            writingSubmissionRepository.findById(request.getSubmissionId()).ifPresent(sub -> {
+                sub.setEvaluationStatus(io.gsp26se16.moni.common.enumeration.EvaluationStatus.COMPLETED);
+                writingSubmissionRepository.save(sub);
+            });
+        }
+
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping(value = "/speaking/score", consumes = "multipart/form-data")
