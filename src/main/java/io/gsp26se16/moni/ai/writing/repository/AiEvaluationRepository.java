@@ -14,4 +14,6 @@ public interface AiEvaluationRepository extends JpaRepository<AiEvaluation, Long
     Optional<AiEvaluation> findBySubmissionIdAndSkill(Long submissionId, Skill skill);
 
     List<AiEvaluation> findBySubmissionId(Long submissionId);
+
+    Optional<AiEvaluation> findFirstBySkillOrderByCreatedAtDesc(Skill skill);
 }
