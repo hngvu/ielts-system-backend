@@ -27,4 +27,6 @@ public interface ScoringSessionRepository extends JpaRepository<ScoringSession, 
     List<ScoringSession> findByUser_IdOrderByCreatedAtDesc(String userId);
 
     List<ScoringSession> findByStatusAndCreatedAtBefore(SessionStatus status, Timestamp cutoff);
+
+    java.util.Optional<ScoringSession> findByWritingSubmissionId(Long writingSubmissionId);
 }

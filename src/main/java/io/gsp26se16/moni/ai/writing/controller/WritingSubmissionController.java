@@ -45,6 +45,8 @@ public class WritingSubmissionController {
     private final WritingSubmissionRepository submissionRepository;
     private final UserCredentialsRepository userCredentialsRepository;
     private final StimulusRepository stimulusRepository;
+    private final ScoringSessionRepository scoringSessionRepository;
+    private final ExpertEvaluationRepository expertEvaluationRepository;
     private final AiEvaluationRepository aiEvaluationRepository;
 
     /**
@@ -139,6 +141,7 @@ public class WritingSubmissionController {
         // Lấy kết quả chấm điểm nếu đã hoàn thành
         WritingEvaluationDetail evaluationDetail = null;
         if (submission.getEvaluationStatus() == EvaluationStatus.COMPLETED) {
+            // 1. Try AI evaluation
             List<AiEvaluation> evals = aiEvaluationRepository.findBySubmissionId(id);
             AiEvaluation eval = evals.stream()
                     .filter(e -> Skill.WRITING.equals(e.getSkill()))
@@ -147,6 +150,42 @@ public class WritingSubmissionController {
             if (eval != null) {
                 evaluationDetail = new WritingEvaluationDetail(
                         eval.getOverallScore(), eval.getAnalysisResult(), eval.getFeedbackResponse());
+            }
+
+            // 2. Fallback: try Expert evaluation via ScoringSession
+            if (evaluationDetail == null) {
+                var expertEval = scoringSessionRepository
+                        .findByWritingSubmissionId(id)
+                        .flatMap(session -> expertEvaluationRepository.findByScoringSession_Id(session.getId()));
+                if (expertEval.isPresent()) {
+                    var ex = expertEval.get();
+                    java.util.Map<String, Object> analysis = java.util.Map.of(
+                            "criteria",
+                            java.util.Map.of(
+                                    "TR",
+                                            java.util.Map.of(
+                                                    "adjusted_band",
+                                                    ex.getTaskResponse() != null ? ex.getTaskResponse() : 0.0),
+                                    "CC",
+                                            java.util.Map.of(
+                                                    "adjusted_band",
+                                                    ex.getCoherence() != null ? ex.getCoherence() : 0.0),
+                                    "LR",
+                                            java.util.Map.of(
+                                                    "adjusted_band",
+                                                    ex.getLexicalResource() != null ? ex.getLexicalResource() : 0.0),
+                                    "GRA",
+                                            java.util.Map.of(
+                                                    "adjusted_band",
+                                                    ex.getGrammaticalRange() != null
+                                                            ? ex.getGrammaticalRange()
+                                                            : 0.0)));
+                    java.util.Map<String, Object> feedback = new java.util.LinkedHashMap<>();
+                    if (ex.getFeedback() != null) feedback.put("summary", ex.getFeedback());
+                    if (ex.getStrengths() != null) feedback.put("strengths", ex.getStrengths());
+                    if (ex.getAreasForImprovement() != null) feedback.put("improvements", ex.getAreasForImprovement());
+                    evaluationDetail = new WritingEvaluationDetail(ex.getOverallScore(), analysis, feedback);
+                }
             }
         }
 
