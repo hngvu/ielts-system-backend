@@ -51,11 +51,26 @@ public class ElevenLabsService {
         if (text == null || text.isBlank() || !wsSession.isOpen()) return;
 
         try {
+            log.info(
+                    "ElevenLabs TTS request: voiceId={}, textLen={}, apiKeyLen={}",
+                    voiceId,
+                    text.length(),
+                    apiKey != null ? apiKey.length() : 0);
             byte[] audioBytes = callElevenLabs(text);
             sendChunks(audioBytes, wsSession);
             sendAudioEnd(wsSession);
         } catch (Exception e) {
-            log.error("ElevenLabs TTS lỗi: {}", e.getMessage());
+            log.error(
+                    "ElevenLabs TTS lỗi (voice={}, textLen={}): {} - {}",
+                    voiceId,
+                    text.length(),
+                    e.getClass().getSimpleName(),
+                    e.getMessage());
+            // Still send audio_end so Frontend doesn't hang waiting for audio
+            try {
+                sendAudioEnd(wsSession);
+            } catch (IOException ignored) {
+            }
         }
     }
 
