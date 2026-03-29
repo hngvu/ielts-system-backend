@@ -33,7 +33,8 @@ public class ScoringSessionController {
                         request.getExpertId(),
                         request.getSkill(),
                         request.getContent(),
-                        request.getTestId()))
+                        request.getTestId(),
+                        request.getWritingSubmissionId()))
                 .build());
     }
 

@@ -8,7 +8,12 @@ import io.gsp26se16.moni.expert.dto.SubmitEvaluationRequest;
 
 public interface ScoringSessionService {
     ScoringSessionResponse createSession(
-            String credentialId, Integer expertId, String skill, String content, Integer testId);
+            String credentialId,
+            Integer expertId,
+            String skill,
+            String content,
+            Integer testId,
+            Long writingSubmissionId);
 
     ScoringSessionResponse cancelSession(Integer sessionId, String credentialId);
 
