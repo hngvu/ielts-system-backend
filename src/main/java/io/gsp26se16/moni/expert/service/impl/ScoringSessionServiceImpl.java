@@ -353,6 +353,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                 .queuePosition(s.getQueuePosition())
                 .createdAt(s.getCreatedAt())
                 .testId(s.getTestId())
+                .content(s.getContent())
                 .recordingUrl(s.getRecordingUrl())
                 .expertRecordingUrl(s.getExpertRecordingUrl())
                 .userRating(s.getUserRating())

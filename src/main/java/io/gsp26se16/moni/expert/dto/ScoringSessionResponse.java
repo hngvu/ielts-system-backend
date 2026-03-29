@@ -22,6 +22,7 @@ public class ScoringSessionResponse {
     Integer queuePosition;
     Timestamp createdAt;
     Integer testId;
+    String content; // Essay content for writing sessions
     String recordingUrl;
     String expertRecordingUrl;
     Integer userRating;
