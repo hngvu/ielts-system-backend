@@ -28,6 +28,8 @@ import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.entity.Stimulus;
 import io.gsp26se16.moni.content.repository.StimulusRepository;
+import io.gsp26se16.moni.expert.repository.ExpertEvaluationRepository;
+import io.gsp26se16.moni.expert.repository.ScoringSessionRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
