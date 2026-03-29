@@ -12,4 +12,5 @@ public class CreateSessionRequest {
     String skill;
     String content;
     Integer testId;
+    Long writingSubmissionId;
 }
