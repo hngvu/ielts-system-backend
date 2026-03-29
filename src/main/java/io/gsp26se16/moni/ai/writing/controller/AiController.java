@@ -66,13 +66,8 @@ public class AiController {
             // Re-link the most recent AiEvaluation to original submission
             var recentEvals = aiEvaluationRepository.findBySubmissionId(origId);
             if (recentEvals.isEmpty()) {
-                // Find eval created by scoring (linked to the NEW submission created by Task1/2Service)
-                // Get all evals sorted by creation, take latest WRITING one
-                var allEvals = aiEvaluationRepository.findAll();
-                allEvals.stream()
-                        .filter(e -> io.gsp26se16.moni.common.enumeration.Skill.WRITING.equals(e.getSkill()))
-                        .max(java.util.Comparator.comparing(
-                                e -> e.getCreatedAt() != null ? e.getCreatedAt() : java.time.LocalDateTime.MIN))
+                aiEvaluationRepository
+                        .findFirstBySkillOrderByCreatedAtDesc(io.gsp26se16.moni.common.enumeration.Skill.WRITING)
                         .ifPresent(e -> {
                             e.setSubmissionId(origId);
                             aiEvaluationRepository.save(e);
