@@ -133,7 +133,7 @@ public class WritingSubmissionController {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
 
-        Long stimulusId =
+        Integer stimulusId =
                 submission.getStimulus() != null ? submission.getStimulus().getId() : null;
 
         // Lấy kết quả chấm điểm nếu đã hoàn thành
@@ -211,7 +211,7 @@ public class WritingSubmissionController {
     public record WritingSubmissionDetail(
             Long submissionId,
             Integer testId,
-            Long stimulusId,
+            Integer stimulusId,
             WritingTaskType taskType,
             String essayContent,
             Integer wordCount,
