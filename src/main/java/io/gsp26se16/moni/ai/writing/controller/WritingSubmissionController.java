@@ -2,6 +2,7 @@ package io.gsp26se16.moni.ai.writing.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import jakarta.validation.Valid;
 
@@ -12,13 +13,16 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import io.gsp26se16.moni.ai.writing.dto.SubmitWritingRequest;
+import io.gsp26se16.moni.ai.writing.entity.AiEvaluation;
 import io.gsp26se16.moni.ai.writing.entity.WritingSubmission;
+import io.gsp26se16.moni.ai.writing.repository.AiEvaluationRepository;
 import io.gsp26se16.moni.ai.writing.repository.WritingSubmissionRepository;
 import io.gsp26se16.moni.authentication.entity.UserCredentials;
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.common.enumeration.EvaluationStatus;
+import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.WritingTaskType;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
@@ -41,6 +45,7 @@ public class WritingSubmissionController {
     private final WritingSubmissionRepository submissionRepository;
     private final UserCredentialsRepository userCredentialsRepository;
     private final StimulusRepository stimulusRepository;
+    private final AiEvaluationRepository aiEvaluationRepository;
 
     /**
      * POST /api/v1/writing/submit
@@ -109,6 +114,60 @@ public class WritingSubmissionController {
                 .build());
     }
 
+    /**
+     * GET /api/v1/writing/submissions/{id}
+     * Lấy chi tiết một bài nộp (bao gồm nội dung bài viết và kết quả chấm nếu có).
+     */
+    @GetMapping("/submissions/{id}")
+    @Operation(summary = "Lấy chi tiết bài viết theo ID")
+    public ResponseEntity<ApiResponse<WritingSubmissionDetail>> getSubmissionDetail(@PathVariable Long id) {
+
+        Users user = getCurrentUser();
+
+        WritingSubmission submission = submissionRepository
+                .findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.WRITING_SUBMISSION_NOT_FOUND));
+
+        // Kiểm tra quyền sở hữu
+        if (!submission.getUser().getId().equals(user.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Long stimulusId =
+                submission.getStimulus() != null ? submission.getStimulus().getId() : null;
+
+        // Lấy kết quả chấm điểm nếu đã hoàn thành
+        WritingEvaluationDetail evaluationDetail = null;
+        if (submission.getEvaluationStatus() == EvaluationStatus.COMPLETED) {
+            List<AiEvaluation> evals = aiEvaluationRepository.findBySubmissionId(id);
+            AiEvaluation eval = evals.stream()
+                    .filter(e -> Skill.WRITING.equals(e.getSkill()))
+                    .findFirst()
+                    .orElse(evals.isEmpty() ? null : evals.get(0));
+            if (eval != null) {
+                evaluationDetail = new WritingEvaluationDetail(
+                        eval.getOverallScore(), eval.getAnalysisResult(), eval.getFeedbackResponse());
+            }
+        }
+
+        WritingSubmissionDetail detail = new WritingSubmissionDetail(
+                submission.getId(),
+                submission.getTestId(),
+                stimulusId,
+                submission.getTaskType(),
+                submission.getEssayContent(),
+                submission.getWordCount(),
+                submission.getEvaluationStatus(),
+                submission.getSubmittedAt(),
+                evaluationDetail);
+
+        return ResponseEntity.ok(ApiResponse.<WritingSubmissionDetail>builder()
+                .code(1000)
+                .message("Lấy chi tiết bài viết thành công")
+                .result(detail)
+                .build());
+    }
+
     // --- Helpers ---
 
     private Users getCurrentUser() {
@@ -143,4 +202,20 @@ public class WritingSubmissionController {
             Integer wordCount,
             EvaluationStatus evaluationStatus,
             LocalDateTime submittedAt) {}
+
+    /** DTO kết quả chấm điểm AI */
+    public record WritingEvaluationDetail(
+            Double overallScore, Map<String, Object> analysisResult, Map<String, Object> feedbackResponse) {}
+
+    /** DTO chi tiết bài nộp */
+    public record WritingSubmissionDetail(
+            Long submissionId,
+            Integer testId,
+            Long stimulusId,
+            WritingTaskType taskType,
+            String essayContent,
+            Integer wordCount,
+            EvaluationStatus evaluationStatus,
+            LocalDateTime submittedAt,
+            WritingEvaluationDetail evaluation) {}
 }
