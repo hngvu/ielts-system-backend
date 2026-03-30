@@ -23,6 +23,71 @@ public class TranscriptServiceImpl implements TranscriptService {
 
     @Override
     @SuppressWarnings("unchecked")
+    public String transcribeAudioBytes(byte[] audioBytes, String contentType) {
+        HttpHeaders uploadHeaders = new HttpHeaders();
+        uploadHeaders.set("authorization", apiKey);
+        uploadHeaders.setContentType(
+                MediaType.parseMediaType(contentType != null ? contentType : "application/octet-stream"));
+
+        // Step 1: Upload raw bytes to AssemblyAI
+        HttpEntity<byte[]> uploadEntity = new HttpEntity<>(audioBytes, uploadHeaders);
+        ResponseEntity<Map<String, Object>> uploadResponse = restTemplate.exchange(
+                baseUrl + "/upload", HttpMethod.POST, uploadEntity, (Class<Map<String, Object>>) (Class<?>) Map.class);
+
+        Map<String, Object> uploadBody = uploadResponse.getBody();
+        if (uploadBody == null || uploadBody.get("upload_url") == null) {
+            throw new RuntimeException("AssemblyAI upload failed");
+        }
+        String uploadUrl = (String) uploadBody.get("upload_url");
+        log.info("AssemblyAI audio uploaded: {}", uploadUrl);
+
+        // Step 2: Submit transcription
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("authorization", apiKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("audio_url", uploadUrl);
+        requestBody.put("language_detection", true);
+        requestBody.put("speech_models", List.of("universal-3-pro", "universal-2"));
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+        ResponseEntity<Map<String, Object>> submitResponse = restTemplate.exchange(
+                baseUrl + "/transcript", HttpMethod.POST, entity, (Class<Map<String, Object>>) (Class<?>) Map.class);
+
+        Map<String, Object> submitBody = submitResponse.getBody();
+        if (submitBody == null) throw new RuntimeException("AssemblyAI transcript submit failed");
+        String transcriptId = (String) submitBody.get("id");
+
+        // Step 3: Poll for completion
+        HttpEntity<Void> pollEntity = new HttpEntity<>(headers);
+        for (int i = 0; i < 60; i++) { // max 3 minutes
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Polling interrupted");
+            }
+            ResponseEntity<Map<String, Object>> pollResponse = restTemplate.exchange(
+                    baseUrl + "/transcript/" + transcriptId, HttpMethod.GET, pollEntity, (Class<Map<String, Object>>)
+                            (Class<?>) Map.class);
+            Map<String, Object> result = pollResponse.getBody();
+            if (result == null) continue;
+            String status = (String) result.get("status");
+            if ("completed".equals(status)) {
+                String text = (String) result.get("text");
+                log.info("AssemblyAI transcription completed: {} chars", text != null ? text.length() : 0);
+                return text != null ? text : "";
+            }
+            if ("error".equals(status)) {
+                throw new RuntimeException("AssemblyAI transcription error: " + result.get("error"));
+            }
+        }
+        throw new RuntimeException("AssemblyAI transcription timed out");
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
     public List<Map<String, Object>> transcribeAudio(String audioUrl) {
         HttpHeaders headers = new HttpHeaders();
         headers.set("authorization", apiKey);

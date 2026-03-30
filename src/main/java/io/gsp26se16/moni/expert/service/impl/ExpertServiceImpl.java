@@ -46,7 +46,9 @@ public class ExpertServiceImpl implements ExpertService {
     public List<ExpertProfileResponse> listExperts(ExpertSpecialization filter) {
         List<ExpertProfile> experts;
         if (filter != null) {
-            experts = expertProfileRepository.findBySpecializationAndStatus(filter, ExpertStatus.AVAILABLE);
+            // Include experts with BOTH specialization
+            experts = expertProfileRepository.findBySpecializationInAndStatus(
+                    java.util.List.of(filter, ExpertSpecialization.BOTH), ExpertStatus.AVAILABLE);
         } else {
             experts = expertProfileRepository.findAll();
         }

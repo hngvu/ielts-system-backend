@@ -22,6 +22,7 @@ import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.entity.Question;
+import io.gsp26se16.moni.content.entity.QuestionGroup;
 import io.gsp26se16.moni.content.entity.Test;
 import io.gsp26se16.moni.content.entity.TestStructure;
 import io.gsp26se16.moni.content.repository.TestRepository;
@@ -77,10 +78,23 @@ public class ExaminerService {
             int section = ts.getSection();
             if (ts.getStimulus() == null) continue;
 
-            ts.getStimulus().getQuestionGroups().forEach(group -> group.getQuestions().stream()
-                    .filter(q -> q.getParentQuestion() == null) // chỉ lấy MAIN (follow-up được load lazy sau)
-                    .sorted(Comparator.comparingInt(Question::getPosition))
-                    .forEach(q -> assignToQueue(session, section, q)));
+            for (QuestionGroup group : ts.getStimulus().getQuestionGroups()) {
+                group.getQuestions().stream()
+                        .filter(q -> q.getParentQuestion() == null) // chỉ lấy MAIN
+                        .sorted(Comparator.comparingInt(Question::getPosition))
+                        .forEach(q -> {
+                            assignToQueue(session, section, q);
+                            // Pre-cache follow-ups while Hibernate session is still open
+                            if (q.getFollowUpQuestions() != null
+                                    && !q.getFollowUpQuestions().isEmpty()) {
+                                Queue<Question> fQueue = new LinkedList<>();
+                                q.getFollowUpQuestions().stream()
+                                        .sorted(Comparator.comparingInt(Question::getPosition))
+                                        .forEach(fQueue::add);
+                                session.getPreloadedFollowUps().put(q.getId(), fQueue);
+                            }
+                        });
+            }
         }
 
         log.info(
@@ -249,13 +263,15 @@ public class ExaminerService {
         }
     }
 
-    /** Load follow-up questions của một MAIN question vào followUpQueue */
+    /** Load follow-up questions từ pre-cached map (đã load trong @Transactional) */
     private void loadFollowUps(ActiveExamSession session, Question mainQuestion) {
-        Queue<Question> followUps = new LinkedList<>();
-        mainQuestion.getFollowUpQuestions().stream()
-                .sorted(Comparator.comparingInt(Question::getPosition))
-                .forEach(followUps::add);
-        session.setFollowUpQueue(followUps);
+        Queue<Question> cached = session.getPreloadedFollowUps().get(mainQuestion.getId());
+        if (cached != null && !cached.isEmpty()) {
+            // Copy to avoid mutating the original cache if needed for retry
+            session.setFollowUpQueue(new LinkedList<>(cached));
+        } else {
+            session.setFollowUpQueue(new LinkedList<>());
+        }
     }
 
     private void sendQuestionEvent(WebSocketSession ws, int part, Integer questionId, String text, boolean isFollowUp)

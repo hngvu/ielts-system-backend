@@ -58,6 +58,8 @@ public class ScoringSession {
 
     Integer testId; // The speaking test ID so expert can see the questions
 
+    Long writingSubmissionId; // Link to WritingSubmission for writing skill
+
     String recordingUrl; // User's mic recording URL
     String expertRecordingUrl; // Expert's mic recording URL
 }

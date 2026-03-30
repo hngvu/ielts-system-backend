@@ -8,6 +8,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.gsp26se16.moni.ai.writing.repository.WritingSubmissionRepository;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
@@ -37,12 +38,18 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
     ExpertEvaluationRepository evaluationRepository;
     UserCredentialsRepository userCredentialsRepository;
     CreditService creditService;
+    WritingSubmissionRepository writingSubmissionRepository;
     DailyCoService dailyCoService;
 
     @Override
     @Transactional
     public ScoringSessionResponse createSession(
-            String credentialId, Integer expertId, String skill, String content, Integer testId) {
+            String credentialId,
+            Integer expertId,
+            String skill,
+            String content,
+            Integer testId,
+            Long writingSubmissionId) {
         var credential = userCredentialsRepository
                 .findById(credentialId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
@@ -62,11 +69,22 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                 .skill(skill)
                 .content(content)
                 .testId(testId)
+                .writingSubmissionId(writingSubmissionId)
                 .status(SessionStatus.QUEUED)
                 .queuePosition(queuePos)
                 .build();
 
-        return toResponse(sessionRepository.save(session));
+        ScoringSession saved = sessionRepository.save(session);
+
+        // Update WritingSubmission status to PROCESSING (sent to expert)
+        if (writingSubmissionId != null) {
+            writingSubmissionRepository.findById(writingSubmissionId).ifPresent(sub -> {
+                sub.setEvaluationStatus(io.gsp26se16.moni.common.enumeration.EvaluationStatus.PROCESSING);
+                writingSubmissionRepository.save(sub);
+            });
+        }
+
+        return toResponse(saved);
     }
 
     @Override
@@ -187,6 +205,15 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
 
         ScoringSession saved = sessionRepository.save(session);
         evaluationRepository.save(eval);
+
+        // Update linked WritingSubmission status to COMPLETED
+        if (saved.getWritingSubmissionId() != null) {
+            writingSubmissionRepository.findById(saved.getWritingSubmissionId()).ifPresent(sub -> {
+                sub.setEvaluationStatus(io.gsp26se16.moni.common.enumeration.EvaluationStatus.COMPLETED);
+                writingSubmissionRepository.save(sub);
+            });
+        }
+
         return toResponse(saved);
     }
 
@@ -326,6 +353,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                 .queuePosition(s.getQueuePosition())
                 .createdAt(s.getCreatedAt())
                 .testId(s.getTestId())
+                .content(s.getContent())
                 .recordingUrl(s.getRecordingUrl())
                 .expertRecordingUrl(s.getExpertRecordingUrl())
                 .userRating(s.getUserRating())

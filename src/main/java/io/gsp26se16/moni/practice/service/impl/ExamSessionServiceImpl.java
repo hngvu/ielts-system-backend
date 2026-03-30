@@ -189,6 +189,35 @@ public class ExamSessionServiceImpl implements ExamSessionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<ExamSessionResponse> getAllActiveSessions() {
+        Users user = getCurrentUser();
+        List<TestSession> sessions = testSessionRepository.findAllByUserAndStatus(user, TestSessionStatus.IN_PROGRESS);
+
+        LocalDateTime now = LocalDateTime.now();
+        return sessions.stream()
+                .map(session -> {
+                    long elapsedSecs = ChronoUnit.SECONDS.between(session.getStartedAt(), now);
+                    int remaining =
+                            session.getDurationSeconds() != null ? session.getDurationSeconds() - (int) elapsedSecs : 0;
+                    if (remaining <= 0) return null; // expired
+
+                    return ExamSessionResponse.builder()
+                            .sessionId(session.getId())
+                            .testId(session.getTest().getId())
+                            .status(TestSessionStatus.IN_PROGRESS)
+                            .startedAt(session.getStartedAt())
+                            .durationSeconds(session.getDurationSeconds())
+                            .remainingSeconds(remaining)
+                            .attemptId(null)
+                            .savedAnswers(Collections.emptyList())
+                            .build();
+                })
+                .filter(java.util.Objects::nonNull)
+                .toList();
+    }
+
+    @Override
     public void saveProgress(SaveProgressRequest request) {
         TestSession session = testSessionRepository
                 .findById(request.getSessionId())

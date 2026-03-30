@@ -80,6 +80,9 @@ public enum ErrorCode {
     SERVICE_PRICING_NOT_FOUND(1063, "Không tìm thấy bảng giá dịch vụ", HttpStatus.NOT_FOUND),
     CREDIT_TRANSACTION_NOT_FOUND(1064, "Không tìm thấy giao dịch credit", HttpStatus.NOT_FOUND),
 
+    // --- WRITING MODULE ---
+    WRITING_SUBMISSION_NOT_FOUND(1090, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND),
+
     // --- AI MODULE ---
     AI_EVALUATION_FAILED(1070, "Đánh giá AI thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
     AI_SERVICE_UNAVAILABLE(1071, "Dịch vụ AI tạm thời không khả dụng", HttpStatus.SERVICE_UNAVAILABLE),

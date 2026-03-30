@@ -27,6 +27,13 @@ public class AssemblyAITokenController {
 
     @PostMapping("/token")
     public ResponseEntity<Map<String, Object>> getTemporaryToken() {
+        if (apiKey == null || apiKey.isBlank()) {
+            log.error("AssemblyAI API key is not configured (empty/null)");
+            return ResponseEntity.internalServerError().body(Map.of("error", "AssemblyAI API key not configured"));
+        }
+
+        log.info("Requesting AssemblyAI token (key length={})", apiKey.length());
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", apiKey);
@@ -38,11 +45,17 @@ public class AssemblyAITokenController {
             ResponseEntity<Map> response = restTemplate.exchange(
                     "https://api.assemblyai.com/v2/realtime/token", HttpMethod.POST, request, Map.class);
 
+            log.info("AssemblyAI token response status: {}", response.getStatusCode());
             if (response.getBody() != null) {
                 return ResponseEntity.ok(response.getBody());
             }
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            log.error(
+                    "AssemblyAI token HTTP error: status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
+            return ResponseEntity.status(e.getStatusCode().value())
+                    .body(Map.of("error", "AssemblyAI rejected: " + e.getResponseBodyAsString()));
         } catch (Exception e) {
-            log.error("Failed to get AssemblyAI token: {}", e.getMessage());
+            log.error("AssemblyAI token unexpected error: {} - {}", e.getClass().getSimpleName(), e.getMessage());
         }
 
         return ResponseEntity.internalServerError().body(Map.of("error", "Failed to generate token"));

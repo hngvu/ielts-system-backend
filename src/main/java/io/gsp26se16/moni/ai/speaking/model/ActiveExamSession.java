@@ -1,6 +1,8 @@
 package io.gsp26se16.moni.ai.speaking.model;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -40,6 +42,10 @@ public class ActiveExamSession {
     private Question part2Question;
     private Queue<Question> part3Queue = new ConcurrentLinkedQueue<>();
     private Question currentQuestion;
+
+    // ── Pre-cached follow-up questions (loaded during @Transactional) ─────────
+    /** Key = mainQuestion.id, Value = ordered queue of follow-up questions */
+    private final Map<Integer, Queue<Question>> preloadedFollowUps = new HashMap<>();
 
     // ── Transition scripts ────────────────────────────────────────────────────
     /** "Now I'm going to give you a topic..." */

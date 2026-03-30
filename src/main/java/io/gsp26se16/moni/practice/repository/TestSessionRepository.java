@@ -16,4 +16,6 @@ public interface TestSessionRepository extends JpaRepository<TestSession, Intege
     Optional<TestSession> findByUserAndTestAndStatus(Users user, Test test, TestSessionStatus status);
 
     List<TestSession> findAllByStatus(TestSessionStatus status);
+
+    List<TestSession> findAllByUserAndStatus(Users user, TestSessionStatus status);
 }
