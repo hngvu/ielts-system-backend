@@ -29,9 +29,13 @@ public class CreditTransactionServiceImpl implements CreditTransactionService {
         Specification<CreditTransaction> spec = (root, query, criteriaBuilder) -> {
             Predicate predicate = criteriaBuilder.conjunction();
 
-            if (userId != null) {
-                predicate = criteriaBuilder.and(
-                        predicate, criteriaBuilder.equal(root.get("user").get("id"), userId));
+            if (userId != null && !userId.isBlank()) {
+                String rawKeyword = userId.trim();
+                String keyword = rawKeyword.toLowerCase();
+                Predicate byUserId = criteriaBuilder.equal(root.get("user").get("id"), rawKeyword);
+                Predicate byEmail = criteriaBuilder.equal(
+                        criteriaBuilder.lower(root.get("user").get("credential").get("email")), keyword);
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.or(byUserId, byEmail));
             }
 
             if (paymentType != null) {
