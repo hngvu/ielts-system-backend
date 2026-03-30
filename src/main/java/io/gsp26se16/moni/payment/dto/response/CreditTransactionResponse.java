@@ -15,5 +15,7 @@ public record CreditTransactionResponse(
         String packageName,
         LocalDateTime createdAt,
         String userId,
+        String userEmail,
+        String userFullName,
         Integer serviceId,
         Integer paymentId) {}

@@ -97,6 +97,15 @@ public class CreditTransactionServiceImpl implements CreditTransactionService {
                         creditTransaction.getUser() != null
                                 ? creditTransaction.getUser().getId()
                                 : null)
+                .userEmail(
+                        creditTransaction.getUser() != null
+                                        && creditTransaction.getUser().getCredential() != null
+                                ? creditTransaction.getUser().getCredential().getEmail()
+                                : null)
+                .userFullName(
+                        creditTransaction.getUser() != null
+                                ? creditTransaction.getUser().getFull_name()
+                                : null)
                 .serviceId(
                         creditTransaction.getServicePricing() != null
                                 ? creditTransaction.getServicePricing().getId()

@@ -13,6 +13,8 @@ import lombok.experimental.FieldDefaults;
 public class AttemptHistoryResponse {
     Integer attemptId;
     Integer testId;
+    String testTitle;
+    String testMode;
     Integer stimulusId;
     String stimulusTitle;
     String skill;

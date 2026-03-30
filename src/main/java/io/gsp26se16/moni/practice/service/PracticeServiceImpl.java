@@ -242,20 +242,27 @@ public class PracticeServiceImpl implements PracticeService {
                         elapsed = (int) java.time.Duration.between(a.getStartedAt(), a.getSubmittedAt())
                                 .getSeconds();
                     }
-                    Stimulus s = a.getStimulus();
-                    Integer testId =
+                    Test test =
                             (a.getTestSession() != null && a.getTestSession().getTest() != null)
-                                    ? a.getTestSession().getTest().getId()
+                                    ? a.getTestSession().getTest()
                                     : null;
+                    Stimulus s = a.getStimulus();
                     return AttemptHistoryResponse.builder()
                             .attemptId(a.getId())
-                            .testId(testId)
+                            .testId(test != null ? test.getId() : null)
+                            .testTitle(test != null ? test.getTitle() : null)
+                            .testMode(
+                                    test != null && test.getTestMode() != null
+                                            ? test.getTestMode().name()
+                                            : null)
                             .stimulusId(s != null ? s.getId() : null)
                             .stimulusTitle(s != null ? s.getTitle() : null)
                             .skill(
-                                    s != null && s.getSkill() != null
-                                            ? s.getSkill().name()
-                                            : null)
+                                    test != null && test.getSkill() != null
+                                            ? test.getSkill().name()
+                                            : (s != null && s.getSkill() != null
+                                                    ? s.getSkill().name()
+                                                    : null))
                             .score(a.getScore())
                             .totalQuestions(a.getTotalQuestions())
                             .elapsedSeconds(elapsed)

@@ -7,6 +7,8 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import io.gsp26se16.moni.payment.entity.Payment;
@@ -20,4 +22,13 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer>, JpaS
 
     @EntityGraph(attributePaths = {"user", "packagePricing"})
     Optional<Payment> findByTxnCode(String txnCode);
+
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p "
+            + "WHERE p.status = :status AND p.createdAt >= :startDate AND p.createdAt <= :endDate")
+    long sumAmountByStatusAndCreatedAtBetween(
+            @Param("status") PaymentStatus status,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
+
+    long countByStatusAndCreatedAtBetween(PaymentStatus status, LocalDateTime startDate, LocalDateTime endDate);
 }
