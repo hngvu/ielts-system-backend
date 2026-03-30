@@ -15,4 +15,10 @@ public interface LearnerMetricRepository extends JpaRepository<LearnerMetric, In
     Optional<LearnerMetric> findByUserAndTag(Users user, Tag tag);
 
     List<LearnerMetric> findTop3ByUserOrderByMasteryLevelAsc(Users user);
+
+    List<LearnerMetric> findTop8ByUserOrderByMasteryLevelAsc(Users user);
+
+    List<LearnerMetric> findTop5ByUserOrderByMasteryLevelDesc(Users user);
+
+    List<LearnerMetric> findByUserOrderByUpdatedAtDesc(Users user);
 }

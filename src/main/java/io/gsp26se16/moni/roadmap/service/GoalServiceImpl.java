@@ -20,11 +20,14 @@ import io.gsp26se16.moni.content.entity.Stimulus;
 import io.gsp26se16.moni.content.entity.TestStructure;
 import io.gsp26se16.moni.content.repository.StimulusRepository;
 import io.gsp26se16.moni.content.repository.TestStructureRepository;
+import io.gsp26se16.moni.placement.entity.PlacementResult;
+import io.gsp26se16.moni.placement.repository.PlacementResultRepository;
 import io.gsp26se16.moni.roadmap.dto.request.GoalCreateRequest;
 import io.gsp26se16.moni.roadmap.dto.request.GoalUpdateRequest;
 import io.gsp26se16.moni.roadmap.dto.request.TaskStatusUpdateRequest;
 import io.gsp26se16.moni.roadmap.dto.response.GoalCreateResponse;
 import io.gsp26se16.moni.roadmap.dto.response.GoalResponse;
+import io.gsp26se16.moni.roadmap.dto.response.LearnerRoadmapInsightsResponse;
 import io.gsp26se16.moni.roadmap.dto.response.RoadmapDetailResponse;
 import io.gsp26se16.moni.roadmap.dto.response.TaskResponse;
 import io.gsp26se16.moni.roadmap.entity.Goal;
@@ -36,6 +39,7 @@ import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
 import io.gsp26se16.moni.roadmap.repository.RoadmapRepository;
 import io.gsp26se16.moni.roadmap.repository.TaskRepository;
 import io.gsp26se16.moni.tag.entity.Tag;
+import io.gsp26se16.moni.tag.entity.TagType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -51,6 +55,7 @@ public class GoalServiceImpl implements GoalService {
     private final LearnerMetricRepository learnerMetricRepository;
     private final StimulusRepository stimulusRepository;
     private final TestStructureRepository testStructureRepository;
+    private final PlacementResultRepository placementResultRepository;
 
     @Override
     @Transactional
@@ -393,6 +398,179 @@ public class GoalServiceImpl implements GoalService {
                             .build();
                 })
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public LearnerRoadmapInsightsResponse getRoadmapInsights() {
+        Users learner = getCurrentUser();
+
+        PlacementResult placement = placementResultRepository
+                .findFirstByUserOrderByCompletedAtDesc(learner)
+                .orElse(null);
+
+        List<LearnerMetric> allMetrics = learnerMetricRepository.findByUserOrderByUpdatedAtDesc(learner);
+        double masteryIndex = computeAvg(allMetrics.stream().map(LearnerMetric::getMasteryLevel).toList(), 0.5);
+        double confidenceIndex = computeAvg(allMetrics.stream().map(LearnerMetric::getConfidenceScore).toList(), 0.0);
+        var lastMetricUpdatedAt = allMetrics.isEmpty() ? null : allMetrics.get(0).getUpdatedAt();
+
+        LocalDate examDate = learner.getExamDate();
+        Integer daysToExam = examDate != null ? (int) java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), examDate) : null;
+        if (daysToExam != null && daysToExam < 0) daysToExam = 0;
+
+        Calibration calibration = calibrateBands(placement, masteryIndex, confidenceIndex);
+        double achievableOverallByExam = computeAchievableOverallByExam(calibration.calibratedOverall, daysToExam);
+
+        Double targetOverall = learner.getTargetBand();
+        boolean targetOverAmbitious = targetOverall != null
+                && targetOverall > 0
+                && daysToExam != null
+                && targetOverall > (achievableOverallByExam + 0.25);
+
+        String targetWarning = null;
+        if (targetOverAmbitious) {
+            targetWarning =
+                    "Muc tieu hien tai co the hoi qua tam so voi thoi gian con lai. Hay can nhac giam muc tieu hoac tang cuong tan suat luyen tap.";
+        }
+
+        List<LearnerRoadmapInsightsResponse.TagMetricResponse> weakest = learnerMetricRepository
+                .findTop8ByUserOrderByMasteryLevelAsc(learner)
+                .stream()
+                .map(this::toTagMetric)
+                .toList();
+
+        List<LearnerRoadmapInsightsResponse.TagMetricResponse> strongest = learnerMetricRepository
+                .findTop5ByUserOrderByMasteryLevelDesc(learner)
+                .stream()
+                .map(this::toTagMetric)
+                .toList();
+
+        return LearnerRoadmapInsightsResponse.builder()
+                .examDate(examDate)
+                .daysToExam(daysToExam)
+                .targetOverall(learner.getTargetBand())
+                .targetReading(learner.getTargetReading())
+                .targetListening(learner.getTargetListening())
+                .targetWriting(learner.getTargetWriting())
+                .targetSpeaking(learner.getTargetSpeaking())
+                .placementSelfAssessed(placement != null ? placement.getIsSelfAssessed() : null)
+                .placementCompletedAt(placement != null ? placement.getCompletedAt() : null)
+                .placementOverall(placement != null ? placement.getOverallBand() : null)
+                .placementReading(placement != null ? placement.getReadingBand() : null)
+                .placementListening(placement != null ? placement.getListeningBand() : null)
+                .placementWriting(placement != null ? placement.getWritingBand() : null)
+                .placementSpeaking(placement != null ? placement.getSpeakingBand() : null)
+                .calibratedOverall(calibration.calibratedOverall)
+                .calibratedReading(calibration.calibratedReading)
+                .calibratedListening(calibration.calibratedListening)
+                .calibratedWriting(calibration.calibratedWriting)
+                .calibratedSpeaking(calibration.calibratedSpeaking)
+                .calibrationNote(calibration.note)
+                .masteryIndex(masteryIndex)
+                .confidenceIndex(confidenceIndex)
+                .lastMetricUpdatedAt(lastMetricUpdatedAt)
+                .achievableOverallByExam(achievableOverallByExam)
+                .targetOverAmbitious(targetOverAmbitious)
+                .targetWarning(targetWarning)
+                .weakestTags(weakest)
+                .strongestTags(strongest)
+                .build();
+    }
+
+    private LearnerRoadmapInsightsResponse.TagMetricResponse toTagMetric(LearnerMetric metric) {
+        Tag tag = metric.getTag();
+        return LearnerRoadmapInsightsResponse.TagMetricResponse.builder()
+                .tagId(tag != null ? tag.getId() : null)
+                .tagName(tag != null ? tag.getName() : null)
+                .tagCode(tag != null ? tag.getCode() : null)
+                .tagType(tag != null && tag.getType() != null ? tag.getType().name() : null)
+                .masteryLevel(safe01(metric.getMasteryLevel(), 0.5))
+                .confidenceScore(safe01(metric.getConfidenceScore(), 0.0))
+                .updatedAt(metric.getUpdatedAt())
+                .build();
+    }
+
+    private record Calibration(
+            double calibratedOverall,
+            double calibratedReading,
+            double calibratedListening,
+            double calibratedWriting,
+            double calibratedSpeaking,
+            String note) {}
+
+    private Calibration calibrateBands(PlacementResult placement, double masteryIndex, double confidenceIndex) {
+        double estimatedOverall = estimateOverallFromMetrics(masteryIndex, confidenceIndex);
+
+        if (placement == null || placement.getOverallBand() == null) {
+            return new Calibration(estimatedOverall, 0, 0, 0, 0, "Chua co placement, band dang uoc tinh tu qua trinh luyen tap.");
+        }
+
+        boolean isSelfAssessed = Boolean.TRUE.equals(placement.getIsSelfAssessed());
+        if (!isSelfAssessed) {
+            return new Calibration(
+                    clampBand(placement.getOverallBand()),
+                    clampBand(placement.getReadingBand()),
+                    clampBand(placement.getListeningBand()),
+                    clampBand(placement.getWritingBand()),
+                    clampBand(placement.getSpeakingBand()),
+                    "Band duoc lay tu ket qua placement gan nhat.");
+        }
+
+        double placementOverall = clampBand(placement.getOverallBand());
+        double calibratedOverall = Math.min(placementOverall, clampBand(estimatedOverall + 0.5));
+        String note =
+                calibratedOverall < placementOverall
+                        ? "Ban da tu danh gia. He thong se hieu chinh dan theo ket qua luyen tap de phan anh dung thuc luc."
+                        : "Band tu danh gia gan voi du lieu luyen tap hien tai.";
+
+        return new Calibration(
+                calibratedOverall,
+                clampBand(Math.min(nonNullOr(placement.getReadingBand(), calibratedOverall), calibratedOverall + 1.0)),
+                clampBand(Math.min(nonNullOr(placement.getListeningBand(), calibratedOverall), calibratedOverall + 1.0)),
+                clampBand(Math.min(nonNullOr(placement.getWritingBand(), calibratedOverall), calibratedOverall + 1.0)),
+                clampBand(Math.min(nonNullOr(placement.getSpeakingBand(), calibratedOverall), calibratedOverall + 1.0)),
+                note);
+    }
+
+    private double estimateOverallFromMetrics(double masteryIndex, double confidenceIndex) {
+        // conservative mapping: 0.5 mastery ~= 5.0-5.5 band
+        double masteryComponent = 3.5 + (safe01(masteryIndex, 0.5) * 4.0); // ~3.5..7.5
+        double confidenceBoost = (safe01(confidenceIndex, 0.0) - 0.5) * 0.5; // -0.25..+0.25
+        return clampBand(masteryComponent + confidenceBoost);
+    }
+
+    private double computeAchievableOverallByExam(double currentOverall, Integer daysToExam) {
+        if (daysToExam == null) return clampBand(currentOverall + 0.5);
+        double weeks = daysToExam / 7.0;
+        double maxDelta = Math.min(2.0, weeks * 0.08); // conservative ceiling
+        return clampBand(currentOverall + maxDelta);
+    }
+
+    private double computeAvg(List<Double> values, double fallback) {
+        if (values == null || values.isEmpty()) return fallback;
+        double sum = 0;
+        int count = 0;
+        for (Double v : values) {
+            if (v == null) continue;
+            sum += v;
+            count++;
+        }
+        return count == 0 ? fallback : (sum / count);
+    }
+
+    private double safe01(Double value, double fallback) {
+        if (value == null || Double.isNaN(value) || Double.isInfinite(value)) return fallback;
+        return Math.max(0.0, Math.min(1.0, value));
+    }
+
+    private double clampBand(Double value) {
+        if (value == null || Double.isNaN(value) || Double.isInfinite(value)) return 0.0;
+        double v = Math.round(value * 2.0) / 2.0;
+        return Math.max(0.0, Math.min(9.0, v));
+    }
+
+    private double nonNullOr(Double value, double fallback) {
+        return value != null ? value : fallback;
     }
 
     // --- Helper lấy User từ JWT Token ---

@@ -15,6 +15,7 @@ import io.gsp26se16.moni.roadmap.dto.request.GoalUpdateRequest;
 import io.gsp26se16.moni.roadmap.dto.request.TaskStatusUpdateRequest;
 import io.gsp26se16.moni.roadmap.dto.response.GoalCreateResponse;
 import io.gsp26se16.moni.roadmap.dto.response.GoalResponse;
+import io.gsp26se16.moni.roadmap.dto.response.LearnerRoadmapInsightsResponse;
 import io.gsp26se16.moni.roadmap.dto.response.RoadmapDetailResponse;
 import io.gsp26se16.moni.roadmap.service.GoalService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -77,6 +78,19 @@ public class GoalController {
                 .code(1000)
                 .message("Đã cập nhật trạng thái bài tập thành công")
                 .result(Map.of("taskId", taskId, "status", request.getStatus().toUpperCase()))
+                .build());
+    }
+
+    @GetMapping("/insights")
+    @Operation(summary = "Lay chi so ca nhan cho roadmap (calibration, metric indices, warning theo ngay thi)")
+    public ResponseEntity<ApiResponse<LearnerRoadmapInsightsResponse>> getRoadmapInsights() {
+
+        LearnerRoadmapInsightsResponse result = goalService.getRoadmapInsights();
+
+        return ResponseEntity.ok(ApiResponse.<LearnerRoadmapInsightsResponse>builder()
+                .code(1000)
+                .message("Lay thong tin insights thanh cong!")
+                .result(result)
                 .build());
     }
 

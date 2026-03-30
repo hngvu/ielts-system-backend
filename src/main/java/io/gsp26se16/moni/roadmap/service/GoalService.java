@@ -9,6 +9,7 @@ import io.gsp26se16.moni.roadmap.dto.request.GoalUpdateRequest;
 import io.gsp26se16.moni.roadmap.dto.request.TaskStatusUpdateRequest;
 import io.gsp26se16.moni.roadmap.dto.response.GoalCreateResponse;
 import io.gsp26se16.moni.roadmap.dto.response.GoalResponse;
+import io.gsp26se16.moni.roadmap.dto.response.LearnerRoadmapInsightsResponse;
 import io.gsp26se16.moni.roadmap.dto.response.RoadmapDetailResponse;
 
 public interface GoalService {
@@ -33,4 +34,6 @@ public interface GoalService {
             LocalDate examDate);
 
     List<RoadmapDetailResponse> getRoadmapDetails();
+
+    LearnerRoadmapInsightsResponse getRoadmapInsights();
 }
