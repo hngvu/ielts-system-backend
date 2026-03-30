@@ -34,11 +34,13 @@ public class FullTestServiceImpl implements FullTestService {
     private static final Map<Skill, Integer> SECTION_COUNT = Map.of(
             Skill.READING, 3,
             Skill.LISTENING, 4,
+            Skill.WRITING, 2,
             Skill.SPEAKING, 3);
 
     private static final Map<Skill, Integer> DEFAULT_DURATION = Map.of(
             Skill.READING, 3600,
             Skill.LISTENING, 1800,
+            Skill.WRITING, 3600,
             Skill.SPEAKING, 900);
 
     private final TestRepository testRepository;
@@ -93,7 +95,7 @@ public class FullTestServiceImpl implements FullTestService {
         for (Test practiceTest : practiceTests) {
             List<TestStructure> structures = testStructureRepository.findByTestId(practiceTest.getId());
             for (TestStructure ts : structures) {
-                int section = ts.getSection() != null ? ts.getSection() : 1;
+                int section = resolveSection(practiceTest, ts);
                 stimuliBySection
                         .computeIfAbsent(section, k -> new ArrayList<>())
                         .add(ts.getStimulus());
@@ -162,23 +164,25 @@ public class FullTestServiceImpl implements FullTestService {
         Skill skillEnum = parseSkill(skill);
         List<Test> practiceTests = testRepository.findByTestModeAndSkill(TestMode.PRACTICE, skillEnum);
 
-        Map<Integer, List<StimulusOption>> result = new LinkedHashMap<>();
+        Map<Integer, Map<Integer, StimulusOption>> groupedBySection = new LinkedHashMap<>();
 
         for (Test practiceTest : practiceTests) {
             List<TestStructure> structures = testStructureRepository.findByTestId(practiceTest.getId());
             for (TestStructure ts : structures) {
-                int section = ts.getSection() != null ? ts.getSection() : 1;
+                int section = resolveSection(practiceTest, ts);
                 Stimulus stimulus = ts.getStimulus();
 
                 int questionCount = stimulus.getQuestionGroups().stream()
                         .mapToInt(qg -> qg.getQuestions().size())
                         .sum();
 
-                // Use stimulus title, fallback to practice test title
-                String title =
-                        stimulus.getTitle() != null && !stimulus.getTitle().isBlank()
+                // Prefer practice test title so admin can identify source like test list screen.
+                String title = practiceTest.getTitle() != null
+                                && !practiceTest.getTitle().isBlank()
+                        ? practiceTest.getTitle()
+                        : (stimulus.getTitle() != null && !stimulus.getTitle().isBlank()
                                 ? stimulus.getTitle()
-                                : practiceTest.getTitle();
+                                : "(Khong co tieu de)");
 
                 StimulusOption option = StimulusOption.builder()
                         .stimulusId(stimulus.getId())
@@ -186,8 +190,19 @@ public class FullTestServiceImpl implements FullTestService {
                         .questionCount(questionCount)
                         .build();
 
-                result.computeIfAbsent(section, k -> new ArrayList<>()).add(option);
+                Map<Integer, StimulusOption> sectionOptions =
+                        groupedBySection.computeIfAbsent(section, k -> new LinkedHashMap<>());
+                StimulusOption existing = sectionOptions.get(stimulus.getId());
+
+                if (existing == null || titleScore(option.getTitle()) > titleScore(existing.getTitle())) {
+                    sectionOptions.put(stimulus.getId(), option);
+                }
             }
+        }
+
+        Map<Integer, List<StimulusOption>> result = new LinkedHashMap<>();
+        for (Map.Entry<Integer, Map<Integer, StimulusOption>> entry : groupedBySection.entrySet()) {
+            result.put(entry.getKey(), new ArrayList<>(entry.getValue().values()));
         }
 
         return result;
@@ -242,5 +257,18 @@ public class FullTestServiceImpl implements FullTestService {
         } catch (Exception e) {
             throw new AppException(ErrorCode.INVALID_KEY);
         }
+    }
+
+    private int titleScore(String title) {
+        if (title == null || title.isBlank()) return 0;
+        String normalized = title.trim().toLowerCase();
+        boolean isGeneric = normalized.matches("^(passage|section|part|task)\\s*\\d+$");
+        return isGeneric ? 1 : 2;
+    }
+
+    private int resolveSection(Test practiceTest, TestStructure structure) {
+        if (practiceTest.getSection() != null) return practiceTest.getSection();
+        if (structure.getSection() != null) return structure.getSection();
+        return 1;
     }
 }
