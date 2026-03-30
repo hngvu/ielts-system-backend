@@ -2,6 +2,7 @@ package io.gsp26se16.moni.content.service;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestMode;
+import io.gsp26se16.moni.common.enumeration.TestType;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.dto.request.AutoFullTestRequest;
@@ -63,17 +65,25 @@ public class FullTestServiceImpl implements FullTestService {
             throw new AppException(ErrorCode.INVALID_KEY);
         }
 
-        Test test = buildTest(request.getTitle(), skill, request.getDuration(), PublishStatus.PUBLISHED);
+        List<Stimulus> selectedStimuli = fetchStimuliByIds(request.getStimulusIds());
+        validateReadingQuestionTotal(skill, selectedStimuli);
+
+        PublishStatus status =
+                request.getStatus() != null && !request.getStatus().isBlank()
+                        ? parseStatus(request.getStatus())
+                        : PublishStatus.PUBLISHED;
+
+        Test test = buildTest(request.getTitle(), skill, request.getDuration(), status);
+        if (request.getTestType() != null && !request.getTestType().isBlank()) {
+            test.setTestType(parseTestType(request.getTestType()));
+        }
+
         Test saved = testRepository.save(test);
 
-        List<Integer> stimulusIds = request.getStimulusIds();
-        for (int i = 0; i < stimulusIds.size(); i++) {
-            Stimulus stimulus = stimulusRepository
-                    .findById(stimulusIds.get(i))
-                    .orElseThrow(() -> new AppException(ErrorCode.STIMULUS_NOT_FOUND));
+        for (int i = 0; i < selectedStimuli.size(); i++) {
             TestStructure ts = new TestStructure();
             ts.setTest(saved);
-            ts.setStimulus(stimulus);
+            ts.setStimulus(selectedStimuli.get(i));
             ts.setSection(i + 1);
             testStructureRepository.save(ts);
         }
@@ -87,10 +97,8 @@ public class FullTestServiceImpl implements FullTestService {
         Skill skill = parseSkill(request.getSkill());
         int requiredSections = SECTION_COUNT.getOrDefault(skill, 3);
 
-        // Get all PRACTICE tests for this skill, group by section via TestStructure
         List<Test> practiceTests = testRepository.findByTestModeAndSkill(TestMode.PRACTICE, skill);
 
-        // Build section -> stimuli map from TestStructure
         Map<Integer, List<Stimulus>> stimuliBySection = new LinkedHashMap<>();
         for (Test practiceTest : practiceTests) {
             List<TestStructure> structures = testStructureRepository.findByTestId(practiceTest.getId());
@@ -102,7 +110,6 @@ public class FullTestServiceImpl implements FullTestService {
             }
         }
 
-        // Validate enough stimuli per section
         for (int section = 1; section <= requiredSections; section++) {
             List<Stimulus> available = stimuliBySection.getOrDefault(section, List.of());
             if (available.isEmpty()) {
@@ -112,14 +119,13 @@ public class FullTestServiceImpl implements FullTestService {
                 throw new AppException(ErrorCode.INVALID_KEY) {
                     @Override
                     public String getMessage() {
-                        return "Thiếu bài " + sectionLabel + " cho kỹ năng " + skillLabel
-                                + ". Vui lòng tạo thêm bài lẻ.";
+                        return "Thieu bai " + sectionLabel + " cho ky nang " + skillLabel
+                                + ". Vui long tao them bai le.";
                     }
                 };
             }
         }
 
-        // Auto-generate title if not provided
         String title = request.getTitle();
         if (title == null || title.isBlank()) {
             long count = testRepository.countByTestModeAndSkill(TestMode.FULL_TEST, skill);
@@ -131,17 +137,53 @@ public class FullTestServiceImpl implements FullTestService {
         Test test = buildTest(title, skill, null, PublishStatus.PUBLISHED);
         Test saved = testRepository.save(test);
 
-        // Random pick 1 stimulus per section
-        for (int section = 1; section <= requiredSections; section++) {
-            List<Stimulus> available = new ArrayList<>(stimuliBySection.get(section));
-            Collections.shuffle(available);
-            Stimulus chosen = available.get(0);
+        if (skill == Skill.READING) {
+            List<List<Stimulus>> validCombinations = new ArrayList<>();
+            List<Stimulus> sectionOne = stimuliBySection.getOrDefault(1, List.of());
+            List<Stimulus> sectionTwo = stimuliBySection.getOrDefault(2, List.of());
+            List<Stimulus> sectionThree = stimuliBySection.getOrDefault(3, List.of());
 
-            TestStructure ts = new TestStructure();
-            ts.setTest(saved);
-            ts.setStimulus(chosen);
-            ts.setSection(section);
-            testStructureRepository.save(ts);
+            for (Stimulus s1 : sectionOne) {
+                for (Stimulus s2 : sectionTwo) {
+                    for (Stimulus s3 : sectionThree) {
+                        int total = countQuestions(s1) + countQuestions(s2) + countQuestions(s3);
+                        if (total == 40) {
+                            validCombinations.add(List.of(s1, s2, s3));
+                        }
+                    }
+                }
+            }
+
+            if (validCombinations.isEmpty()) {
+                throw new AppException(ErrorCode.INVALID_KEY) {
+                    @Override
+                    public String getMessage() {
+                        return "Khong tim duoc to hop Reading du 40 cau de tao full test.";
+                    }
+                };
+            }
+
+            Collections.shuffle(validCombinations);
+            List<Stimulus> chosen = validCombinations.get(0);
+            for (int i = 0; i < chosen.size(); i++) {
+                TestStructure ts = new TestStructure();
+                ts.setTest(saved);
+                ts.setStimulus(chosen.get(i));
+                ts.setSection(i + 1);
+                testStructureRepository.save(ts);
+            }
+        } else {
+            for (int section = 1; section <= requiredSections; section++) {
+                List<Stimulus> available = new ArrayList<>(stimuliBySection.get(section));
+                Collections.shuffle(available);
+                Stimulus chosen = available.get(0);
+
+                TestStructure ts = new TestStructure();
+                ts.setTest(saved);
+                ts.setStimulus(chosen);
+                ts.setSection(section);
+                testStructureRepository.save(ts);
+            }
         }
 
         return toFullTestResponse(saved);
@@ -160,6 +202,66 @@ public class FullTestServiceImpl implements FullTestService {
     }
 
     @Override
+    public FullTestResponse getFullTestById(Integer id) {
+        Test test = testRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_FOUND));
+        if (test.getTestMode() != null && test.getTestMode() != TestMode.FULL_TEST) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+        return toFullTestResponse(test);
+    }
+
+    @Override
+    @Transactional
+    public FullTestResponse updateFullTest(Integer id, CreateFullTestRequest request) {
+        Test test = testRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_FOUND));
+        if (test.getTestMode() != TestMode.FULL_TEST) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+
+        if (request.getTitle() != null && !request.getTitle().isBlank()) {
+            test.setTitle(request.getTitle());
+        }
+        if (request.getSkill() != null && !request.getSkill().isBlank()) {
+            test.setSkill(parseSkill(request.getSkill()));
+        }
+        if (request.getTestType() != null && !request.getTestType().isBlank()) {
+            test.setTestType(parseTestType(request.getTestType()));
+        }
+        if (request.getDuration() != null) {
+            test.setDuration(request.getDuration());
+        }
+        if (request.getStatus() != null && !request.getStatus().isBlank()) {
+            test.setStatus(parseStatus(request.getStatus()));
+        }
+
+        Test saved = testRepository.save(test);
+
+        if (request.getStimulusIds() != null && !request.getStimulusIds().isEmpty()) {
+            Skill effectiveSkill = saved.getSkill();
+            int requiredSections = SECTION_COUNT.getOrDefault(effectiveSkill, 3);
+            if (request.getStimulusIds().size() != requiredSections) {
+                throw new AppException(ErrorCode.INVALID_KEY);
+            }
+
+            List<Stimulus> selectedStimuli = fetchStimuliByIds(request.getStimulusIds());
+            validateReadingQuestionTotal(effectiveSkill, selectedStimuli);
+
+            testStructureRepository.deleteByTestId(id);
+            int order = 0;
+            for (Stimulus stimulus : selectedStimuli) {
+                TestStructure ts = new TestStructure();
+                ts.setTest(saved);
+                ts.setStimulus(stimulus);
+                ts.setSection(order + 1);
+                order++;
+                testStructureRepository.save(ts);
+            }
+        }
+
+        return toFullTestResponse(saved);
+    }
+
+    @Override
     public Map<Integer, List<StimulusOption>> getAvailableStimuli(String skill) {
         Skill skillEnum = parseSkill(skill);
         List<Test> practiceTests = testRepository.findByTestModeAndSkill(TestMode.PRACTICE, skillEnum);
@@ -171,12 +273,8 @@ public class FullTestServiceImpl implements FullTestService {
             for (TestStructure ts : structures) {
                 int section = resolveSection(practiceTest, ts);
                 Stimulus stimulus = ts.getStimulus();
+                int questionCount = countQuestions(stimulus);
 
-                int questionCount = stimulus.getQuestionGroups().stream()
-                        .mapToInt(qg -> qg.getQuestions().size())
-                        .sum();
-
-                // Prefer practice test title so admin can identify source like test list screen.
                 String title = practiceTest.getTitle() != null
                                 && !practiceTest.getTitle().isBlank()
                         ? practiceTest.getTitle()
@@ -186,6 +284,7 @@ public class FullTestServiceImpl implements FullTestService {
 
                 StimulusOption option = StimulusOption.builder()
                         .stimulusId(stimulus.getId())
+                        .testId(practiceTest.getId())
                         .title(title)
                         .questionCount(questionCount)
                         .build();
@@ -208,8 +307,6 @@ public class FullTestServiceImpl implements FullTestService {
         return result;
     }
 
-    // --- helpers ---
-
     private Test buildTest(String title, Skill skill, Integer duration, PublishStatus status) {
         Test test = new Test();
         test.setTitle(title);
@@ -230,13 +327,20 @@ public class FullTestServiceImpl implements FullTestService {
 
         List<FullTestResponse.StimulusInfo> stimuliInfo = structures.stream()
                 .map(ts -> {
-                    Stimulus s = ts.getStimulus();
+                    Stimulus stimulus = ts.getStimulus();
                     String title =
-                            s.getTitle() != null && !s.getTitle().isBlank() ? s.getTitle() : "(Không có tiêu đề)";
+                            stimulus.getTitle() != null && !stimulus.getTitle().isBlank()
+                                    ? stimulus.getTitle()
+                                    : "(Khong co tieu de)";
+                    SourceTestInfo source = resolveSourcePracticeTest(stimulus.getId(), ts.getSection());
+
                     return FullTestResponse.StimulusInfo.builder()
-                            .id(s.getId())
+                            .id(stimulus.getId())
                             .section(ts.getSection())
                             .title(title)
+                            .questionCount(countQuestions(stimulus))
+                            .testId(source != null ? source.testId() : null)
+                            .testTitle(source != null ? source.title() : null)
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -245,6 +349,7 @@ public class FullTestServiceImpl implements FullTestService {
                 .id(test.getId())
                 .title(test.getTitle())
                 .skill(test.getSkill() != null ? test.getSkill().name() : null)
+                .testType(test.getTestType() != null ? test.getTestType().name() : null)
                 .duration(test.getDuration())
                 .status(test.getStatus() != null ? test.getStatus().name() : null)
                 .stimuli(stimuliInfo)
@@ -259,16 +364,83 @@ public class FullTestServiceImpl implements FullTestService {
         }
     }
 
+    private TestType parseTestType(String testType) {
+        try {
+            return TestType.valueOf(testType.toUpperCase());
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+    }
+
+    private PublishStatus parseStatus(String status) {
+        try {
+            return PublishStatus.valueOf(status.toUpperCase());
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+    }
+
+    private List<Stimulus> fetchStimuliByIds(List<Integer> stimulusIds) {
+        List<Stimulus> result = new ArrayList<>();
+        for (Integer stimulusId : stimulusIds) {
+            Stimulus stimulus = stimulusRepository
+                    .findById(stimulusId)
+                    .orElseThrow(() -> new AppException(ErrorCode.STIMULUS_NOT_FOUND));
+            result.add(stimulus);
+        }
+        return result;
+    }
+
+    private int countQuestions(Stimulus stimulus) {
+        return stimulus.getQuestionGroups().stream()
+                .mapToInt(group -> group.getQuestions().size())
+                .sum();
+    }
+
+    private void validateReadingQuestionTotal(Skill skill, List<Stimulus> stimuli) {
+        if (skill != Skill.READING) {
+            return;
+        }
+
+        int totalQuestions = stimuli.stream().mapToInt(this::countQuestions).sum();
+        if (totalQuestions != 40) {
+            throw new AppException(ErrorCode.INVALID_KEY) {
+                @Override
+                public String getMessage() {
+                    return "Reading full test bat buoc co tong 40 cau.";
+                }
+            };
+        }
+    }
+
+    private SourceTestInfo resolveSourcePracticeTest(Integer stimulusId, Integer section) {
+        return testStructureRepository.findByStimulusId(stimulusId).stream()
+                .filter(ts -> ts.getTest() != null && ts.getTest().getTestMode() == TestMode.PRACTICE)
+                .filter(ts -> section == null || ts.getSection() == null || section.equals(ts.getSection()))
+                .max(Comparator.comparingInt(ts -> titleScore(ts.getTest().getTitle())))
+                .map(ts -> new SourceTestInfo(ts.getTest().getId(), ts.getTest().getTitle()))
+                .orElse(null);
+    }
+
     private int titleScore(String title) {
-        if (title == null || title.isBlank()) return 0;
+        if (title == null || title.isBlank()) {
+            return 0;
+        }
+
         String normalized = title.trim().toLowerCase();
         boolean isGeneric = normalized.matches("^(passage|section|part|task)\\s*\\d+$");
         return isGeneric ? 1 : 2;
     }
 
     private int resolveSection(Test practiceTest, TestStructure structure) {
-        if (practiceTest.getSection() != null) return practiceTest.getSection();
-        if (structure.getSection() != null) return structure.getSection();
+        if (practiceTest.getSection() != null) {
+            return practiceTest.getSection();
+        }
+        if (structure.getSection() != null) {
+            return structure.getSection();
+        }
         return 1;
     }
+
+    private record SourceTestInfo(Integer testId, String title) {}
 }

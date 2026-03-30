@@ -18,9 +18,7 @@ public record AdminRevenueDashboardResponse(
         List<DailyRevenue> dailyRevenue,
         List<DailyExpertJobs> dailyExpertJobs) {
 
-    public record DailyRevenue(LocalDate date, long amount) {
-    }
+    public record DailyRevenue(LocalDate date, long amount) {}
 
-    public record DailyExpertJobs(LocalDate date, long writingJobs, long speakingJobs) {
-    }
+    public record DailyExpertJobs(LocalDate date, long writingJobs, long speakingJobs) {}
 }

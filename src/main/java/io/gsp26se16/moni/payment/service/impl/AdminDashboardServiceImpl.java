@@ -51,8 +51,8 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
                 PaymentType.CONSUME, EXPERT_SPEAKING_SERVICE_CODE, safeStart, safeEnd);
 
         // Build daily revenue data
-        List<Object[]> dailyRevenueData = paymentRepository.getDailyRevenueByStatusAndCreatedAtBetween(
-                PaymentStatus.SUCCESS, safeStart, safeEnd);
+        List<Object[]> dailyRevenueData =
+                paymentRepository.getDailyRevenueByStatusAndCreatedAtBetween(PaymentStatus.SUCCESS, safeStart, safeEnd);
         List<AdminRevenueDashboardResponse.DailyRevenue> dailyRevenue = new ArrayList<>();
         for (Object[] row : dailyRevenueData) {
             LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
@@ -61,10 +61,12 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         }
 
         // Build daily expert jobs data
-        List<Object[]> dailyWritingData = creditTransactionRepository.countDailyJobsByServiceCodeAndPaymentTypeAndCreatedAtBetween(
-                PaymentType.CONSUME, EXPERT_WRITING_SERVICE_CODE, safeStart, safeEnd);
-        List<Object[]> dailySpeakingData = creditTransactionRepository.countDailyJobsByServiceCodeAndPaymentTypeAndCreatedAtBetween(
-                PaymentType.CONSUME, EXPERT_SPEAKING_SERVICE_CODE, safeStart, safeEnd);
+        List<Object[]> dailyWritingData =
+                creditTransactionRepository.countDailyJobsByServiceCodeAndPaymentTypeAndCreatedAtBetween(
+                        PaymentType.CONSUME, EXPERT_WRITING_SERVICE_CODE, safeStart, safeEnd);
+        List<Object[]> dailySpeakingData =
+                creditTransactionRepository.countDailyJobsByServiceCodeAndPaymentTypeAndCreatedAtBetween(
+                        PaymentType.CONSUME, EXPERT_SPEAKING_SERVICE_CODE, safeStart, safeEnd);
 
         Map<LocalDate, Long> writingMap = new HashMap<>();
         for (Object[] row : dailyWritingData) {

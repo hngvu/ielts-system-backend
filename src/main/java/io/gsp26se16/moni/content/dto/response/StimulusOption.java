@@ -7,6 +7,7 @@ import lombok.Data;
 @Builder
 public class StimulusOption {
     Integer stimulusId;
+    Integer testId;
     String title; // from the practice test that uses this stimulus
     Integer questionCount;
 }

@@ -11,6 +11,7 @@ public class FullTestResponse {
     Integer id;
     String title;
     String skill;
+    String testType;
     Integer duration;
     String status; // DRAFT, PUBLISHED
     List<StimulusInfo> stimuli;
@@ -21,5 +22,8 @@ public class FullTestResponse {
         Integer id;
         Integer section;
         String title; // stimulus title or first test title using it
+        Integer questionCount;
+        Integer testId; // source PRACTICE test containing this stimulus
+        String testTitle;
     }
 }

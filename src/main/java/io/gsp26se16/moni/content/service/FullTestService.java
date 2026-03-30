@@ -17,5 +17,9 @@ public interface FullTestService {
 
     void deleteFullTest(Integer id);
 
+    FullTestResponse getFullTestById(Integer id);
+
+    FullTestResponse updateFullTest(Integer id, CreateFullTestRequest request);
+
     Map<Integer, List<StimulusOption>> getAvailableStimuli(String skill);
 }

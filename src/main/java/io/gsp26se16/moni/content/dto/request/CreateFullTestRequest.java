@@ -8,6 +8,8 @@ import lombok.Data;
 public class CreateFullTestRequest {
     String title;
     String skill; // READING, LISTENING, WRITING, SPEAKING
+    String testType; // ACADEMIC, GENERAL_TRAINING, BOTH, FULL_TEST, PRACTICE
     Integer duration; // in seconds, optional - auto-set if null
+    String status; // DRAFT, PUBLISHED, HIDDEN
     List<Integer> stimulusIds; // ordered by section
 }

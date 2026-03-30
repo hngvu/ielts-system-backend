@@ -70,6 +70,29 @@ public class FullTestController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/{id}")
+    @Operation(summary = "Lấy chi tiết Full Test theo ID")
+    public ResponseEntity<ApiResponse<FullTestResponse>> getFullTestById(@PathVariable Integer id) {
+        FullTestResponse result = fullTestService.getFullTestById(id);
+        return ResponseEntity.ok(ApiResponse.<FullTestResponse>builder()
+                .code(1000)
+                .message("Lấy chi tiết full test thành công")
+                .result(result)
+                .build());
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Cập nhật Full Test")
+    public ResponseEntity<ApiResponse<FullTestResponse>> updateFullTest(
+            @PathVariable Integer id, @RequestBody CreateFullTestRequest request) {
+        FullTestResponse result = fullTestService.updateFullTest(id, request);
+        return ResponseEntity.ok(ApiResponse.<FullTestResponse>builder()
+                .code(1000)
+                .message("Cập nhật full test thành công")
+                .result(result)
+                .build());
+    }
+
     @GetMapping("/available-stimuli")
     @Operation(summary = "Lấy danh sách ngữ liệu có sẵn theo kỹ năng (nhóm theo section)")
     public ResponseEntity<ApiResponse<Map<Integer, List<StimulusOption>>>> getAvailableStimuli(

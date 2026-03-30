@@ -20,7 +20,8 @@ public interface TestRepository extends JpaRepository<Test, Integer> {
 
     @Query("SELECT t FROM Test t WHERE "
             + "(CAST(:keyword AS String) IS NULL OR CAST(:keyword AS String) = '' OR LOWER(t.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS String), '%'))) AND "
-            + "(:skill IS NULL OR t.skill = :skill)")
+            + "(:skill IS NULL OR t.skill = :skill) AND "
+            + "(t.testMode IS NULL OR t.testMode != 'FULL_TEST')")
     Page<Test> searchTests(@Param("keyword") String keyword, @Param("skill") Skill skill, Pageable pageable);
 
     @Query("SELECT t FROM Test t WHERE t.status = :status AND "
