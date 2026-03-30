@@ -39,7 +39,6 @@ import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
 import io.gsp26se16.moni.roadmap.repository.RoadmapRepository;
 import io.gsp26se16.moni.roadmap.repository.TaskRepository;
 import io.gsp26se16.moni.tag.entity.Tag;
-import io.gsp26se16.moni.tag.entity.TagType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -410,12 +409,16 @@ public class GoalServiceImpl implements GoalService {
                 .orElse(null);
 
         List<LearnerMetric> allMetrics = learnerMetricRepository.findByUserOrderByUpdatedAtDesc(learner);
-        double masteryIndex = computeAvg(allMetrics.stream().map(LearnerMetric::getMasteryLevel).toList(), 0.5);
-        double confidenceIndex = computeAvg(allMetrics.stream().map(LearnerMetric::getConfidenceScore).toList(), 0.0);
-        var lastMetricUpdatedAt = allMetrics.isEmpty() ? null : allMetrics.get(0).getUpdatedAt();
+        double masteryIndex = computeAvg(
+                allMetrics.stream().map(LearnerMetric::getMasteryLevel).toList(), 0.5);
+        double confidenceIndex = computeAvg(
+                allMetrics.stream().map(LearnerMetric::getConfidenceScore).toList(), 0.0);
+        var lastMetricUpdatedAt =
+                allMetrics.isEmpty() ? null : allMetrics.get(0).getUpdatedAt();
 
         LocalDate examDate = learner.getExamDate();
-        Integer daysToExam = examDate != null ? (int) java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), examDate) : null;
+        Integer daysToExam =
+                examDate != null ? (int) java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), examDate) : null;
         if (daysToExam != null && daysToExam < 0) daysToExam = 0;
 
         Calibration calibration = calibrateBands(placement, masteryIndex, confidenceIndex);
@@ -433,17 +436,15 @@ public class GoalServiceImpl implements GoalService {
                     "Muc tieu hien tai co the hoi qua tam so voi thoi gian con lai. Hay can nhac giam muc tieu hoac tang cuong tan suat luyen tap.";
         }
 
-        List<LearnerRoadmapInsightsResponse.TagMetricResponse> weakest = learnerMetricRepository
-                .findTop8ByUserOrderByMasteryLevelAsc(learner)
-                .stream()
-                .map(this::toTagMetric)
-                .toList();
+        List<LearnerRoadmapInsightsResponse.TagMetricResponse> weakest =
+                learnerMetricRepository.findTop8ByUserOrderByMasteryLevelAsc(learner).stream()
+                        .map(this::toTagMetric)
+                        .toList();
 
-        List<LearnerRoadmapInsightsResponse.TagMetricResponse> strongest = learnerMetricRepository
-                .findTop5ByUserOrderByMasteryLevelDesc(learner)
-                .stream()
-                .map(this::toTagMetric)
-                .toList();
+        List<LearnerRoadmapInsightsResponse.TagMetricResponse> strongest =
+                learnerMetricRepository.findTop5ByUserOrderByMasteryLevelDesc(learner).stream()
+                        .map(this::toTagMetric)
+                        .toList();
 
         return LearnerRoadmapInsightsResponse.builder()
                 .examDate(examDate)
@@ -502,7 +503,8 @@ public class GoalServiceImpl implements GoalService {
         double estimatedOverall = estimateOverallFromMetrics(masteryIndex, confidenceIndex);
 
         if (placement == null || placement.getOverallBand() == null) {
-            return new Calibration(estimatedOverall, 0, 0, 0, 0, "Chua co placement, band dang uoc tinh tu qua trinh luyen tap.");
+            return new Calibration(
+                    estimatedOverall, 0, 0, 0, 0, "Chua co placement, band dang uoc tinh tu qua trinh luyen tap.");
         }
 
         boolean isSelfAssessed = Boolean.TRUE.equals(placement.getIsSelfAssessed());
@@ -518,15 +520,15 @@ public class GoalServiceImpl implements GoalService {
 
         double placementOverall = clampBand(placement.getOverallBand());
         double calibratedOverall = Math.min(placementOverall, clampBand(estimatedOverall + 0.5));
-        String note =
-                calibratedOverall < placementOverall
-                        ? "Ban da tu danh gia. He thong se hieu chinh dan theo ket qua luyen tap de phan anh dung thuc luc."
-                        : "Band tu danh gia gan voi du lieu luyen tap hien tai.";
+        String note = calibratedOverall < placementOverall
+                ? "Ban da tu danh gia. He thong se hieu chinh dan theo ket qua luyen tap de phan anh dung thuc luc."
+                : "Band tu danh gia gan voi du lieu luyen tap hien tai.";
 
         return new Calibration(
                 calibratedOverall,
                 clampBand(Math.min(nonNullOr(placement.getReadingBand(), calibratedOverall), calibratedOverall + 1.0)),
-                clampBand(Math.min(nonNullOr(placement.getListeningBand(), calibratedOverall), calibratedOverall + 1.0)),
+                clampBand(
+                        Math.min(nonNullOr(placement.getListeningBand(), calibratedOverall), calibratedOverall + 1.0)),
                 clampBand(Math.min(nonNullOr(placement.getWritingBand(), calibratedOverall), calibratedOverall + 1.0)),
                 clampBand(Math.min(nonNullOr(placement.getSpeakingBand(), calibratedOverall), calibratedOverall + 1.0)),
                 note);

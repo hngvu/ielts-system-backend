@@ -1,6 +1,8 @@
 package io.gsp26se16.moni.payment.dto.response;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record AdminRevenueDashboardResponse(
         LocalDateTime startDate,
@@ -12,4 +14,13 @@ public record AdminRevenueDashboardResponse(
         long expertSpeakingCredits,
         long expertSpeakingJobs,
         long totalExpertCredits,
-        long totalExpertJobs) {}
+        long totalExpertJobs,
+        List<DailyRevenue> dailyRevenue,
+        List<DailyExpertJobs> dailyExpertJobs) {
+
+    public record DailyRevenue(LocalDate date, long amount) {
+    }
+
+    public record DailyExpertJobs(LocalDate date, long writingJobs, long speakingJobs) {
+    }
+}

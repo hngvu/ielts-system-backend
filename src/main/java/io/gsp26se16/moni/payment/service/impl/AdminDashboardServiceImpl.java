@@ -1,6 +1,11 @@
 package io.gsp26se16.moni.payment.service.impl;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
@@ -45,6 +50,49 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         long expertSpeakingJobs = creditTransactionRepository.countByServiceCodeAndPaymentTypeAndCreatedAtBetween(
                 PaymentType.CONSUME, EXPERT_SPEAKING_SERVICE_CODE, safeStart, safeEnd);
 
+        // Build daily revenue data
+        List<Object[]> dailyRevenueData = paymentRepository.getDailyRevenueByStatusAndCreatedAtBetween(
+                PaymentStatus.SUCCESS, safeStart, safeEnd);
+        List<AdminRevenueDashboardResponse.DailyRevenue> dailyRevenue = new ArrayList<>();
+        for (Object[] row : dailyRevenueData) {
+            LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
+            long amount = ((Number) row[1]).longValue();
+            dailyRevenue.add(new AdminRevenueDashboardResponse.DailyRevenue(date, amount));
+        }
+
+        // Build daily expert jobs data
+        List<Object[]> dailyWritingData = creditTransactionRepository.countDailyJobsByServiceCodeAndPaymentTypeAndCreatedAtBetween(
+                PaymentType.CONSUME, EXPERT_WRITING_SERVICE_CODE, safeStart, safeEnd);
+        List<Object[]> dailySpeakingData = creditTransactionRepository.countDailyJobsByServiceCodeAndPaymentTypeAndCreatedAtBetween(
+                PaymentType.CONSUME, EXPERT_SPEAKING_SERVICE_CODE, safeStart, safeEnd);
+
+        Map<LocalDate, Long> writingMap = new HashMap<>();
+        for (Object[] row : dailyWritingData) {
+            LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
+            long count = ((Number) row[1]).longValue();
+            writingMap.put(date, count);
+        }
+
+        Map<LocalDate, Long> speakingMap = new HashMap<>();
+        for (Object[] row : dailySpeakingData) {
+            LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
+            long count = ((Number) row[1]).longValue();
+            speakingMap.put(date, count);
+        }
+
+        // Combine all dates
+        List<LocalDate> allDates = new ArrayList<>();
+        allDates.addAll(writingMap.keySet());
+        allDates.addAll(speakingMap.keySet());
+        allDates = allDates.stream().distinct().sorted().toList();
+
+        List<AdminRevenueDashboardResponse.DailyExpertJobs> dailyExpertJobs = new ArrayList<>();
+        for (LocalDate date : allDates) {
+            long writingJobs = writingMap.getOrDefault(date, 0L);
+            long speakingJobs = speakingMap.getOrDefault(date, 0L);
+            dailyExpertJobs.add(new AdminRevenueDashboardResponse.DailyExpertJobs(date, writingJobs, speakingJobs));
+        }
+
         return new AdminRevenueDashboardResponse(
                 safeStart,
                 safeEnd,
@@ -55,6 +103,8 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
                 expertSpeakingCredits,
                 expertSpeakingJobs,
                 expertWritingCredits + expertSpeakingCredits,
-                expertWritingJobs + expertSpeakingJobs);
+                expertWritingJobs + expertSpeakingJobs,
+                dailyRevenue,
+                dailyExpertJobs);
     }
 }

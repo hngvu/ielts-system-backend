@@ -1,5 +1,7 @@
 package io.gsp26se16.moni.payment.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -27,6 +29,17 @@ public interface CreditTransactionRepository
             + "AND ct.servicePricing.serviceCode = :serviceCode "
             + "AND ct.createdAt >= :startDate AND ct.createdAt <= :endDate")
     long countByServiceCodeAndPaymentTypeAndCreatedAtBetween(
+            @Param("paymentType") PaymentType paymentType,
+            @Param("serviceCode") String serviceCode,
+            @Param("startDate") java.time.LocalDateTime startDate,
+            @Param("endDate") java.time.LocalDateTime endDate);
+
+    @Query("SELECT DATE(ct.createdAt) as date, COUNT(ct) as count FROM CreditTransaction ct "
+            + "WHERE ct.paymentType = :paymentType "
+            + "AND ct.servicePricing.serviceCode = :serviceCode "
+            + "AND ct.createdAt >= :startDate AND ct.createdAt <= :endDate "
+            + "GROUP BY DATE(ct.createdAt) ORDER BY date")
+    List<Object[]> countDailyJobsByServiceCodeAndPaymentTypeAndCreatedAtBetween(
             @Param("paymentType") PaymentType paymentType,
             @Param("serviceCode") String serviceCode,
             @Param("startDate") java.time.LocalDateTime startDate,

@@ -31,4 +31,12 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer>, JpaS
             @Param("endDate") LocalDateTime endDate);
 
     long countByStatusAndCreatedAtBetween(PaymentStatus status, LocalDateTime startDate, LocalDateTime endDate);
+
+    @Query("SELECT DATE(p.createdAt) as date, COALESCE(SUM(p.amount), 0) as amount FROM Payment p "
+            + "WHERE p.status = :status AND p.createdAt >= :startDate AND p.createdAt <= :endDate "
+            + "GROUP BY DATE(p.createdAt) ORDER BY date")
+    List<Object[]> getDailyRevenueByStatusAndCreatedAtBetween(
+            @Param("status") PaymentStatus status,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
 }
