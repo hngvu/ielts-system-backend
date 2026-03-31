@@ -87,11 +87,13 @@ public class TestServiceImpl implements TestService {
             testStructureRepository.save(testStructure);
 
             if (stimReq.getQuestionGroups() != null) {
+                int groupIndex = 0;
                 for (var groupReq : stimReq.getQuestionGroups()) {
                     QuestionGroup group = new QuestionGroup();
                     group.setStimulus(savedStimulus);
                     group.setInstruction(groupReq.getInstruction());
                     group.setGroupContent(groupReq.getGroupContent());
+                    group.setOrderIndex(groupIndex++);
                     group.setImageUrl(groupReq.getImageUrl());
                     group.setSharedOptions(groupReq.getSharedOptions());
                     if (groupReq.getQuestionTypeCode() != null) {
@@ -173,6 +175,9 @@ public class TestServiceImpl implements TestService {
                     Stimulus s = ts.getStimulus();
 
                     List<TestDetailResponse.QuestionGroupDetail> groupDetails = s.getQuestionGroups().stream()
+                            .sorted(Comparator.comparing((QuestionGroup g) ->
+                                            g.getOrderIndex() == null ? Integer.MAX_VALUE : g.getOrderIndex())
+                                    .thenComparing(QuestionGroup::getId))
                             .map(g -> {
                                 List<TestDetailResponse.QuestionDetail> qDetails = g.getQuestions().stream()
                                         .map(q -> {
@@ -212,6 +217,7 @@ public class TestServiceImpl implements TestService {
                                                         ? g.getQuestionType().getCode()
                                                         : null)
                                         .groupContent(g.getGroupContent())
+                                        .orderIndex(g.getOrderIndex())
                                         .imageUrl(g.getImageUrl())
                                         .sharedOptions(g.getSharedOptions())
                                         .questions(qDetails)

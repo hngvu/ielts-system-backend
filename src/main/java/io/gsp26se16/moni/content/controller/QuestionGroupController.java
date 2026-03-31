@@ -70,6 +70,19 @@ public class QuestionGroupController {
                 .build());
     }
 
+    @PatchMapping("/question-groups/{id}/instruction")
+    @Operation(summary = "Update QuestionGroup instruction")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateInstruction(
+            @PathVariable Integer id, @RequestBody Map<String, String> body) {
+        String instruction = body.get("instruction");
+        questionGroupService.updateInstruction(id, instruction);
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
+                .code(1000)
+                .message("Updated")
+                .result(Map.of("id", id, "instruction", instruction != null ? instruction : ""))
+                .build());
+    }
+
     @PatchMapping("/question-groups/{id}/question-type-code")
     @Operation(summary = "Update QuestionGroup questionTypeCode")
     public ResponseEntity<ApiResponse<Map<String, Object>>> updateQuestionTypeCode(
@@ -80,6 +93,19 @@ public class QuestionGroupController {
                 .code(1000)
                 .message("Updated")
                 .result(Map.of("id", id, "questionTypeCode", questionTypeCode != null ? questionTypeCode : ""))
+                .build());
+    }
+
+    @PatchMapping("/question-groups/{id}/order-index")
+    @Operation(summary = "Update QuestionGroup orderIndex")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateOrderIndex(
+            @PathVariable Integer id, @RequestBody Map<String, Integer> body) {
+        Integer orderIndex = body.get("orderIndex");
+        questionGroupService.updateOrderIndex(id, orderIndex);
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
+                .code(1000)
+                .message("Updated")
+                .result(Map.of("id", id, "orderIndex", orderIndex))
                 .build());
     }
 

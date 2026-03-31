@@ -44,6 +44,7 @@ public class TestDetailResponse {
         private String instruction;
         private String questionTypeCode;
         private String groupContent;
+        private Integer orderIndex;
         private String imageUrl;
         private List<Map<String, Object>> sharedOptions;
         private List<QuestionDetail> questions;

@@ -39,6 +39,13 @@ public class QuestionGroupServiceImpl implements QuestionGroupService {
         group.setStimulus(stimulus);
         group.setInstruction(request.getInstruction());
         group.setGroupContent(request.getGroupContent());
+        int nextOrderIndex = stimulus.getQuestionGroups().stream()
+                        .map(QuestionGroup::getOrderIndex)
+                        .filter(java.util.Objects::nonNull)
+                        .max(Integer::compareTo)
+                        .orElse(-1)
+                + 1;
+        group.setOrderIndex(nextOrderIndex);
         group.setImageUrl(request.getImageUrl());
         group.setSharedOptions(request.getSharedOptions());
 
@@ -95,6 +102,26 @@ public class QuestionGroupServiceImpl implements QuestionGroupService {
         if (questionTypeCode != null) {
             questionTypeRepository.findByCode(questionTypeCode).ifPresent(group::setQuestionType);
         }
+        questionGroupRepository.save(group);
+    }
+
+    @Override
+    @Transactional
+    public void updateOrderIndex(Integer id, Integer orderIndex) {
+        QuestionGroup group = questionGroupRepository
+                .findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.QUESTION_GROUP_NOT_FOUND));
+        group.setOrderIndex(orderIndex);
+        questionGroupRepository.save(group);
+    }
+
+    @Override
+    @Transactional
+    public void updateInstruction(Integer id, String instruction) {
+        QuestionGroup group = questionGroupRepository
+                .findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.QUESTION_GROUP_NOT_FOUND));
+        group.setInstruction(instruction);
         questionGroupRepository.save(group);
     }
 
