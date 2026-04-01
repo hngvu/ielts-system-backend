@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.expert.dto;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 import io.gsp26se16.moni.expert.enumeration.SessionStatus;
 import lombok.*;
@@ -15,13 +16,18 @@ public class ScoringSessionResponse {
     Integer id;
     Integer expertId;
     String expertDisplayName;
+    String userDisplayName;
     String skill;
     SessionStatus status;
     String roomUrl;
     String roomName;
     Integer queuePosition;
     Timestamp createdAt;
+    LocalDateTime startedAt;
+    LocalDateTime endedAt;
     Integer testId;
+    Long writingSubmissionId;
+    LocalDateTime submittedAt;
     String content; // Essay content for writing sessions
     String recordingUrl;
     String expertRecordingUrl;

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import io.gsp26se16.moni.ai.writing.repository.WritingSubmissionRepository;
+import io.gsp26se16.moni.ai.writing.entity.WritingSubmission;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
@@ -342,17 +343,28 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
     }
 
     private ScoringSessionResponse toResponse(ScoringSession s) {
+        LocalDateTime submittedAt = null;
+        if (s.getWritingSubmissionId() != null) {
+            submittedAt = writingSubmissionRepository.findById(s.getWritingSubmissionId())
+                    .map(WritingSubmission::getSubmittedAt)
+                    .orElse(null);
+        }
         return ScoringSessionResponse.builder()
                 .id(s.getId())
                 .expertId(s.getExpert() != null ? s.getExpert().getId() : null)
                 .expertDisplayName(s.getExpert() != null ? s.getExpert().getDisplayName() : null)
+                .userDisplayName(s.getUser() != null ? s.getUser().getFull_name() : null)
                 .skill(s.getSkill())
                 .status(s.getStatus())
                 .roomUrl(s.getRoomUrl())
                 .roomName(s.getRoomName())
                 .queuePosition(s.getQueuePosition())
                 .createdAt(s.getCreatedAt())
+                .startedAt(s.getStartedAt())
+                .endedAt(s.getEndedAt())
                 .testId(s.getTestId())
+                .writingSubmissionId(s.getWritingSubmissionId())
+                .submittedAt(submittedAt)
                 .content(s.getContent())
                 .recordingUrl(s.getRecordingUrl())
                 .expertRecordingUrl(s.getExpertRecordingUrl())
