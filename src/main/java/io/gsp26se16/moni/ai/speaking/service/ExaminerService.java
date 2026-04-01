@@ -132,21 +132,30 @@ public class ExaminerService {
 
     /**
      * Client báo xong Part 2 (hết 120s hoặc im lặng).
-     * Server TTS câu dẫn Part 3 rồi bắt đầu Part 3.
      */
     public void stopPart2Speaking(ActiveExamSession session, String transcript) throws IOException {
         session.setPart2Transcript(transcript != null ? transcript : "");
-        session.setState(ExamState.TRANSITIONING_TO_PART3);
-
-        // TTS câu dẫn Part 3
-        Question transScript = session.getPart3TransitionScript();
-        if (transScript != null) {
-            sendQuestionEvent(session.getWsSession(), 3, transScript.getId(), transScript.getContent(), false);
-            ttsAsync(transScript.getContent(), session.getWsSession());
-        }
-
         session.setState(ExamState.PART3_QUESTIONING);
-        askNextQuestion(session);
+
+        WebSocketSession ws = session.getWsSession();
+
+        // Lấy câu dẫn Part 3
+        Question transScript = session.getPart3TransitionScript();
+        String introText = transScript != null ? transScript.getContent() : "Now let's move on to Part 3.";
+
+        // Thay vì gọi 2 lần ttsAsync (gây lồng tiếng), ta gộp intro và câu hỏi đầu tiên thành 1 chuỗi để đọc
+        if (!session.getPart3Queue().isEmpty()) {
+            Question q = session.getPart3Queue().poll();
+            session.setCurrentQuestion(q);
+            loadFollowUps(session, q);
+            sendQuestionEvent(ws, 3, q.getId(), q.getContent(), false);
+
+            // Gộp câu: "Now let's move on to Part 3. [Question 1]"
+            String combinedText = introText + " " + q.getContent();
+            ttsAsync(combinedText, ws);
+        } else {
+            endExam(session);
+        }
     }
 
     // ─────────────────────────────── Core logic ──────────────────────────────
@@ -202,11 +211,8 @@ public class ExaminerService {
         session.setState(ExamState.TRANSITIONING_TO_PART2);
         WebSocketSession ws = session.getWsSession();
 
-        // TTS câu dẫn Part 2
-        Question transScript = session.getPart2TransitionScript();
-        if (transScript != null) {
-            ttsAsync(transScript.getContent(), ws);
-        }
+        // Bỏ ttsAsync cho Part 2 ở đây vì Frontend đã tự động đọc giới thiệu bằng Browser TTS
+        // khi hiện thẻ Cue Card để đồng bộ với timer 1 phút.
 
         // Gửi show_cue_card về client
         Question part2Q = session.getPart2Question();

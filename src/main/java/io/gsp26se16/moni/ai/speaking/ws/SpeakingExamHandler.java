@@ -70,6 +70,9 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
                 case "start_speaking_part2" -> handleStartPart2(ws);
                 case "stop_speaking_part2" -> handleStopPart2(ws, payload);
                 case "end_exam" -> handleEndExam(ws);
+                case "ping", "ack" -> {
+                    /* ping from old logic, ack from new mutual heartbeat */
+                }
                 default -> log.warn("Unknown message type: {}", type);
             }
         } catch (Exception e) {

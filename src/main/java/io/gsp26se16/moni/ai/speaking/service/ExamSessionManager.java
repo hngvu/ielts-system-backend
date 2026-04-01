@@ -60,4 +60,31 @@ public class ExamSessionManager {
     public void remove(String sessionId) {
         sessions.remove(sessionId);
     }
+
+    public Iterable<ActiveExamSession> getAllSessions() {
+        return sessions.values();
+    }
+
+    /**
+     * Gửi heartbeat (Mutual keepalive) đến tất cả các session đang mở mỗi 15 giây.
+     * Giáp FE keep Load Balancer không bị timeout.
+     */
+    @org.springframework.scheduling.annotation.Scheduled(fixedDelay = 15000)
+    public void broadcastHeartbeat() {
+        if (sessions.isEmpty()) return;
+
+        String heartbeatMessage = "{\"type\":\"heartbeat\"}";
+        org.springframework.web.socket.TextMessage tm =
+                new org.springframework.web.socket.TextMessage(heartbeatMessage);
+
+        for (ActiveExamSession session : sessions.values()) {
+            if (session.isOpen()) {
+                try {
+                    session.getWsSession().sendMessage(tm);
+                } catch (java.io.IOException e) {
+                    log.error("Failed to send heartbeat to session {}: {}", session.getSessionId(), e.getMessage());
+                }
+            }
+        }
+    }
 }
