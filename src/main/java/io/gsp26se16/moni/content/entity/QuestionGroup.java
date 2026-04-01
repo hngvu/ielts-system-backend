@@ -29,6 +29,8 @@ public class QuestionGroup {
     @Column(columnDefinition = "TEXT")
     String groupContent; // gap-fill template with {{1}}, {{2}} placeholders
 
+    Integer orderIndex;
+
     String imageUrl; // diagram label image URL
 
     @JdbcTypeCode(SqlTypes.JSON)

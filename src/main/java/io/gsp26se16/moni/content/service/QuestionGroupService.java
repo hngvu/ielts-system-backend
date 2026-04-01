@@ -12,4 +12,8 @@ public interface QuestionGroupService {
     void updateGroupContent(Integer id, String groupContent);
 
     void updateQuestionTypeCode(Integer id, String questionTypeCode);
+
+    void updateOrderIndex(Integer id, Integer orderIndex);
+
+    void updateInstruction(Integer id, String instruction);
 }
