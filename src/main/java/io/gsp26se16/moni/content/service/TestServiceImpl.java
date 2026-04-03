@@ -3,6 +3,7 @@ package io.gsp26se16.moni.content.service;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -96,11 +97,7 @@ public class TestServiceImpl implements TestService {
                     group.setOrderIndex(groupIndex++);
                     group.setImageUrl(groupReq.getImageUrl());
                     group.setSharedOptions(groupReq.getSharedOptions());
-                    if (groupReq.getQuestionTypeCode() != null) {
-                        questionTypeRepository
-                                .findByCode(groupReq.getQuestionTypeCode())
-                                .ifPresent(group::setQuestionType);
-                    }
+                    applyQuestionTypeCode(group, groupReq.getQuestionTypeCode());
                     QuestionGroup savedGroup = questionGroupRepository.save(group);
 
                     // ── Pass 1: Lưu tất cả questions, track theo position ──
@@ -212,10 +209,7 @@ public class TestServiceImpl implements TestService {
                                 return TestDetailResponse.QuestionGroupDetail.builder()
                                         .id(g.getId())
                                         .instruction(g.getInstruction())
-                                        .questionTypeCode(
-                                                g.getQuestionType() != null
-                                                        ? g.getQuestionType().getCode()
-                                                        : null)
+                                        .questionTypeCode(resolveQuestionTypeCode(g))
                                         .groupContent(g.getGroupContent())
                                         .orderIndex(g.getOrderIndex())
                                         .imageUrl(g.getImageUrl())
@@ -242,6 +236,7 @@ public class TestServiceImpl implements TestService {
                 .title(test.getTitle())
                 .description(test.getDescription())
                 .skill(test.getSkill())
+                .testType(test.getTestType())
                 .duration(test.getDuration())
                 .testMode(test.getTestMode())
                 .section(test.getSection())
@@ -340,6 +335,91 @@ public class TestServiceImpl implements TestService {
                 .attemptCount(testRepository.countAttemptsByTestId(testId))
                 .questionTypes(testRepository.findQuestionTypesByTestId(testId))
                 .build();
+    }
+
+    private String resolveQuestionTypeCode(QuestionGroup group) {
+        if (group.getQuestionType() != null
+                && group.getQuestionType().getCode() != null
+                && !group.getQuestionType().getCode().isBlank()) {
+            return group.getQuestionType().getCode();
+        }
+        return inferQuestionTypeCode(group);
+    }
+
+    private String inferQuestionTypeCode(QuestionGroup group) {
+        String instruction =
+                group.getInstruction() == null ? "" : group.getInstruction().toLowerCase(Locale.ROOT);
+        String groupContent =
+                group.getGroupContent() == null ? "" : group.getGroupContent().trim();
+        String imageUrl = group.getImageUrl() == null ? "" : group.getImageUrl().trim();
+
+        if (!imageUrl.isEmpty()) {
+            return "DIAGRAM_LABEL";
+        }
+
+        if (!groupContent.isEmpty()) {
+            return "GAP_FILLING";
+        }
+
+        if (group.getSharedOptions() != null && !group.getSharedOptions().isEmpty()) {
+            if (instruction.contains("heading")) return "MATCHING_HEADINGS";
+            if (instruction.contains("information")) return "MATCHING_INFORMATION";
+            if (instruction.contains("feature")) return "MATCHING_FEATURE";
+            return "MATCHING_HEADINGS";
+        }
+
+        boolean hasOptions =
+                group.getQuestions().stream().anyMatch(q -> !q.getOptions().isEmpty());
+        if (hasOptions) {
+            boolean hasMultiCorrect = group.getQuestions().stream()
+                    .anyMatch(q -> q.getOptions().stream()
+                                    .filter(opt -> opt.isCorrect())
+                                    .count()
+                            > 1);
+            if (hasMultiCorrect) {
+                return "MCQ_MULTIPLE";
+            }
+
+            boolean looksLikeTfng = group.getQuestions().stream().anyMatch(q -> {
+                List<String> tokens = q.getOptions().stream()
+                        .map(opt -> opt.getContent() == null
+                                ? ""
+                                : opt.getContent().trim().toLowerCase(Locale.ROOT))
+                        .toList();
+                return tokens.contains("true") && tokens.contains("false") && tokens.contains("not given")
+                        || tokens.contains("yes") && tokens.contains("no") && tokens.contains("not given");
+            });
+            if (looksLikeTfng) {
+                boolean yesNo = group.getQuestions().stream().anyMatch(q -> q.getOptions().stream()
+                        .map(opt -> opt.getContent() == null
+                                ? ""
+                                : opt.getContent().trim().toLowerCase(Locale.ROOT))
+                        .collect(Collectors.toSet())
+                        .contains("yes"));
+                return yesNo ? "YNNG" : "TFNG";
+            }
+
+            return "MCQ";
+        }
+
+        return null;
+    }
+
+    private void applyQuestionTypeCode(QuestionGroup group, String questionTypeCode) {
+        if (questionTypeCode == null) {
+            group.setQuestionType(null);
+            return;
+        }
+
+        String normalizedCode = questionTypeCode.trim();
+        if (normalizedCode.isEmpty()) {
+            group.setQuestionType(null);
+            return;
+        }
+
+        group.setQuestionType(questionTypeRepository
+                .findByCode(normalizedCode)
+                .orElseThrow(() -> new AppException(ErrorCode.QUESTION_TYPE_NOT_FOUND)));
     }
 
     private Users resolveCurrentUser() {

@@ -49,9 +49,7 @@ public class QuestionGroupServiceImpl implements QuestionGroupService {
         group.setImageUrl(request.getImageUrl());
         group.setSharedOptions(request.getSharedOptions());
 
-        if (request.getQuestionTypeCode() != null) {
-            questionTypeRepository.findByCode(request.getQuestionTypeCode()).ifPresent(group::setQuestionType);
-        }
+        applyQuestionTypeCode(group, request.getQuestionTypeCode());
 
         QuestionGroup savedGroup = questionGroupRepository.save(group);
 
@@ -99,9 +97,7 @@ public class QuestionGroupServiceImpl implements QuestionGroupService {
         QuestionGroup group = questionGroupRepository
                 .findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.QUESTION_GROUP_NOT_FOUND));
-        if (questionTypeCode != null) {
-            questionTypeRepository.findByCode(questionTypeCode).ifPresent(group::setQuestionType);
-        }
+        applyQuestionTypeCode(group, questionTypeCode);
         questionGroupRepository.save(group);
     }
 
@@ -149,5 +145,22 @@ public class QuestionGroupServiceImpl implements QuestionGroupService {
         }
 
         questionRepository.save(question);
+    }
+
+    private void applyQuestionTypeCode(QuestionGroup group, String questionTypeCode) {
+        if (questionTypeCode == null) {
+            group.setQuestionType(null);
+            return;
+        }
+
+        String normalizedCode = questionTypeCode.trim();
+        if (normalizedCode.isEmpty()) {
+            group.setQuestionType(null);
+            return;
+        }
+
+        group.setQuestionType(questionTypeRepository
+                .findByCode(normalizedCode)
+                .orElseThrow(() -> new AppException(ErrorCode.QUESTION_TYPE_NOT_FOUND)));
     }
 }

@@ -7,6 +7,7 @@ import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import io.gsp26se16.moni.common.enumeration.QuestionCategory;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestMode;
+import io.gsp26se16.moni.common.enumeration.TestType;
 import lombok.Builder;
 import lombok.Data;
 
@@ -17,6 +18,7 @@ public class TestDetailResponse {
     private String title;
     private String description;
     private Skill skill;
+    private TestType testType;
     private Integer duration;
     private TestMode testMode;
     private Integer section;

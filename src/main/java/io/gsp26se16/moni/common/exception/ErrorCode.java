@@ -67,6 +67,7 @@ public enum ErrorCode {
     OPTION_NOT_FOUND(1047, "Không tìm thấy đáp án", HttpStatus.NOT_FOUND),
     ATTEMPT_NOT_FOUND(1048, "Không tìm thấy lần làm bài", HttpStatus.NOT_FOUND),
     QUESTION_GROUP_NOT_FOUND(1061, "Không tìm thấy nhóm câu hỏi", HttpStatus.NOT_FOUND),
+    QUESTION_TYPE_NOT_FOUND(1065, "Không tìm thấy dạng đề", HttpStatus.NOT_FOUND),
 
     // --- PLACEMENT MODULE ---
     PLACEMENT_NO_READING_TEST(1050, "Không có bài thi Reading nào được công bố", HttpStatus.NOT_FOUND),
