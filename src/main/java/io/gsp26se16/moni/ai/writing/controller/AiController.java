@@ -16,6 +16,8 @@ import io.gsp26se16.moni.ai.speaking.service.ConversationEngine;
 import io.gsp26se16.moni.ai.writing.request.WritingRequest;
 import io.gsp26se16.moni.ai.writing.service.WritingTask1Service;
 import io.gsp26se16.moni.ai.writing.service.WritingTask2Service;
+import io.gsp26se16.moni.common.enumeration.EvaluationStatus;
+import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.service.TranscriptService;
@@ -60,14 +62,14 @@ public class AiController {
         if (request.getSubmissionId() != null) {
             Long origId = request.getSubmissionId();
             writingSubmissionRepository.findById(origId).ifPresent(sub -> {
-                sub.setEvaluationStatus(io.gsp26se16.moni.common.enumeration.EvaluationStatus.COMPLETED);
+                sub.setEvaluationStatus(EvaluationStatus.COMPLETED);
                 writingSubmissionRepository.save(sub);
             });
             // Re-link the most recent AiEvaluation to original submission
             var recentEvals = aiEvaluationRepository.findBySubmissionId(origId);
             if (recentEvals.isEmpty()) {
                 aiEvaluationRepository
-                        .findFirstBySkillOrderByCreatedAtDesc(io.gsp26se16.moni.common.enumeration.Skill.WRITING)
+                        .findFirstBySkillOrderByCreatedAtDesc(Skill.WRITING)
                         .ifPresent(e -> {
                             e.setSubmissionId(origId);
                             aiEvaluationRepository.save(e);

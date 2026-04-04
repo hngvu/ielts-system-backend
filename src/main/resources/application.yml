@@ -8,14 +8,14 @@ spring:
   ai:
     openai:
       base-url: https://integrate.api.nvidia.com
-      api-key: a
+      api-key: ${NVIDIA_API_KEY}
       chat:
         options:
           model: meta/llama-3.3-70b-instruct
     vertex:
       ai:
         gemini:
-          api-endpoint: a
+          api-endpoint: ${GEMINI_API_KEY}
           chat:
             options: gemini-3-flash-preview
 
