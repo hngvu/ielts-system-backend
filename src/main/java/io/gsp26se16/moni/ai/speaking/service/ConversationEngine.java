@@ -76,13 +76,13 @@ public class ConversationEngine {
                     chatClientBuilder.defaultAdvisors(new SimpleLoggerAdvisor()).build();
 
             // Chấm 4 tiêu chí IELTS Speaking
-            Map<String, Object> fc = evaluateCriterion(chatClient, "FC", fullTranscript, "IELTS Speaking Test");
-            Map<String, Object> lr = evaluateCriterion(chatClient, "LR", fullTranscript, "IELTS Speaking Test");
-            Map<String, Object> gra = evaluateCriterion(chatClient, "GRA", fullTranscript, "IELTS Speaking Test");
-            Map<String, Object> pr = evaluateCriterion(chatClient, "PR", fullTranscript, "IELTS Speaking Test");
+            Map<String, Object> fc = phase1FC(chatClient, fullTranscript, "IELTS Speaking Test");
+            Map<String, Object> lr = phase2LR(chatClient, fullTranscript, "IELTS Speaking Test");
+            Map<String, Object> gra = phase3GRA(chatClient, fullTranscript, "IELTS Speaking Test");
+            Map<String, Object> pr = phase4PR(chatClient, fullTranscript, "IELTS Speaking Test");
 
             Map<String, Object> assessment = speakingRuleEngine.calculateBands(fc, lr, gra, pr);
-            Map<String, Object> feedback = generateFeedback(chatClient, fullTranscript, assessment);
+            Map<String, Object> feedback = phase5Feedback(chatClient, fullTranscript, assessment);
 
             double finalBand = (double) assessment.get("final_band");
             persistEvaluation(submission, fullTranscript, assessment, feedback, finalBand);
@@ -150,13 +150,13 @@ public class ConversationEngine {
             ChatClient chatClient =
                     chatClientBuilder.defaultAdvisors(new SimpleLoggerAdvisor()).build();
 
-            Map<String, Object> fc = evaluateCriterion(chatClient, "FC", formattedTranscript, question);
-            Map<String, Object> lr = evaluateCriterion(chatClient, "LR", formattedTranscript, question);
-            Map<String, Object> gra = evaluateCriterion(chatClient, "GRA", formattedTranscript, question);
-            Map<String, Object> pr = evaluateCriterion(chatClient, "PR", formattedTranscript, question);
+            Map<String, Object> fc = phase1FC(chatClient, formattedTranscript, question);
+            Map<String, Object> lr = phase2LR(chatClient, formattedTranscript, question);
+            Map<String, Object> gra = phase3GRA(chatClient, formattedTranscript, question);
+            Map<String, Object> pr = phase4PR(chatClient, formattedTranscript, question);
 
             Map<String, Object> assessment = speakingRuleEngine.calculateBands(fc, lr, gra, pr);
-            Map<String, Object> feedback = generateFeedback(chatClient, formattedTranscript, assessment);
+            Map<String, Object> feedback = phase5Feedback(chatClient, formattedTranscript, assessment);
 
             double finalBand = (double) assessment.get("final_band");
             persistEvaluation(submission, formattedTranscript, assessment, feedback, finalBand);
@@ -230,39 +230,45 @@ public class ConversationEngine {
         return speakingSubmissionRepository.save(submission);
     }
 
-    private Map<String, Object> evaluateCriterion(
-            ChatClient chatClient, String criterion, String transcript, String question) {
-
-        String prompt = promptLoader.loadPromptWithSpeakingRubric(
-                "speaking_eval.txt",
-                criterion,
-                Map.of(
-                        "criterion", criterion,
-                        "question", question,
-                        "transcript", transcript));
-
-        String response = chatClient
-                .prompt()
-                .system(prompt)
-                .user("Evaluate strictly using the rubric. Return ONLY raw JSON.")
-                .call()
-                .content();
-
-        Map<String, Object> result = helper.parseJson(response);
-        return helper.withCriterion(result, criterion);
+    private Map<String, Object> phase1FC(ChatClient chatClient, String transcript, String question) {
+        String prompt = promptLoader.loadPrompt(
+                "speaking/phase1_fc.txt", Map.of("question", question, "transcript", transcript));
+        Map<String, Object> result = callEvaluation(chatClient, prompt);
+        return helper.withCriterion(result, "FC");
     }
 
-    private Map<String, Object> generateFeedback(
+    private Map<String, Object> phase2LR(ChatClient chatClient, String transcript, String question) {
+        String prompt = promptLoader.loadPrompt(
+                "speaking/phase2_lr.txt", Map.of("question", question, "transcript", transcript));
+        Map<String, Object> result = callEvaluation(chatClient, prompt);
+        return helper.withCriterion(result, "LR");
+    }
+
+    private Map<String, Object> phase3GRA(ChatClient chatClient, String transcript, String question) {
+        String prompt = promptLoader.loadPrompt(
+                "speaking/phase3_gra.txt", Map.of("question", question, "transcript", transcript));
+        Map<String, Object> result = callEvaluation(chatClient, prompt);
+        return helper.withCriterion(result, "GRA");
+    }
+
+    private Map<String, Object> phase4PR(ChatClient chatClient, String transcript, String question) {
+        String prompt = promptLoader.loadPrompt(
+                "speaking/phase4_pr.txt", Map.of("question", question, "transcript", transcript));
+        Map<String, Object> result = callEvaluation(chatClient, prompt);
+        return helper.withCriterion(result, "PR");
+    }
+
+    private Map<String, Object> phase5Feedback(
             ChatClient chatClient, String transcript, Map<String, Object> assessment) {
         try {
             String prompt = promptLoader.loadPrompt(
-                    "speaking_feedback.txt",
+                    "speaking/phase5_feedback.txt",
                     Map.of("transcript", transcript, "assessment", objectMapper.writeValueAsString(assessment)));
 
             String response = chatClient
                     .prompt()
                     .system(prompt)
-                    .user("Provide feedback strictly from the assessment. Return ONLY raw JSON.")
+                    .user("Return ONLY raw JSON.")
                     .call()
                     .content();
 
@@ -271,6 +277,16 @@ public class ConversationEngine {
             log.error("Sinh feedback thất bại: {}", e.getMessage());
             return Map.of("summary", "Feedback unavailable.");
         }
+    }
+
+    private Map<String, Object> callEvaluation(ChatClient chatClient, String systemPrompt) {
+        String response = chatClient
+                .prompt()
+                .system(systemPrompt)
+                .user("Return ONLY raw JSON.")
+                .call()
+                .content();
+        return helper.parseJson(response);
     }
 
     private void persistEvaluation(
