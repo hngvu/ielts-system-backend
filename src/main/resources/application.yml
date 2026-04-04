@@ -76,3 +76,8 @@ logging:
     org.springframework.web.client: DEBUG
     org.springframework.ai: DEBUG
     org.springframework.security: DEBUG
+
+# Disable Swagger UI in production by default
+springdoc:
+  swagger-ui:
+    enabled: false

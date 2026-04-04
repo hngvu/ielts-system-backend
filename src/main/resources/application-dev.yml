@@ -1,0 +1,4 @@
+# Enable Swagger UI for development profile
+springdoc:
+  swagger-ui:
+    enabled: true

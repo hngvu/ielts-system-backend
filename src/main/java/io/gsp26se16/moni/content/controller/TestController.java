@@ -55,6 +55,7 @@ public class TestController {
     public ResponseEntity<ApiResponse<Page<TestResponse>>> getAllTests(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Skill skill,
+            @RequestParam(required = false) Integer section,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
@@ -64,7 +65,7 @@ public class TestController {
                 : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<TestResponse> result = testService.getAllTests(keyword, skill, pageable);
+        Page<TestResponse> result = testService.getAllTests(keyword, skill, section, pageable);
 
         ApiResponse<Page<TestResponse>> response = ApiResponse.<Page<TestResponse>>builder()
                 .code(1000)

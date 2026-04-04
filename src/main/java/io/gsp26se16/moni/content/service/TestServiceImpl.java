@@ -147,8 +147,8 @@ public class TestServiceImpl implements TestService {
     }
 
     @Override
-    public Page<TestResponse> getAllTests(String keyword, Skill skill, Pageable pageable) {
-        Page<Test> testPage = testRepository.searchTests(keyword, skill, pageable);
+    public Page<TestResponse> getAllTests(String keyword, Skill skill, Integer section, Pageable pageable) {
+        Page<Test> testPage = testRepository.searchTests(keyword, skill, section, pageable);
 
         return testPage.map(test -> buildTestResponse(test));
     }
