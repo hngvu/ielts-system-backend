@@ -89,7 +89,7 @@ public class GoalController {
 
         return ResponseEntity.ok(ApiResponse.<LearnerRoadmapInsightsResponse>builder()
                 .code(1000)
-                .message("Lay thong tin insights thanh cong!")
+                .message("Lấy thông tin insights thành công!")
                 .result(result)
                 .build());
     }

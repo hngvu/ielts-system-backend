@@ -433,7 +433,7 @@ public class GoalServiceImpl implements GoalService {
         String targetWarning = null;
         if (targetOverAmbitious) {
             targetWarning =
-                    "Muc tieu hien tai co the hoi qua tam so voi thoi gian con lai. Hay can nhac giam muc tieu hoac tang cuong tan suat luyen tap.";
+                    "Mục tiêu hiện tại có thể hơi quá tầm so với thời gian còn lại. Hãy cân nhắc giảm mục tiêu hoặc tăng cường tần suất luyện tập.";
         }
 
         List<LearnerRoadmapInsightsResponse.TagMetricResponse> weakest =
@@ -504,7 +504,7 @@ public class GoalServiceImpl implements GoalService {
 
         if (placement == null || placement.getOverallBand() == null) {
             return new Calibration(
-                    estimatedOverall, 0, 0, 0, 0, "Chua co placement, band dang uoc tinh tu qua trinh luyen tap.");
+                    estimatedOverall, 0, 0, 0, 0, "Chưa có placement, band đang ước tính từ quá trình luyện tập.");
         }
 
         boolean isSelfAssessed = Boolean.TRUE.equals(placement.getIsSelfAssessed());
@@ -515,14 +515,14 @@ public class GoalServiceImpl implements GoalService {
                     clampBand(placement.getListeningBand()),
                     clampBand(placement.getWritingBand()),
                     clampBand(placement.getSpeakingBand()),
-                    "Band duoc lay tu ket qua placement gan nhat.");
+                    "Band được lấy từ kết quả placement gần nhất.");
         }
 
         double placementOverall = clampBand(placement.getOverallBand());
         double calibratedOverall = Math.min(placementOverall, clampBand(estimatedOverall + 0.5));
         String note = calibratedOverall < placementOverall
-                ? "Ban da tu danh gia. He thong se hieu chinh dan theo ket qua luyen tap de phan anh dung thuc luc."
-                : "Band tu danh gia gan voi du lieu luyen tap hien tai.";
+                ? "Bạn đã tự đánh giá. Hệ thống sẽ hiệu chỉnh dần theo kết quả luyện tập để phản ánh đúng thực lực."
+                : "Band tự đánh giá gần với dữ liệu luyện tập hiện tại.";
 
         return new Calibration(
                 calibratedOverall,
