@@ -58,7 +58,7 @@ public class TestServiceImpl implements TestService {
         test.setDuration(request.getDuration());
         test.setTestMode(request.getTestMode());
         test.setThumbnailUrl(request.getThumbnailUrl());
-        test.setStatus(PublishStatus.DRAFT);
+        test.setStatus(PublishStatus.PUBLISHED);
         test.setSection(request.getSection());
 
         if (request.getTagIds() != null) {
@@ -77,7 +77,7 @@ public class TestServiceImpl implements TestService {
             stimulus.setSkill(request.getSkill());
             stimulus.setTestType(request.getTestType());
 
-            stimulus.setStatus(PublishStatus.DRAFT);
+            stimulus.setStatus(PublishStatus.PUBLISHED);
             stimulus.setCreatedBy(adminUser);
             Stimulus savedStimulus = stimulusRepository.save(stimulus);
 

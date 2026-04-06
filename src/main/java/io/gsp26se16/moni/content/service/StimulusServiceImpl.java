@@ -48,7 +48,7 @@ public class StimulusServiceImpl implements StimulusService {
         stimulus.setContent(request.getContent());
         stimulus.setMediaUrl(request.getMediaUrl());
         stimulus.setMetadata(request.getMetadata());
-        stimulus.setStatus(PublishStatus.DRAFT);
+        stimulus.setStatus(PublishStatus.PUBLISHED);
 
         Users adminUser = userRepository.getReferenceById("1");
         stimulus.setCreatedBy(adminUser);
