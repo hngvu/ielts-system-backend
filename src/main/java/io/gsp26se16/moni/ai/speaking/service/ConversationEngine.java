@@ -67,7 +67,7 @@ public class ConversationEngine {
      * @param fullTranscript toàn bộ transcript 3 parts (từ ActiveExamSession.getFullTranscript())
      */
     public Map<String, Object> evaluateFromExam(String examSessionId, String userId, String fullTranscript) {
-        if (fullTranscript == null || fullTranscript.isBlank()) {
+        if (fullTranscript == null || fullTranscript.isBlank() || isNoResponseTranscript(fullTranscript)) {
             log.warn("Transcript rỗng cho exam session {}", examSessionId);
             return defaultResult();
         }
@@ -272,10 +272,6 @@ public class ConversationEngine {
         }
     }
 
-    public Map<String, Object> defaultCriterion(String criterion) {
-        return Map.of("criterion", criterion, "band", 5.0, "reason", "Fallback due to error");
-    }
-
     private String extractComments(Map<String, Object> feedback) {
         if (feedback == null) return "";
         Object summary = feedback.get("summary");
@@ -430,5 +426,14 @@ public class ConversationEngine {
                 "pronunciation", 0.0,
                 "feedback", Map.of("summary", "No speech detected."),
                 "transcript", "");
+    }
+
+    private boolean isNoResponseTranscript(String transcript) {
+        if (transcript == null) return true;
+
+        String cleaned =
+                transcript.replace("[no response]", "").replaceAll("\\s+", "").trim();
+
+        return cleaned.isEmpty();
     }
 }
