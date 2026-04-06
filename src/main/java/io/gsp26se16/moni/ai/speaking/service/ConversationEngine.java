@@ -1,7 +1,11 @@
 package io.gsp26se16.moni.ai.speaking.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.function.Function;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
@@ -50,6 +54,7 @@ public class ConversationEngine {
     private final Helper helper;
     private final ObjectMapper objectMapper;
     private final ChatClient.Builder chatClientBuilder;
+    private final Executor aiExecutor;
 
     // ─────────────────────────────── Public API ───────────────────────────────
 
@@ -72,22 +77,69 @@ public class ConversationEngine {
         SpeakingSubmission submission = createSubmission(userId, fullTranscript);
 
         try {
-            ChatClient chatClient =
-                    chatClientBuilder.defaultAdvisors(new SimpleLoggerAdvisor()).build();
+            ChatClient chatClient = chatClientBuilder.build();
+            Function<String, Map<String, Object>> fallback = (criterion) -> {
+                log.warn("{} fallback → band 0.0", criterion);
+                return Map.of(
+                        "band", 0.0,
+                        "strengths", List.of(),
+                        "weaknesses", List.of(),
+                        "violations", Map.of(),
+                        "justification", "Fallback due to evaluation error");
+            };
 
-            // Chấm 4 tiêu chí IELTS Speaking
-            Map<String, Object> fc = phase1FC(chatClient, fullTranscript, "IELTS Speaking Test");
-            Map<String, Object> lr = phase2LR(chatClient, fullTranscript, "IELTS Speaking Test");
-            Map<String, Object> gra = phase3GRA(chatClient, fullTranscript, "IELTS Speaking Test");
-            Map<String, Object> pr = phase4PR(chatClient, fullTranscript, "IELTS Speaking Test");
+            // 🚀 Run song song + fallback từng cái
+            CompletableFuture<Map<String, Object>> fcFuture = CompletableFuture.supplyAsync(
+                            () -> phase1FC(chatClient, fullTranscript, "IELTS Speaking Test"), aiExecutor)
+                    .exceptionally(ex -> {
+                        log.error("FC failed", ex);
+                        return fallback.apply("FC");
+                    });
+
+            CompletableFuture<Map<String, Object>> lrFuture = CompletableFuture.supplyAsync(
+                            () -> phase2LR(chatClient, fullTranscript, "IELTS Speaking Test"), aiExecutor)
+                    .exceptionally(ex -> {
+                        log.error("LR failed", ex);
+                        return fallback.apply("LR");
+                    });
+
+            CompletableFuture<Map<String, Object>> graFuture = CompletableFuture.supplyAsync(
+                            () -> phase3GRA(chatClient, fullTranscript, "IELTS Speaking Test"), aiExecutor)
+                    .exceptionally(ex -> {
+                        log.error("GRA failed", ex);
+                        return fallback.apply("GRA");
+                    });
+
+            CompletableFuture<Map<String, Object>> prFuture = CompletableFuture.supplyAsync(
+                            () -> phase4PR(chatClient, fullTranscript, "IELTS Speaking Test"), aiExecutor)
+                    .exceptionally(ex -> {
+                        log.error("PR failed", ex);
+                        return fallback.apply("PR");
+                    });
+
+            CompletableFuture.allOf(fcFuture, lrFuture, graFuture, prFuture).join();
+
+            Map<String, Object> fc = fcFuture.join();
+            Map<String, Object> lr = lrFuture.join();
+            Map<String, Object> gra = graFuture.join();
+            Map<String, Object> pr = prFuture.join();
 
             Map<String, Object> assessment = speakingRuleEngine.calculateBands(fc, lr, gra, pr);
-            Map<String, Object> feedback = phase5Feedback(chatClient, fullTranscript, assessment);
+
+            Map<String, Object> feedback;
+            try {
+                feedback = phase5Feedback(chatClient, fullTranscript, assessment);
+            } catch (Exception ex) {
+                log.error("Feedback failed", ex);
+                feedback = Map.of("summary", "Feedback unavailable due to error.");
+            }
 
             double finalBand = (double) assessment.get("final_band");
+
             persistEvaluation(submission, fullTranscript, assessment, feedback, finalBand);
 
             Map<String, Object> criteriaMap = (Map<String, Object>) assessment.get("criteria");
+
             return Map.of(
                     "type",
                     "evaluation",
@@ -113,7 +165,6 @@ public class ConversationEngine {
             return defaultResult();
         }
     }
-
     /**
      * Đánh giá practice mode: 1 câu hỏi + 1 transcript.
      * Dùng bởi REST endpoint /ai/speaking/score.
@@ -123,18 +174,12 @@ public class ConversationEngine {
         if (transcript == null || transcript.isBlank()) {
             log.warn("Empty transcript for practice scoring, userId={}", userId);
             return Map.of(
-                    "overallScore",
-                    0.0,
-                    "fluency",
-                    0.0,
-                    "pronunciation",
-                    0.0,
-                    "vocabulary",
-                    0.0,
-                    "grammar",
-                    0.0,
-                    "comments",
-                    "Không phát hiện giọng nói.");
+                    "overallScore", 0.0,
+                    "fluency", 0.0,
+                    "pronunciation", 0.0,
+                    "vocabulary", 0.0,
+                    "grammar", 0.0,
+                    "comments", "Không phát hiện giọng nói.");
         }
 
         log.info(
@@ -150,20 +195,58 @@ public class ConversationEngine {
             ChatClient chatClient =
                     chatClientBuilder.defaultAdvisors(new SimpleLoggerAdvisor()).build();
 
-            Map<String, Object> fc = phase1FC(chatClient, formattedTranscript, question);
-            Map<String, Object> lr = phase2LR(chatClient, formattedTranscript, question);
-            Map<String, Object> gra = phase3GRA(chatClient, formattedTranscript, question);
-            Map<String, Object> pr = phase4PR(chatClient, formattedTranscript, question);
+            // 🔥 chạy song song + fallback từng phase
+            CompletableFuture<Map<String, Object>> fcFuture = CompletableFuture.supplyAsync(
+                            () -> phase1FC(chatClient, formattedTranscript, question), aiExecutor)
+                    .exceptionally(ex -> {
+                        log.error("FC failed", ex);
+                        return helper.defaultCriterion("FC");
+                    });
+
+            CompletableFuture<Map<String, Object>> lrFuture = CompletableFuture.supplyAsync(
+                            () -> phase2LR(chatClient, formattedTranscript, question), aiExecutor)
+                    .exceptionally(ex -> {
+                        log.error("LR failed", ex);
+                        return helper.defaultCriterion("LR");
+                    });
+
+            CompletableFuture<Map<String, Object>> graFuture = CompletableFuture.supplyAsync(
+                            () -> phase3GRA(chatClient, formattedTranscript, question), aiExecutor)
+                    .exceptionally(ex -> {
+                        log.error("GRA failed", ex);
+                        return helper.defaultCriterion("GRA");
+                    });
+
+            CompletableFuture<Map<String, Object>> prFuture = CompletableFuture.supplyAsync(
+                            () -> phase4PR(chatClient, formattedTranscript, question), aiExecutor)
+                    .exceptionally(ex -> {
+                        log.error("PR failed", ex);
+                        return helper.defaultCriterion("PR");
+                    });
+
+            CompletableFuture.allOf(fcFuture, lrFuture, graFuture, prFuture).join();
+
+            Map<String, Object> fc = fcFuture.join();
+            Map<String, Object> lr = lrFuture.join();
+            Map<String, Object> gra = graFuture.join();
+            Map<String, Object> pr = prFuture.join();
 
             Map<String, Object> assessment = speakingRuleEngine.calculateBands(fc, lr, gra, pr);
-            Map<String, Object> feedback = phase5Feedback(chatClient, formattedTranscript, assessment);
+
+            // feedback fallback
+            Map<String, Object> feedback;
+            try {
+                feedback = phase5Feedback(chatClient, formattedTranscript, assessment);
+            } catch (Exception e) {
+                log.error("Feedback failed", e);
+                feedback = Map.of("summary", "Feedback unavailable.");
+            }
 
             double finalBand = (double) assessment.get("final_band");
             persistEvaluation(submission, formattedTranscript, assessment, feedback, finalBand);
 
             Map<String, Object> criteriaMap = (Map<String, Object>) assessment.get("criteria");
 
-            // Extract comments from feedback
             String comments = extractComments(feedback);
 
             return Map.of(
@@ -178,8 +261,19 @@ public class ConversationEngine {
             log.error("Practice scoring failed for userId={}: {}", userId, e.getMessage(), e);
             submission.setEvaluationStatus(EvaluationStatus.FAILED);
             speakingSubmissionRepository.save(submission);
-            throw new RuntimeException("Speaking evaluation failed: " + e.getMessage(), e);
+
+            return Map.of(
+                    "overallScore", 0.0,
+                    "fluency", 0.0,
+                    "pronunciation", 0.0,
+                    "vocabulary", 0.0,
+                    "grammar", 0.0,
+                    "comments", "Evaluation failed.");
         }
+    }
+
+    public Map<String, Object> defaultCriterion(String criterion) {
+        return Map.of("criterion", criterion, "band", 5.0, "reason", "Fallback due to error");
     }
 
     private String extractComments(Map<String, Object> feedback) {

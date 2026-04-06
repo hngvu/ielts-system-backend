@@ -293,4 +293,8 @@ public class Helper {
         cleaned = cleaned.trim();
         return cleaned.isEmpty() ? "{}" : cleaned;
     }
+
+    public Map<String, Object> defaultCriterion(String criterion) {
+        return Map.of("criterion", criterion, "band", 0.0, "reason", "Fallback due to error");
+    }
 }
