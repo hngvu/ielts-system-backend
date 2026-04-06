@@ -68,6 +68,39 @@ public class CreditServiceImpl implements CreditService {
     }
 
     @Override
+    @Transactional
+    public void refund(String credentialId, String serviceCode) {
+        var credential = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        Users user = credential.getUser();
+
+        ServicePricing pricing = servicePricingRepository
+                .findByServiceCode(serviceCode)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_KEY));
+
+        int creditCost = pricing.getCreditCost();
+        int balanceBefore = user.getCredit() != null ? user.getCredit().intValue() : 0;
+        int balanceAfter = balanceBefore + creditCost;
+
+        user.setCredit((double) balanceAfter);
+        usersRepository.save(user);
+
+        CreditTransaction tx = CreditTransaction.builder()
+                .delta(creditCost)
+                .balanceBefore(balanceBefore)
+                .balanceAfter(balanceAfter)
+                .paymentType(PaymentType.REFUND)
+                .createdAt(LocalDateTime.now())
+                .user(user)
+                .servicePricing(pricing)
+                .build();
+
+        creditTransactionRepository.save(tx);
+    }
+
+    @Override
     public int getBalance(String credentialId) {
         var credential = userCredentialsRepository
                 .findById(credentialId)

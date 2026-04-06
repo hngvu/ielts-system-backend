@@ -58,6 +58,8 @@ public class ExpertProfile {
     @Builder.Default
     Integer totalSessions = 0;
 
+    java.time.LocalDateTime lastActiveAt;
+
     @CreationTimestamp
     Timestamp createdAt;
 

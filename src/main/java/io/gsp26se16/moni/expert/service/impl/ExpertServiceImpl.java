@@ -43,22 +43,47 @@ public class ExpertServiceImpl implements ExpertService {
     ObjectMapper objectMapper;
 
     @Override
+    @Transactional
     public List<ExpertProfileResponse> listExperts(ExpertSpecialization filter) {
         List<ExpertProfile> experts;
         if (filter != null) {
-            // Include experts with BOTH specialization
             experts = expertProfileRepository.findBySpecializationInAndStatus(
                     java.util.List.of(filter, ExpertSpecialization.BOTH), ExpertStatus.AVAILABLE);
         } else {
             experts = expertProfileRepository.findAll();
         }
+
+        // Auto-set OFFLINE nếu không ping trong 30s
+        java.time.LocalDateTime threshold = java.time.LocalDateTime.now().minusSeconds(30);
+        for (ExpertProfile ep : experts) {
+            if (ep.getStatus() == ExpertStatus.AVAILABLE
+                    && (ep.getLastActiveAt() == null || ep.getLastActiveAt().isBefore(threshold))) {
+                ep.setStatus(ExpertStatus.OFFLINE);
+                expertProfileRepository.save(ep);
+            }
+        }
+
+        if (filter != null) {
+            experts = experts.stream()
+                    .filter(e -> e.getStatus() == ExpertStatus.AVAILABLE)
+                    .toList();
+        }
         return experts.stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     @Override
+    @Transactional
     public ExpertProfileResponse getExpert(Integer id) {
         ExpertProfile profile =
                 expertProfileRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.EXPERT_NOT_FOUND));
+        // Auto-set OFFLINE nếu không ping trong 30s
+        if (profile.getStatus() == ExpertStatus.AVAILABLE) {
+            java.time.LocalDateTime threshold = java.time.LocalDateTime.now().minusSeconds(30);
+            if (profile.getLastActiveAt() == null || profile.getLastActiveAt().isBefore(threshold)) {
+                profile.setStatus(ExpertStatus.OFFLINE);
+                expertProfileRepository.save(profile);
+            }
+        }
         return toResponse(profile);
     }
 
@@ -180,6 +205,9 @@ public class ExpertServiceImpl implements ExpertService {
                 .findByUser_Id(cred.getUser().getId())
                 .orElseThrow(() -> new AppException(ErrorCode.EXPERT_NOT_FOUND));
         profile.setStatus(status);
+        if (status == ExpertStatus.AVAILABLE) {
+            profile.setLastActiveAt(java.time.LocalDateTime.now());
+        }
         expertProfileRepository.save(profile);
     }
 

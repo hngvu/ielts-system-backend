@@ -92,6 +92,7 @@ public enum ErrorCode {
     EXPERT_NOT_FOUND(1055, "Không tìm thấy chuyên gia", HttpStatus.NOT_FOUND),
     SCORING_SESSION_NOT_FOUND(1056, "Không tìm thấy phiên chấm điểm", HttpStatus.NOT_FOUND),
     SESSION_NOT_CANCELLABLE(1057, "Phiên này không thể huỷ", HttpStatus.BAD_REQUEST),
+    EXPERT_NOT_AVAILABLE(1066, "Giảng viên hiện không sẵn sàng", HttpStatus.BAD_REQUEST),
 
     // --- EXAM SESSION MODULE ---
     EXAM_SESSION_ALREADY_EXISTS(1080, "Đã có phiên thi đang diễn ra cho bài thi này", HttpStatus.CONFLICT),

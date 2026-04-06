@@ -59,6 +59,10 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                 .findById(expertId)
                 .orElseThrow(() -> new AppException(ErrorCode.EXPERT_NOT_FOUND));
 
+        if (expert.getStatus() == io.gsp26se16.moni.expert.enumeration.ExpertStatus.OFFLINE) {
+            throw new AppException(ErrorCode.EXPERT_NOT_AVAILABLE);
+        }
+
         String serviceCode = "SPEAKING".equalsIgnoreCase(skill) ? "EXPERT_SPEAKING_SCORE" : "EXPERT_WRITING_SCORE";
         creditService.checkAndDeduct(credentialId, serviceCode);
 
@@ -100,6 +104,12 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
         }
 
         session.setStatus(SessionStatus.CANCELLED);
+
+        // Hoàn credit khi huỷ phiên chưa bắt đầu
+        String serviceCode =
+                "SPEAKING".equalsIgnoreCase(session.getSkill()) ? "EXPERT_SPEAKING_SCORE" : "EXPERT_WRITING_SCORE";
+        creditService.refund(credentialId, serviceCode);
+
         return toResponse(sessionRepository.save(session));
     }
 
