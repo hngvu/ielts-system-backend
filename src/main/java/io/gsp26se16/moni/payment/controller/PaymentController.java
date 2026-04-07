@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.payment.dto.request.PaymentInitRequest;
@@ -33,7 +32,7 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final PaymentNotificationService notificationService;
-    private final UserCredentialsRepository userCredentialsRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @PostMapping("/sepay")
     public ResponseEntity<PaymentResponse> handleSePayWebhook(
@@ -73,12 +72,17 @@ public class PaymentController {
             var signedJWT = com.nimbusds.jwt.SignedJWT.parse(token);
             String credentialId = signedJWT.getJWTClaimsSet().getStringClaim("userId");
             if (credentialId != null) {
-                String userId = userCredentialsRepository
-                        .findById(credentialId)
-                        .map(cred -> cred.getUser().getId())
-                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-                return notificationService.subscribe(userId);
+                // To avoid OSIV holding the DB connection for the entire 15min SSE stream,
+                // we bypass standard JPA Repository and use raw JDBC which releases the connection immediately.
+                String userId = jdbcTemplate.queryForObject(
+                        "SELECT user_id FROM user_credentials WHERE id = ?", String.class, credentialId);
+
+                if (userId != null) {
+                    return notificationService.subscribe(userId);
+                }
             }
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            throw new AppException(ErrorCode.USER_NOT_EXISTED);
         } catch (AppException e) {
             throw e;
         } catch (Exception e) {
