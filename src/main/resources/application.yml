@@ -25,12 +25,22 @@ spring:
     username: ${UB_USERNAME}
     password: ${DB_PASSWORD}
     hikari:
-      minimum-idle: 2
-      maximum-pool-size: 5
-      idle-timeout: 300000
+      minimum-idle: 5
+      maximum-pool-size: 20
+        # Thời gian connection idle trước khi đóng (ms)
+      idle-timeout: 300000       # 5 phút
+        # Connection sống tối đa trước khi recycle (ms)
+      max-lifetime: 1800000      # 30 phút
+        # Thời gian chờ lấy connection trước khi timeout (ms)
+      connection-timeout: 15000  # 15 giây
+        # Thời gian check connection trước khi đưa ra sử dụng (ms)
+      validation-timeout: 5000
+        # Thời gian detect leak connection (ms)
+      leak-detection-threshold: 60000
+        # Giữ connection sống với DB ngay cả khi idle (ms)
       keepalive-time: 60000
-      connection-timeout: 10000
-      validation-timeout: 3000
+        # Tên pool để dễ debug
+      pool-name: HikariPool-1
 
   jpa:
     hibernate:
