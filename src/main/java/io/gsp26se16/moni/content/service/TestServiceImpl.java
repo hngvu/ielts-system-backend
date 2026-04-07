@@ -35,6 +35,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class TestServiceImpl implements TestService {
 
     private final TestRepository testRepository;
