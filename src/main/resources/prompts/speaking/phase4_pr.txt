@@ -89,12 +89,12 @@ Return ONLY raw JSON in this exact format:
 
 {
   "band": 6.0,
-  "strengths": ["..."],
-  "weaknesses": ["..."],
+  "strengths": ["Mô tả cực kỳ chi tiết bằng TIẾNG VIỆT về điểm mạnh (ít nhất 2-3 câu dài, trích dẫn phần nói tốt)"],
+  "weaknesses": ["Mô tả cực kỳ chi tiết bằng TIẾNG VIỆT về điểm yếu (ít nhất 2-3 câu dài, trích dẫn lỗi sai)"],
   "violations": {
     "unintelligible_pronunciation": {"active": false, "location": "", "evidence": "", "reason": ""},
     "inconsistent_stress": {"active": true, "location": "...", "evidence": "...", "reason": "..."},
     "unclear_consonants": {"active": false, "location": "", "evidence": "", "reason": ""}
   },
-  "justification": "Examiner-style explanation referencing pronunciation clarity."
+  "justification": "Phân tích và giải thích tổng quan toàn bộ điểm số của tiêu chí này bằng TIẾNG VIỆT thật chi tiết và chuyên sâu như một cựu giám khảo chấm thi."
 }

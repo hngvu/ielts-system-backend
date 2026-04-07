@@ -104,8 +104,8 @@ Return ONLY raw JSON in this exact format:
 
 {
   "band": 5.0,
-  "strengths": ["..."],
-  "weaknesses": ["..."],
+  "strengths": ["Mô tả cực kỳ chi tiết bằng TIẾNG VIỆT về điểm mạnh (ít nhất 2-3 câu dài, trích dẫn phần nói tốt)"],
+  "weaknesses": ["Mô tả cực kỳ chi tiết bằng TIẾNG VIỆT về điểm yếu (ít nhất 2-3 câu dài, trích dẫn lỗi sai)"],
   "violations": {
     "long_pauses_throughout": {"active": false, "location": "", "evidence": "", "reason": ""},
     "incoherent_speech": {"active": false, "location": "", "evidence": "", "reason": ""},
@@ -113,5 +113,5 @@ Return ONLY raw JSON in this exact format:
     "limited_linking_devices": {"active": false, "location": "", "evidence": "", "reason": ""},
     "repetitive_self_correction": {"active": true, "location": "...", "evidence": "...", "reason": "..."}
   },
-  "justification": "Examiner-style explanation referencing speech flow, coherence, and hesitations."
+  "justification": "Phân tích và giải thích tổng quan toàn bộ điểm số của tiêu chí này bằng TIẾNG VIỆT thật chi tiết và chuyên sâu như một cựu giám khảo chấm thi."
 }

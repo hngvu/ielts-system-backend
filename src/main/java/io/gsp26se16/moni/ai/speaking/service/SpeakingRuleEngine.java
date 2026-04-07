@@ -40,19 +40,19 @@ public class SpeakingRuleEngine {
     private static final Map<String, SpeakingHardRule> SPEAKING_HARD_RULES = Map.of(
 
             // FC: constant long pauses that severely disrupt communication
-            "long_pauses_throughout", new SpeakingHardRule(Map.of("FC", 5.0), 5.5),
+            "long_pauses_throughout", new SpeakingHardRule(Map.of("FC", 1.0), 1.5),
 
             // FC: completely incoherent speech — cannot be understood
-            "incoherent_speech", new SpeakingHardRule(Map.of("FC", 4.0), 4.5),
+            "incoherent_speech", new SpeakingHardRule(Map.of("FC", 0.0), 0.0),
 
             // LR: vocabulary so limited it prevents effective communication
-            "insufficient_vocabulary", new SpeakingHardRule(Map.of("LR", 5.0), null),
+            "insufficient_vocabulary", new SpeakingHardRule(Map.of("LR", 1.0), null),
 
             // GRA: pervasive basic errors impede comprehension
-            "pervasive_grammar_errors", new SpeakingHardRule(Map.of("GRA", 5.0), 5.5),
+            "pervasive_grammar_errors", new SpeakingHardRule(Map.of("GRA", 1.0), 1.5),
 
             // PR: pronunciation so unclear it causes persistent misunderstanding
-            "unintelligible_pronunciation", new SpeakingHardRule(Map.of("PR", 4.0), 5.0));
+            "unintelligible_pronunciation", new SpeakingHardRule(Map.of("PR", 0.0), 0.0));
 
     // ─────────────────────────────── Soft penalties ──────────────────────────
 
