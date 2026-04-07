@@ -90,7 +90,7 @@ public class ConversationEngine {
                         "justification", "Fallback due to evaluation error");
             };
 
-            // 🚀 Run song song + fallback từng cái
+            // Run song song + fallback từng cái
             CompletableFuture<Map<String, Object>> fcFuture = CompletableFuture.supplyAsync(
                             () -> phase1FC(chatClient, fullTranscript, "IELTS Speaking Test"), aiExecutor)
                     .exceptionally(ex -> {

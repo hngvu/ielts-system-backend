@@ -4,8 +4,11 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
@@ -47,6 +50,9 @@ public class WritingTask1Service {
     private final AiEvaluationRepository aiEvaluationRepository;
     private final UsersRepository usersRepository;
 
+    @Qualifier("aiExecutor")
+    private final Executor aiExecutor;
+
     // =========================================================================
     // PUBLIC ENTRY POINT
     // =========================================================================
@@ -68,20 +74,49 @@ public class WritingTask1Service {
             ChatClient chatClient = chatClientBuilder.build();
 
             // ── Vision analysis (cache nếu đã có) ─────────────────────────────
-            Map<String, Object> chartData = null;
+            Map<String, Object> tempChartData = null;
             if (request.getStimulusId() != null) {
-                chartData = getOrCacheVisionAnalysis(request.getStimulusId(), request.getChartImage());
+                tempChartData = getOrCacheVisionAnalysis(request.getStimulusId(), request.getChartImage());
             }
+            final Map<String, Object> chartData = tempChartData;
 
             // ── Phase 1 ───────────────────────────────────────────────────────
             Map<String, Object> parsedEssay = phase1Parse(chatClient, request.getAnswer());
 
-            // ── Phase 2–5 ─────────────────────────────────────────────────────
-            Map<String, Object> ta = phase2TaskAchievement(
-                    chatClient, request.getQuestion(), request.getAnswer(), parsedEssay, chartData);
-            Map<String, Object> cc = phase3Coherence(chatClient, request.getAnswer(), parsedEssay);
-            Map<String, Object> lr = phase4Lexical(chatClient, request.getAnswer());
-            Map<String, Object> gra = phase5Grammar(chatClient, request.getAnswer());
+            // ── Phase 2–5 in parallel ─────────────────────────────────────────
+            CompletableFuture<Map<String, Object>> taFuture = CompletableFuture.supplyAsync(
+                    () -> {
+                        try {
+                            return phase2TaskAchievement(
+                                    chatClient, request.getQuestion(), request.getAnswer(), parsedEssay, chartData);
+                        } catch (JsonProcessingException e) {
+                            throw new RuntimeException("Error in JSON processing for TA", e);
+                        }
+                    },
+                    aiExecutor);
+
+            CompletableFuture<Map<String, Object>> ccFuture = CompletableFuture.supplyAsync(
+                    () -> {
+                        try {
+                            return phase3Coherence(chatClient, request.getAnswer(), parsedEssay);
+                        } catch (JsonProcessingException e) {
+                            throw new RuntimeException("Error in JSON processing for CC", e);
+                        }
+                    },
+                    aiExecutor);
+
+            CompletableFuture<Map<String, Object>> lrFuture =
+                    CompletableFuture.supplyAsync(() -> phase4Lexical(chatClient, request.getAnswer()), aiExecutor);
+
+            CompletableFuture<Map<String, Object>> graFuture =
+                    CompletableFuture.supplyAsync(() -> phase5Grammar(chatClient, request.getAnswer()), aiExecutor);
+
+            CompletableFuture.allOf(taFuture, ccFuture, lrFuture, graFuture).join();
+
+            Map<String, Object> ta = taFuture.join();
+            Map<String, Object> cc = ccFuture.join();
+            Map<String, Object> lr = lrFuture.join();
+            Map<String, Object> gra = graFuture.join();
 
             // ── Phase 6: Rule Engine ──────────────────────────────────────────
             Map<String, Object> finalResult = phase6Calculate(ta, cc, lr, gra);

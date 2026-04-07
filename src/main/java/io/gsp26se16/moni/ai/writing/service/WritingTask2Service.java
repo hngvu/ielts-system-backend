@@ -3,8 +3,11 @@ package io.gsp26se16.moni.ai.writing.service;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
@@ -38,6 +41,9 @@ public class WritingTask2Service {
     private final AiEvaluationRepository aiEvaluationRepository;
     private final UsersRepository usersRepository;
 
+    @Qualifier("aiExecutor")
+    private final Executor aiExecutor;
+
     // =========================================================================
     // PUBLIC ENTRY POINT
     // =========================================================================
@@ -64,11 +70,39 @@ public class WritingTask2Service {
             // ── Phase 1: Structural parse ─────────────────────────────────────
             Map<String, Object> parsedEssay = phase1Parse(chatClient, question, essay);
 
-            // ── Phase 2–5: Criterion scoring ──────────────────────────────────
-            Map<String, Object> tr = phase2TaskResponse(chatClient, question, essay, parsedEssay);
-            Map<String, Object> cc = phase3Coherence(chatClient, essay, parsedEssay);
-            Map<String, Object> lr = phase4Lexical(chatClient, essay);
-            Map<String, Object> gra = phase5Grammar(chatClient, essay);
+            // ── Phase 2–5: Criterion scoring in parallel ──────────────────────
+            CompletableFuture<Map<String, Object>> trFuture = CompletableFuture.supplyAsync(
+                    () -> {
+                        try {
+                            return phase2TaskResponse(chatClient, question, essay, parsedEssay);
+                        } catch (JsonProcessingException e) {
+                            throw new RuntimeException("Error in JSON processing for TR", e);
+                        }
+                    },
+                    aiExecutor);
+
+            CompletableFuture<Map<String, Object>> ccFuture = CompletableFuture.supplyAsync(
+                    () -> {
+                        try {
+                            return phase3Coherence(chatClient, essay, parsedEssay);
+                        } catch (JsonProcessingException e) {
+                            throw new RuntimeException("Error in JSON processing for CC", e);
+                        }
+                    },
+                    aiExecutor);
+
+            CompletableFuture<Map<String, Object>> lrFuture =
+                    CompletableFuture.supplyAsync(() -> phase4Lexical(chatClient, essay), aiExecutor);
+
+            CompletableFuture<Map<String, Object>> graFuture =
+                    CompletableFuture.supplyAsync(() -> phase5Grammar(chatClient, essay), aiExecutor);
+
+            CompletableFuture.allOf(trFuture, ccFuture, lrFuture, graFuture).join();
+
+            Map<String, Object> tr = trFuture.join();
+            Map<String, Object> cc = ccFuture.join();
+            Map<String, Object> lr = lrFuture.join();
+            Map<String, Object> gra = graFuture.join();
 
             // ── Phase 6: Rule Engine + band calculation ───────────────────────
             Map<String, Object> finalResult = helper.calculateBands(tr, cc, lr, gra);
