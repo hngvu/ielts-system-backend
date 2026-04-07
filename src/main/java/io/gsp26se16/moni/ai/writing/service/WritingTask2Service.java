@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
@@ -57,8 +56,7 @@ public class WritingTask2Service {
         writingSubmissionRepository.save(submission);
 
         try {
-            ChatClient chatClient =
-                    chatClientBuilder.defaultAdvisors(new SimpleLoggerAdvisor()).build();
+            ChatClient chatClient = chatClientBuilder.build();
 
             String question = request.getQuestion();
             String essay = request.getAnswer();
