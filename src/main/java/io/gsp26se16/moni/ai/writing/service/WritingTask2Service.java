@@ -45,8 +45,16 @@ public class WritingTask2Service {
 
     public Map<String, Object> score(WritingRequest request) throws JsonProcessingException {
 
-        // ── Tạo WritingSubmission (PROCESSING) ────────────────────────────────
-        WritingSubmission submission = createSubmission(request, WritingTaskType.TASK_2);
+        WritingSubmission submission;
+        if (request.getSubmissionId() != null) {
+            submission = writingSubmissionRepository
+                    .findById(request.getSubmissionId())
+                    .orElseGet(() -> createSubmission(request, WritingTaskType.TASK_2));
+        } else {
+            submission = createSubmission(request, WritingTaskType.TASK_2);
+        }
+        submission.setEvaluationStatus(EvaluationStatus.PROCESSING);
+        writingSubmissionRepository.save(submission);
 
         try {
             ChatClient chatClient =
