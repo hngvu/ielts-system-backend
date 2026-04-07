@@ -40,10 +40,10 @@ public class FullTestServiceImpl implements FullTestService {
             Skill.SPEAKING, 3);
 
     private static final Map<Skill, Integer> DEFAULT_DURATION = Map.of(
-            Skill.READING, 3600,
-            Skill.LISTENING, 1800,
-            Skill.WRITING, 3600,
-            Skill.SPEAKING, 900);
+            Skill.READING, 60,
+            Skill.LISTENING, 30,
+            Skill.WRITING, 60,
+            Skill.SPEAKING, 15);
 
     private final TestRepository testRepository;
     private final StimulusRepository stimulusRepository;
