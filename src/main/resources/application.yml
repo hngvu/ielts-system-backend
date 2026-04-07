@@ -36,7 +36,7 @@ spring:
         # Thời gian check connection trước khi đưa ra sử dụng (ms)
       validation-timeout: 5000
         # Thời gian detect leak connection (ms)
-      leak-detection-threshold: 180000
+      leak-detection-threshold: 240000
         # Giữ connection sống với DB ngay cả khi idle (ms)
       keepalive-time: 60000
         # Tên pool để dễ debug
@@ -49,12 +49,12 @@ spring:
     open-in-view: false
   mvc:
     async:
-      request-timeout: 180000
+      request-timeout: 240000
 
 server:
   port: 8080
   tomcat:
-    connection-timeout: 180000
+    connection-timeout: 240000
 
 
 cloudinary:

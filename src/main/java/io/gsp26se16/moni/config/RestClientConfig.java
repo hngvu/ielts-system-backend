@@ -13,7 +13,7 @@ public class RestClientConfig {
         return builder -> {
             SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
             factory.setConnectTimeout(30000); // 30 seconds
-            factory.setReadTimeout(120000); // 120 seconds (2 minutes)
+            factory.setReadTimeout(240000); // 120 seconds -> 240 seconds
             builder.requestFactory(factory);
         };
     }
