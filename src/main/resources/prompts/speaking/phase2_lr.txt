@@ -19,6 +19,8 @@ CANDIDATE'S TRANSCRIPT:
 ==================================================
 EVALUATION SCOPE
 
+- CRITICAL RULE: If the transcript contains mostly disconnected nonsense, random words, or is excessively sparse due to multiple "[no response]", this represents an inability to communicate. YOU MUST ACTIVATE "insufficient_vocabulary" to `true`, and assign a `band` of 0.0 or 1.0. Do NOT invent meaning to award higher bands.
+
 Assess ONLY:
 - Range of vocabulary
 - Precision and appropriacy of word choice

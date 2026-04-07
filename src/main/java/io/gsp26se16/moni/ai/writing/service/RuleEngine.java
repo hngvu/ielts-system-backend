@@ -57,6 +57,18 @@ public class RuleEngine {
             Map.entry("no_overview", new HardRule(Map.of("TA", 6.0), 6.5)),
             Map.entry("irrelevant_data", new HardRule(Map.of("TA", 6.0), null)),
 
+            // [NEW] Task 1: inaccurate data reporting from chart
+            // severity "major" → cap TA ≤ 4.0, overall ≤ 5.0
+            // severity "moderate" → cap TA ≤ 5.0, overall ≤ 6.0
+            // The engine checks severity in applyAllRules() for graduated caps
+            Map.entry("inaccurate_data_reporting", new HardRule(Map.of("TA", 5.0), 6.0)),
+
+            // [NEW] Task 1: missing key features from chart
+            Map.entry("missing_key_features", new HardRule(Map.of("TA", 6.0), 6.5)),
+
+            // [NEW] Task 1: incomplete coverage of chart data
+            Map.entry("incomplete_coverage", new HardRule(Map.of("TA", 6.0), null)),
+
             // ---------- TASK 2 (TR) ----------
 
             // Emitted by phase2_tr.txt as "no_position_throughout"
@@ -196,6 +208,28 @@ public class RuleEngine {
                     // CC-scoped irrelevant_content has no hard cap → skip to soft
                     continue;
                 }
+            }
+
+            // -------------------------------------------------------
+            // Severity-aware dispatch for Task 1 "inaccurate_data_reporting"
+            // severity "major"    → TA ≤ 4.0, overall ≤ 5.0 (harsher)
+            // severity "moderate" → TA ≤ 5.0, overall ≤ 6.0 (default HardRule)
+            // severity "minor"    → no hard cap, skip to soft penalties
+            // -------------------------------------------------------
+            if ("inaccurate_data_reporting".equals(violationKey)) {
+                String severity = entry.getValue().severity();
+                if ("major".equals(severity)) {
+                    // Override with harsher caps
+                    appliedHardRules.add("inaccurate_data_reporting_major");
+                    adjusted.computeIfPresent("TA", (k, v) -> Math.min(v, 4.0));
+                    hardCappedCriteria.add("TA");
+                    overallCap = (overallCap == null) ? 5.0 : Math.min(overallCap, 5.0);
+                    continue;
+                } else if ("minor".equals(severity)) {
+                    // minor inaccuracy → skip hard cap, let soft penalties handle
+                    continue;
+                }
+                // "moderate" → fall through to default HardRule (TA ≤ 5.0, overall ≤ 6.0)
             }
 
             HardRule rule = HARD_RULES.get(violationKey);

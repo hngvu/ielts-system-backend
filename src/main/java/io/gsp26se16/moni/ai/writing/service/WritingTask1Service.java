@@ -79,7 +79,8 @@ public class WritingTask1Service {
             Map<String, Object> parsedEssay = phase1Parse(chatClient, request.getAnswer());
 
             // ── Phase 2–5 ─────────────────────────────────────────────────────
-            Map<String, Object> ta = phase2TaskAchievement(chatClient, request.getAnswer(), parsedEssay, chartData);
+            Map<String, Object> ta = phase2TaskAchievement(
+                    chatClient, request.getQuestion(), request.getAnswer(), parsedEssay, chartData);
             Map<String, Object> cc = phase3Coherence(chatClient, request.getAnswer(), parsedEssay);
             Map<String, Object> lr = phase4Lexical(chatClient, request.getAnswer());
             Map<String, Object> gra = phase5Grammar(chatClient, request.getAnswer());
@@ -119,11 +120,17 @@ public class WritingTask1Service {
     }
 
     private Map<String, Object> phase2TaskAchievement(
-            ChatClient chatClient, String essay, Map<String, Object> parsed, Map<String, Object> chartData)
+            ChatClient chatClient,
+            String question,
+            String essay,
+            Map<String, Object> parsed,
+            Map<String, Object> chartData)
             throws JsonProcessingException {
         String prompt = promptLoader.loadPrompt(
-                "phase2_ta.txt",
+                "phase2_ta_task1.txt",
                 Map.of(
+                        "question",
+                        question != null ? question : "",
                         "essay",
                         essay,
                         "phase1_json",

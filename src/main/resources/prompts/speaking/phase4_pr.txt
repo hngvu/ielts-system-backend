@@ -20,6 +20,8 @@ CANDIDATE'S TRANSCRIPT:
 ==================================================
 EVALUATION SCOPE
 
+- CRITICAL RULE: If the transcript contains mostly disconnected nonsense, random words strung together (e.g., "call me something what you want"), or excessively sparse answers like multiple "[no response]", this suggests speech so unintelligible the STT failed completely. YOU MUST ACTIVATE "unintelligible_pronunciation" to `true`, and assign a `band` of 0.0 or 1.0. Do NOT generously award a higher Band.
+
 Assess ONLY:
 - Clear word formations and consonant/vowel clarity (inferred from STT accuracy)
 - Syllable stress and phonetic accuracy
