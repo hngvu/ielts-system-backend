@@ -1,6 +1,8 @@
 package io.gsp26se16.moni.ai.speaking.service;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -140,23 +142,17 @@ public class ConversationEngine {
 
             Map<String, Object> criteriaMap = (Map<String, Object>) assessment.get("criteria");
 
-            return Map.of(
-                    "type",
-                    "evaluation",
-                    "final_band",
-                    finalBand,
-                    "fluency",
-                    getBandFromCriterion(criteriaMap, "FC"),
-                    "vocabulary",
-                    getBandFromCriterion(criteriaMap, "LR"),
-                    "grammar",
-                    getBandFromCriterion(criteriaMap, "GRA"),
-                    "pronunciation",
-                    getBandFromCriterion(criteriaMap, "PR"),
-                    "feedback",
-                    feedback,
-                    "transcript",
-                    fullTranscript);
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("type", "evaluation");
+            response.put("final_band", finalBand);
+            response.put("fluency", getBandFromCriterion(criteriaMap, "FC"));
+            response.put("vocabulary", getBandFromCriterion(criteriaMap, "LR"));
+            response.put("grammar", getBandFromCriterion(criteriaMap, "GRA"));
+            response.put("pronunciation", getBandFromCriterion(criteriaMap, "PR"));
+            response.put("criteria", criteriaMap);
+            response.put("feedback", feedback);
+            response.put("transcript", fullTranscript);
+            return response;
 
         } catch (Exception e) {
             log.error("Đánh giá exam thất bại cho session {}: {}", examSessionId, e.getMessage(), e);
@@ -249,13 +245,15 @@ public class ConversationEngine {
 
             String comments = extractComments(feedback);
 
-            return Map.of(
-                    "overallScore", finalBand,
-                    "fluency", getBandFromCriterion(criteriaMap, "FC"),
-                    "pronunciation", getBandFromCriterion(criteriaMap, "PR"),
-                    "vocabulary", getBandFromCriterion(criteriaMap, "LR"),
-                    "grammar", getBandFromCriterion(criteriaMap, "GRA"),
-                    "comments", comments);
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("overallScore", finalBand);
+            response.put("fluency", getBandFromCriterion(criteriaMap, "FC"));
+            response.put("pronunciation", getBandFromCriterion(criteriaMap, "PR"));
+            response.put("vocabulary", getBandFromCriterion(criteriaMap, "LR"));
+            response.put("grammar", getBandFromCriterion(criteriaMap, "GRA"));
+            response.put("criteria", criteriaMap);
+            response.put("comments", comments);
+            return response;
 
         } catch (Exception e) {
             log.error("Practice scoring failed for userId={}: {}", userId, e.getMessage(), e);
@@ -431,9 +429,15 @@ public class ConversationEngine {
     private boolean isNoResponseTranscript(String transcript) {
         if (transcript == null) return true;
 
-        String cleaned =
-                transcript.replace("[no response]", "").replaceAll("\\s+", "").trim();
+        String cleaned = transcript
+                .replaceAll("=== PART \\d ===", "")
+                .replaceAll("Q\\d+:", "")
+                .replace("[no response]", "");
 
-        return cleaned.isEmpty();
+        long wordCount = Arrays.stream(cleaned.split("\\s+"))
+                .filter(w -> !w.trim().isEmpty())
+                .count();
+
+        return wordCount <= 5;
     }
 }
