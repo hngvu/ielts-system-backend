@@ -5,18 +5,24 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class Helper {
 
     private final ObjectMapper objectMapper;
+    private final ObjectMapper relaxedMapper;
     private final RuleEngine ruleEngine;
+
+    public Helper(ObjectMapper objectMapper, RuleEngine ruleEngine) {
+        this.objectMapper = objectMapper;
+        this.ruleEngine = ruleEngine;
+        this.relaxedMapper = objectMapper.copy().enable(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS);
+    }
 
     // =========================================================================
     // VIOLATION COLLECTION
@@ -234,12 +240,12 @@ public class Helper {
 
         try {
             String cleaned = cleanJsonResponse(response);
-            return objectMapper.readValue(cleaned, Map.class);
+            return relaxedMapper.readValue(cleaned, Map.class);
         } catch (Exception e) {
             log.warn("Initial JSON parse failed, attempting repair. Raw: {}", response);
             try {
                 String repaired = repairJson(cleanJsonResponse(response));
-                return objectMapper.readValue(repaired, Map.class);
+                return relaxedMapper.readValue(repaired, Map.class);
             } catch (Exception e2) {
                 log.error("JSON repair also failed. Raw response: {}", response, e2);
                 return Map.of("error", "Invalid JSON", "raw", response);
