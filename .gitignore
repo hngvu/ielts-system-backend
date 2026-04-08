@@ -80,3 +80,7 @@ application-secret.yml
 .DS_Store
 Thumbs.db
 .next/
+
+# Bỏ qua tất cả file .md, nhưng giữ lại README.md
+*.md
+!README.md

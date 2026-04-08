@@ -36,4 +36,13 @@ public class LearnerMetric {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "p_transit")
+    private Double pTransit;
+
+    @Column(name = "p_guess")
+    private Double pGuess;
+
+    @Column(name = "p_slip")
+    private Double pSlip;
 }
