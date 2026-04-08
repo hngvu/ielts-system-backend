@@ -157,7 +157,9 @@ Return ONLY raw JSON in this exact format:
     "version": "chart_verification_v1"
   },
   "criterion": "TA",
-  "band": 6.0,
+  "band": 5.0 | 5.5 | 6.0 | 6.5 | 7.0 | 7.5 | 8.0 | 8.5 | 9.0,
+  "strengths": ["..."],
+  "weaknesses": ["..."],
   "data_verification": [
     {
       "claim": "sales of apples reached 50 tons in 2010",

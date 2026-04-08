@@ -251,6 +251,8 @@ Return EXACTLY this JSON structure:
 },
 "criterion": "TR",
 "band": 5.0 | 5.5 | 6.0 | 6.5 | 7.0 | 7.5 | 8.0 | 8.5 | 9.0,
+"strengths": ["..."],
+"weaknesses": ["..."],
 "violations": {
 "no_clear_position": {
 "active": true | false,
