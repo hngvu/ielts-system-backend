@@ -1,15 +1,22 @@
 package io.gsp26se16.moni.vocab.service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.vocab.dto.SaveVocabRequest;
+import io.gsp26se16.moni.vocab.dto.VocabDetailResponse;
 import io.gsp26se16.moni.vocab.dto.VocabResponse;
 import io.gsp26se16.moni.vocab.entity.Dictionary;
 import io.gsp26se16.moni.vocab.entity.Vocab;
@@ -32,8 +39,10 @@ public class VocabServiceImpl implements VocabService {
     private final VocabLookupService vocabLookupService;
     private final VocabListServiceImpl vocabListServiceImpl;
     private final VocabAuthHelper authHelper;
+    private final ObjectMapper objectMapper;
 
     @Override
+    @Transactional(readOnly = true)
     public Page<VocabResponse> getMyWords(String credentialId, int page, int size, Integer listId, String search) {
         Users user = authHelper.getUser(credentialId);
         String userId = user.getId();
@@ -123,6 +132,43 @@ public class VocabServiceImpl implements VocabService {
                 .orElseThrow(() -> new AppException(ErrorCode.VOCAB_COLLECTION_NOT_FOUND));
         vocab.setVocabList(targetList);
         vocabRepository.save(vocab);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public VocabDetailResponse getVocabDetail(String credentialId, Integer vocabId) {
+        Users user = authHelper.getUser(credentialId);
+        Vocab vocab = vocabRepository
+                .findById(vocabId)
+                .filter(v -> v.getUser().getId().equals(user.getId()))
+                .orElseThrow(() -> new AppException(ErrorCode.VOCAB_NOT_FOUND));
+
+        Dictionary dict = vocab.getDictionary();
+        List<String> exampleList = new ArrayList<>();
+        if (dict != null && dict.getExamples() != null && !dict.getExamples().isBlank()) {
+            try {
+                exampleList = objectMapper.readValue(dict.getExamples(), new TypeReference<List<String>>() {});
+            } catch (Exception e) {
+                log.warn("Failed to parse examples for '{}': {}", vocab.getWord(), e.getMessage());
+            }
+        }
+
+        return VocabDetailResponse.builder()
+                .id(vocab.getId())
+                .word(vocab.getWord())
+                .phonetic(vocab.getPhonetic())
+                .pos(vocab.getPos())
+                .definition(vocab.getDefinition())
+                .example(vocab.getExample())
+                .audioUrl(vocab.getAudioUrl())
+                .meaning(vocab.getMeaning())
+                .status(vocab.getStatus().name())
+                .collectionName(
+                        vocab.getVocabList() != null ? vocab.getVocabList().getTitle() : null)
+                .collocation(dict != null ? dict.getCollocation() : null)
+                .explanation(dict != null ? dict.getExplanation() : null)
+                .examples(exampleList.isEmpty() ? null : exampleList)
+                .build();
     }
 
     // --- Helpers ---

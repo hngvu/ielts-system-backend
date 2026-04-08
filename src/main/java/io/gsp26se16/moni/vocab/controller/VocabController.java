@@ -119,6 +119,14 @@ public class VocabController {
                 ApiResponse.<Void>builder().message("Đã xóa từ vựng").build());
     }
 
+    @GetMapping("/{id}/detail")
+    public ResponseEntity<ApiResponse<VocabDetailResponse>> getVocabDetail(@PathVariable Integer id) {
+        String credentialId = getCredentialId();
+        VocabDetailResponse result = vocabService.getVocabDetail(credentialId, id);
+        return ResponseEntity.ok(
+                ApiResponse.<VocabDetailResponse>builder().result(result).build());
+    }
+
     @PatchMapping("/{id}/move")
     public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> moveWord(
             @PathVariable Integer id, @RequestBody MoveVocabRequest request) {
