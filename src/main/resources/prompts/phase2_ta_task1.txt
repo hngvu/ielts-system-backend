@@ -40,7 +40,7 @@ Step 1: Extract ALL numerical claims from the essay.
 Step 2: Compare each claim against the chart data.
   - A claim is INACCURATE if the essay states a value that differs significantly
     from the chart data (e.g., essay says "35%" but chart shows "20%").
-  - Minor rounding (e.g., "about 20%" when chart shows 21%) is acceptable.
+  - A minor deviation of 1-2% or minor rounding (e.g., essay says "about 20%" or "19%" when chart shows 21%) is considered ACCURATE and insignificant. Do not flag it as an error.
   - Inverted trends (e.g., "increased" when data shows decrease) are INACCURATE.
 
 Step 3: Count inaccurate claims and determine violation severity.
@@ -160,9 +160,9 @@ Return ONLY raw JSON in this exact format:
   "band": 6.0,
   "data_verification": [
     {
-      "claim": "suitable degree courses were 35% in 1995",
-      "essay_value": "35%",
-      "chart_value": "38%",
+      "claim": "sales of apples reached 50 tons in 2010",
+      "essay_value": "50",
+      "chart_value": "100",
       "accurate": false
     }
   ],
@@ -171,8 +171,8 @@ Return ONLY raw JSON in this exact format:
       "active": true,
       "severity": "moderate",
       "location": "body paragraph 1",
-      "evidence": "around 35% of students selected the university because of suitable degree courses",
-      "reason": "Chart shows 38%, not 35%. Multiple other values also misreported."
+      "evidence": "sales of apples reached 50 tons in 2010",
+      "reason": "Chart shows 100 tons, not 50. Multiple other values also misreported."
     },
     "missing_key_features": {
       "active": false,
