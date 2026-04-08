@@ -97,4 +97,4 @@ logging:
 # Disable Swagger UI in production by default
 springdoc:
   swagger-ui:
-    enabled: false
+    enabled: true
