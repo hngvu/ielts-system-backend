@@ -88,7 +88,7 @@ public class WritingTask1Service {
                     () -> {
                         try {
                             return phase2TaskAchievement(
-                                    chatClient, request.getQuestion(), request.getAnswer(), parsedEssay, chartData);
+                                    chatClient, request.getAnswer(), parsedEssay, chartData);
                         } catch (JsonProcessingException e) {
                             throw new RuntimeException("Error in JSON processing for TA", e);
                         }
@@ -105,11 +105,11 @@ public class WritingTask1Service {
                     },
                     aiExecutor);
 
-            CompletableFuture<Map<String, Object>> lrFuture =
-                    CompletableFuture.supplyAsync(() -> phase4Lexical(chatClient, request.getAnswer()), aiExecutor);
+            CompletableFuture<Map<String, Object>> lrFuture = CompletableFuture
+                    .supplyAsync(() -> phase4Lexical(chatClient, request.getAnswer()), aiExecutor);
 
-            CompletableFuture<Map<String, Object>> graFuture =
-                    CompletableFuture.supplyAsync(() -> phase5Grammar(chatClient, request.getAnswer()), aiExecutor);
+            CompletableFuture<Map<String, Object>> graFuture = CompletableFuture
+                    .supplyAsync(() -> phase5Grammar(chatClient, request.getAnswer()), aiExecutor);
 
             CompletableFuture.allOf(taFuture, ccFuture, lrFuture, graFuture).join();
 
@@ -122,8 +122,8 @@ public class WritingTask1Service {
             Map<String, Object> finalResult = phase6Calculate(ta, cc, lr, gra);
 
             // ── Phase 7: Feedback ─────────────────────────────────────────────
-            Map<String, Object> feedback =
-                    phase7Feedback(chatClient, request.getQuestion(), request.getAnswer(), finalResult);
+            Map<String, Object> feedback = phase7Feedback(chatClient, request.getQuestion(), request.getAnswer(),
+                    finalResult);
 
             // ── Lưu AiEvaluation + cập nhật submission COMPLETED ─────────────
             double finalBand = (double) finalResult.get("final_band");
@@ -154,7 +154,6 @@ public class WritingTask1Service {
 
     private Map<String, Object> phase2TaskAchievement(
             ChatClient chatClient,
-            String question,
             String essay,
             Map<String, Object> parsed,
             Map<String, Object> chartData)
@@ -162,8 +161,6 @@ public class WritingTask1Service {
         String prompt = promptLoader.loadPrompt(
                 "phase2_ta_task1.txt",
                 Map.of(
-                        "question",
-                        question != null ? question : "",
                         "essay",
                         essay,
                         "phase1_json",
@@ -218,12 +215,13 @@ public class WritingTask1Service {
     }
 
     private Map<String, Object> phase7Feedback(
-            ChatClient chatClient, String question, String essay, Map<String, Object> finalResult)
+            ChatClient chatClient, Map<String, Object> chartData, String essay, Map<String, Object> finalResult)
             throws JsonProcessingException {
         String prompt = promptLoader.loadPrompt(
                 "phase7_feedback.txt",
                 Map.of(
-                        "question", question,
+                        "chart_entities",
+                        chartData != null ? objectMapper.writeValueAsString(chartData) : "[]",
                         "essay", essay,
                         "all_phase_results", objectMapper.writeValueAsString(finalResult)));
         return callFeedback(chatClient, prompt);
@@ -308,7 +306,8 @@ public class WritingTask1Service {
     }
 
     private int countWords(String text) {
-        if (text == null || text.isBlank()) return 0;
+        if (text == null || text.isBlank())
+            return 0;
         return text.trim().split("\\s+").length;
     }
 
@@ -324,11 +323,9 @@ public class WritingTask1Service {
                 try {
                     return Double.parseDouble(s);
                 } catch (NumberFormatException e) {
-                    log.warn("Cannot parse band: {}", val);
-                }
-            }
-        }
-        log.warn("Invalid band value, defaulting to 5.0: {}", obj);
+             
+
+         }}    log.warn("Invalid band value, defaulting to 5.0: {}", obj);
         return 5.0;
     }
 
