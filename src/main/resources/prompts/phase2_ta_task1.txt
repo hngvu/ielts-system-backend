@@ -18,9 +18,6 @@ You must strictly assess Task Achievement and ignore:
 INPUT
 ==================================================
 
-[QUESTION / TASK PROMPT]
-{question}
-
 [CANDIDATE'S ESSAY]
 {essay}
 
