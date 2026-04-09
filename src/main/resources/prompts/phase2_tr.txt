@@ -95,6 +95,14 @@ Return EXACTLY this JSON structure:
       "evidence": "",
       "reason": "",
       "band_cap": 5.0
+    },
+    "spam_or_gibberish": {
+      "active": false,
+      "severity": "",
+      "location": "",
+      "evidence": "",
+      "reason": "",
+      "band_cap": 1.0
     }
   }
 }
@@ -144,6 +152,19 @@ minor
 moderate
 
 major
+
+spam_or_gibberish (HARD CAP)
+
+Active if:
+
+Essay is pure gibberish, nonsensical, or mindless spam (e.g., repeating the same words/sentences).
+Essay is completely unrelated to the task and appears to be a joke or a system test.
+
+If active:
+
+band_cap MUST be 1.0
+
+severity MUST be "major"
 
 no_position_throughout (HARD CAP)
 
@@ -231,11 +252,17 @@ OR no_position_throughout triggered (cap)
 
 Band 4 or below
 
-Largely off-topic
+largely off-topic
 
 Serious misunderstanding
 
 Minimal development
+
+Band 1–2
+
+Completely off topic, gibberish, or spam (e.g., repeating the same word, nonsensical phrases).
+
+Answers completely unrelated to the task.
 
 Band must reflect violation severity logically.
 

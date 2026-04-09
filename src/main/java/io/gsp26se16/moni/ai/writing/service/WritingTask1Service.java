@@ -104,11 +104,11 @@ public class WritingTask1Service {
                     },
                     aiExecutor);
 
-            CompletableFuture<Map<String, Object>> lrFuture =
-                    CompletableFuture.supplyAsync(() -> phase4Lexical(chatClient, request.getAnswer()), aiExecutor);
+            CompletableFuture<Map<String, Object>> lrFuture = CompletableFuture
+                    .supplyAsync(() -> phase4Lexical(chatClient, request.getAnswer()), aiExecutor);
 
-            CompletableFuture<Map<String, Object>> graFuture =
-                    CompletableFuture.supplyAsync(() -> phase5Grammar(chatClient, request.getAnswer()), aiExecutor);
+            CompletableFuture<Map<String, Object>> graFuture = CompletableFuture
+                    .supplyAsync(() -> phase5Grammar(chatClient, request.getAnswer()), aiExecutor);
 
             CompletableFuture.allOf(taFuture, ccFuture, lrFuture, graFuture).join();
 
@@ -154,7 +154,7 @@ public class WritingTask1Service {
             ChatClient chatClient, String essay, Map<String, Object> parsed, Map<String, Object> chartData)
             throws JsonProcessingException {
         String prompt = promptLoader.loadPrompt(
-                "phase2_ta_task1.txt",
+                "phase2_ta.txt",
                 Map.of(
                         "essay",
                         essay,
@@ -303,7 +303,8 @@ public class WritingTask1Service {
     }
 
     private int countWords(String text) {
-        if (text == null || text.isBlank()) return 0;
+        if (text == null || text.isBlank())
+            return 0;
         return text.trim().split("\\s+").length;
     }
 
@@ -319,11 +320,9 @@ public class WritingTask1Service {
                 try {
                     return Double.parseDouble(s);
                 } catch (NumberFormatException e) {
-                    log.warn("Cannot parse band: {}", val);
-                }
-            }
-        }
-        log.warn("Invalid band value, defaulting to 5.0: {}", obj);
+             
+
+         }}    log.warn("Invalid band value, defaulting to 5.0: {}", obj);
         return 5.0;
     }
 

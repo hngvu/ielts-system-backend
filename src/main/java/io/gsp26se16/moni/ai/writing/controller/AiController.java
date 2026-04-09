@@ -41,6 +41,11 @@ public class AiController {
     @PostMapping(value = "/writing/score", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> scoreWriting(@ModelAttribute WritingRequest request)
             throws JsonProcessingException {
+
+        if (request.getAnswer() == null || request.getAnswer().trim().split("\\s+").length < 20) {
+            throw new AppException(ErrorCode.ESSAY_TOO_SHORT);
+        }
+
         String userId = getCurrentUserId();
         if (userId != null) {
             creditService.checkAndDeduct(userId, "AI_WRITING_SCORE");

@@ -83,6 +83,7 @@ public enum ErrorCode {
 
     // --- WRITING MODULE ---
     WRITING_SUBMISSION_NOT_FOUND(1090, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND),
+    ESSAY_TOO_SHORT(1091, "Bài viết quá ngắn. Vui lòng viết ít nhất 20 từ để được chấm điểm.", HttpStatus.BAD_REQUEST),
 
     // --- AI MODULE ---
     AI_EVALUATION_FAILED(1070, "Đánh giá AI thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
