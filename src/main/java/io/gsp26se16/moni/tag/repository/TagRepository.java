@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.tag.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -19,4 +20,6 @@ public interface TagRepository extends JpaRepository<Tag, Integer> {
     boolean existsByCode(String code);
 
     boolean existsByCodeAndIdNot(String code, Integer id);
+
+    Optional<Tag> findByCode(String code);
 }

@@ -31,6 +31,9 @@ import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.entity.Stimulus;
 import io.gsp26se16.moni.content.repository.StimulusRepository;
+import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
+import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
+import io.gsp26se16.moni.tag.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,6 +52,8 @@ public class WritingTask1Service {
     private final WritingSubmissionRepository writingSubmissionRepository;
     private final AiEvaluationRepository aiEvaluationRepository;
     private final UsersRepository usersRepository;
+    private final LearnerMetricRepository learnerMetricRepository;
+    private final TagRepository tagRepository;
 
     @Qualifier("aiExecutor")
     private final Executor aiExecutor;
@@ -280,6 +285,126 @@ public class WritingTask1Service {
         writingSubmissionRepository.save(submission);
 
         log.info("AiEvaluation lưu thành công: submissionId={}, band={}", submission.getId(), finalBand);
+
+        // ============================================================
+        // [NEW] Update LearnerMetric with Writing evaluation scores
+        // ============================================================
+        try {
+            Users user = submission.getUser();
+            if (user != null) {
+                updateMetricsFromWritingEval(user, analysisResult);
+                log.info("Writing metrics updated for user={}, finalBand={}", user.getId(), finalBand);
+            }
+        } catch (Exception e) {
+            log.error("Failed to update writing metrics: {}", e.getMessage(), e);
+            // Don't fail the whole evaluation if metric update fails
+        }
+    }
+
+    /**
+     * Update LearnerMetric based on Writing evaluation scores.
+     * Called after RuleEngine.applyAllRules() finishes.
+     *
+     * Maps writing criteria to tags:
+     * - TA (Task Achievement) → TA tag
+     * - CC (Coherence & Cohesion) → CC tag
+     * - LR (Lexical Resource) → LR tag
+     * - GRA (Grammar) → GRA tag
+     *
+     * Uses BKT (Bayesian Knowledge Tracing) algorithm to update mastery.
+     */
+    private void updateMetricsFromWritingEval(Users user, Map<String, Object> analysisResult) {
+        if (analysisResult == null) return;
+
+        Map<String, Object> criteriaMap = (Map<String, Object>) analysisResult.get("criteria");
+        if (criteriaMap == null) return;
+
+        // Extract final band for each criterion
+        Map<String, Double> criterionBands = new java.util.LinkedHashMap<>();
+        for (String criterion : new String[]{"TA", "CC", "LR", "GRA"}) {
+            Object obj = criteriaMap.get(criterion);
+            if (obj instanceof Map<?, ?> map) {
+                Object adjusted = map.get("adjusted_band");
+                if (adjusted instanceof Number n) {
+                    criterionBands.put(criterion, n.doubleValue());
+                } else {
+                    Object band = map.get("band");
+                    if (band instanceof Number n) {
+                        criterionBands.put(criterion, n.doubleValue());
+                    }
+                }
+            }
+        }
+
+        // Update metric for each criterion
+        for (Map.Entry<String, Double> entry : criterionBands.entrySet()) {
+            String criterion = entry.getKey();
+            Double band = entry.getValue();
+
+            // Find or create tag for this criterion
+            io.gsp26se16.moni.tag.entity.Tag tag = tagRepository.findByCode(criterion).orElse(null);
+            if (tag == null) {
+                log.debug("Tag not found for criterion={}, skipping metric update", criterion);
+                continue;
+            }
+
+            // Convert band (0-9) to observation for BKT (0-1)
+            double S = band / 9.0;
+            boolean isCorrect = S >= 0.6;  // Band >= 5.4 counts as "correct"
+
+            // Update with BKT algorithm
+            updateMetricBKT(user, tag, isCorrect, S);
+        }
+    }
+
+    /**
+     * Update single metric using BKT formula.
+     * Integrated from MasteryService for inline use.
+     */
+    private void updateMetricBKT(Users user, io.gsp26se16.moni.tag.entity.Tag tag, boolean isCorrect, double scoreNormalized) {
+        LearnerMetric metric = learnerMetricRepository
+                .findByUserAndTag(user, tag)
+                .orElseGet(() -> {
+                    LearnerMetric m = new LearnerMetric();
+                    m.setUser(user);
+                    m.setTag(tag);
+                    m.setMasteryLevel(0.3);     // BKT prior
+                    m.setConfidenceScore(0.0);
+                    m.setPTransit(0.1);
+                    m.setPGuess(0.25);
+                    m.setPSlip(0.1);
+                    return m;
+                });
+
+        double pL = metric.getMasteryLevel();
+        double pGuess = metric.getPGuess();
+        double pSlip = metric.getPSlip();
+        double pTransit = metric.getPTransit();
+
+        // Bayesian update
+        double pLnew;
+        if (isCorrect) {
+            double pCorrectGivenL = 1.0 - pSlip;
+            double pCorrectGivenNotL = pGuess;
+            double pCorrect = (pL * pCorrectGivenL) + ((1.0 - pL) * pCorrectGivenNotL);
+            pLnew = (pL * pCorrectGivenL) / pCorrect;
+        } else {
+            double pIncorrectGivenL = pSlip;
+            double pIncorrectGivenNotL = 1.0 - pGuess;
+            double pIncorrect = (pL * pIncorrectGivenL) + ((1.0 - pL) * pIncorrectGivenNotL);
+            pLnew = (pL * pIncorrectGivenL) / pIncorrect;
+        }
+
+        // Apply transition
+        double pLfinal = pLnew + ((1.0 - pLnew) * pTransit);
+        pLfinal = Math.max(0.0, Math.min(1.0, pLfinal));
+
+        metric.setMasteryLevel(pLfinal);
+        metric.setConfidenceScore(Math.min(1.0, metric.getConfidenceScore() + 0.1));
+        metric.setUpdatedAt(LocalDateTime.now());
+
+        learnerMetricRepository.save(metric);
+        log.debug("[Writing-BKT] tag={}, pL(final)={}, score={}", tag.getName(), pLfinal, scoreNormalized);
     }
 
     // =========================================================================
