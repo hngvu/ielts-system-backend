@@ -53,10 +53,9 @@ public class VocabController {
     // --- Existing endpoint ---
 
     @GetMapping("/lookup")
-    public ResponseEntity<ApiResponse<VocabLookupResponse>> lookup(
-            @RequestParam String word, @RequestParam(required = false) String sentence) {
+    public ResponseEntity<ApiResponse<VocabLookupResponse>> lookup(@RequestParam String word) {
         try {
-            VocabLookupResponse result = vocabLookupService.lookupWord(word, sentence);
+            VocabLookupResponse result = vocabLookupService.lookupWord(word);
             return ResponseEntity.ok(
                     ApiResponse.<VocabLookupResponse>builder().result(result).build());
         } catch (Exception e) {
@@ -107,6 +106,14 @@ public class VocabController {
     public ResponseEntity<ApiResponse<VocabResponse>> saveWord(@RequestBody SaveVocabRequest request) {
         String credentialId = getCredentialId();
         VocabResponse result = vocabService.saveWord(credentialId, request);
+        return ResponseEntity.ok(
+                ApiResponse.<VocabResponse>builder().result(result).build());
+    }
+
+    @PostMapping("/save-manual")
+    public ResponseEntity<ApiResponse<VocabResponse>> saveWordManual(@RequestBody ManualSaveVocabRequest request) {
+        String credentialId = getCredentialId();
+        VocabResponse result = vocabService.saveWordManual(credentialId, request);
         return ResponseEntity.ok(
                 ApiResponse.<VocabResponse>builder().result(result).build());
     }

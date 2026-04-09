@@ -8,9 +8,13 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class SaveVocabRequest {
+public class ManualSaveVocabRequest {
     String word;
     Integer vocabListId;
-    String sentence; // optional context sentence for better AI meaning
+    String meaning;
+    String phonetic;
+    String pos;
+    String definition;
+    String example;
     VocabSourceType sourceType; // where this word was saved from
 }

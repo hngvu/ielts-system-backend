@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import jakarta.persistence.*;
 
 import io.gsp26se16.moni.authentication.entity.Users;
+import io.gsp26se16.moni.vocab.enumeration.VocabSourceType;
 import io.gsp26se16.moni.vocab.enumeration.VocabStatus;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -22,6 +23,7 @@ import lombok.experimental.FieldDefaults;
             @Index(name = "idx_vocab_user_status", columnList = "user_id, status"),
             @Index(name = "idx_vocab_user_review", columnList = "user_id, next_review_at, status"),
             @Index(name = "idx_vocab_user_list", columnList = "user_id, vocab_list_id"),
+            @Index(name = "idx_vocab_user_source", columnList = "user_id, source_type"),
         })
 public class Vocab {
 
@@ -41,6 +43,12 @@ public class Vocab {
     @Builder.Default
     VocabStatus status = VocabStatus.ACTIVE;
 
+    // Source tracking: where was this word saved from?
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    VocabSourceType sourceType = VocabSourceType.MANUAL;
+
+    // SM2 Spaced Repetition fields
     @Builder.Default
     double easeFactor = 2.5;
 

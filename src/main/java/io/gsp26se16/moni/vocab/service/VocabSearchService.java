@@ -105,7 +105,7 @@ public class VocabSearchService {
     private void enrichWithVietnamese(Dictionary d) {
         if (d.getMeaning() != null && !d.getMeaning().isBlank()) return;
         try {
-            var lookup = vocabLookupService.lookupWord(d.getWord(), d.getExample());
+            var lookup = vocabLookupService.lookupWord(d.getWord());
             if (d.getMeaning() == null) d.setMeaning(lookup.getMeaning());
             if (d.getPhonetic() == null) d.setPhonetic(lookup.getPhonetic());
             if (d.getPos() == null) d.setPos(lookup.getPos());

@@ -33,6 +33,7 @@ public class VocabLearningService {
     private final CuratedWordRepository curatedWordRepository;
     private final VocabAuthHelper authHelper;
 
+    @Transactional(readOnly = true)
     public List<VocabResponse> getDueReview(String credentialId, int limit) {
         Users user = authHelper.getUser(credentialId);
         List<Vocab> due = vocabRepository.findByUserIdAndNextReviewAtBeforeAndStatusNot(
@@ -191,6 +192,10 @@ public class VocabLearningService {
     }
 
     private VocabResponse toResponse(Vocab v) {
+        String collectionName = null;
+        if (v.getVocabList() != null && v.getVocabList().getTitle() != null) {
+            collectionName = v.getVocabList().getTitle();
+        }
         return VocabResponse.builder()
                 .id(v.getId())
                 .word(v.getWord())
@@ -201,7 +206,7 @@ public class VocabLearningService {
                 .meaning(v.getMeaning())
                 .audioUrl(v.getAudioUrl())
                 .status(v.getStatus())
-                .collectionName(v.getVocabList() != null ? v.getVocabList().getTitle() : null)
+                .collectionName(collectionName)
                 .nextReviewAt(v.getNextReviewAt())
                 .createdAt(v.getCreatedAt())
                 .build();

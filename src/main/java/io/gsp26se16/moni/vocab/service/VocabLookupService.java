@@ -32,7 +32,7 @@ public class VocabLookupService {
     private static final String DOL_TTS_API =
             "https://apigateway.dolenglish.vn/public/tts/api/generate-with-download-url";
 
-    public VocabLookupResponse lookupWord(String word, String sentence) {
+    public VocabLookupResponse lookupWord(String word) {
         Optional<Dictionary> cached = dictionaryRepository.findFirstByWordIgnoreCase(word);
         if (cached.isPresent()) {
             Dictionary dict = cached.get();
@@ -60,18 +60,32 @@ public class VocabLookupService {
     @SuppressWarnings("unchecked")
     private VocabLookupResponse callDolApi(String word) {
         try {
-            String url = DOL_API + "?query=" + word.trim().toLowerCase() + "&size=1&page=1";
+            // Remove size/page params - DOL API works without them
+            String url = DOL_API + "?query=" + word.trim().toLowerCase();
+
+            log.debug("Calling DOL API for word: {}, url: {}", word, url);
+
             ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
-            if (response.getBody() == null) return null;
+
+            if (response.getBody() == null) {
+                log.warn("DOL API returned null body for word: {}", word);
+                return null;
+            }
 
             // DOL API returns { results: [ { en_word: { raw: "..." }, ... } ] }
             List<Map<String, Object>> results =
                     (List<Map<String, Object>>) response.getBody().get("results");
-            if (results == null || results.isEmpty()) return null;
+
+            if (results == null || results.isEmpty()) {
+                log.warn("DOL API returned no results for word: {}", word);
+                return null;
+            }
 
             Map<String, Object> entry = results.get(0);
             String dictWord = raw(entry, "en_word", word);
-            if (!dictWord.equalsIgnoreCase(word.trim())) return null;
+
+            // DOL API already returns the best match as first result - just use it
+            String normalizedDict = dictWord.toLowerCase();
 
             String phonetic = raw(entry, "pronounce", "");
             String pos = raw(entry, "type", "");
@@ -114,7 +128,7 @@ public class VocabLookupService {
                     .audioUrl(audioUrl)
                     .build();
         } catch (Exception e) {
-            log.warn("DOL API failed for '{}': {}", word, e.getMessage());
+            log.error("DOL API failed for '{}': {}", word, e.getMessage(), e);
             return null;
         }
     }

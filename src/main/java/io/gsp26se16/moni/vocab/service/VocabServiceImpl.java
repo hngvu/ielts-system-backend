@@ -15,12 +15,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
+import io.gsp26se16.moni.vocab.dto.ManualSaveVocabRequest;
 import io.gsp26se16.moni.vocab.dto.SaveVocabRequest;
 import io.gsp26se16.moni.vocab.dto.VocabDetailResponse;
 import io.gsp26se16.moni.vocab.dto.VocabResponse;
 import io.gsp26se16.moni.vocab.entity.Dictionary;
 import io.gsp26se16.moni.vocab.entity.Vocab;
 import io.gsp26se16.moni.vocab.entity.VocabList;
+import io.gsp26se16.moni.vocab.enumeration.VocabSourceType;
 import io.gsp26se16.moni.vocab.enumeration.VocabStatus;
 import io.gsp26se16.moni.vocab.repository.DictionaryRepository;
 import io.gsp26se16.moni.vocab.repository.VocabListRepository;
@@ -99,6 +101,81 @@ public class VocabServiceImpl implements VocabService {
                 .audioUrl(dict.getAudioUrl())
                 .meaning(dict.getMeaning())
                 .status(VocabStatus.ACTIVE)
+                .sourceType(
+                        request.getSourceType() != null ? request.getSourceType() : VocabSourceType.DICTIONARY_LOOKUP)
+                .user(user)
+                .vocabList(vocabList)
+                .dictionary(dict)
+                .build();
+
+        return toResponse(vocabRepository.save(vocab));
+    }
+
+    @Override
+    @Transactional
+    public VocabResponse saveWordManual(String credentialId, ManualSaveVocabRequest request) {
+        Users user = authHelper.getUser(credentialId);
+        String userId = user.getId();
+        String word = request.getWord().trim().toLowerCase();
+
+        // Return existing if already saved
+        var existing = vocabRepository.findByUserIdAndWord(userId, word);
+        if (existing.isPresent()) {
+            Vocab v = existing.get();
+            // Restore if archived
+            if (v.getStatus() == VocabStatus.ARCHIVED) {
+                v.setStatus(VocabStatus.ACTIVE);
+                vocabRepository.save(v);
+            }
+            return toResponse(v);
+        }
+
+        // Check if Dictionary entry already exists
+        Dictionary dict = dictionaryRepository.findFirstByWordIgnoreCase(word).orElse(null);
+
+        if (dict == null) {
+            // Create new Dictionary entry
+            dict = new Dictionary();
+            dict.setWord(word);
+            dict.setMeaning(request.getMeaning());
+            dict.setPhonetic(request.getPhonetic());
+            dict.setPos(request.getPos());
+            dict.setDefinition(request.getDefinition());
+            dict.setExample(request.getExample());
+            dictionaryRepository.save(dict);
+        } else {
+            // Update existing Dictionary entry with new data if provided
+            if (request.getMeaning() != null && !request.getMeaning().isBlank()) {
+                dict.setMeaning(request.getMeaning());
+            }
+            if (request.getPhonetic() != null && !request.getPhonetic().isBlank()) {
+                dict.setPhonetic(request.getPhonetic());
+            }
+            if (request.getPos() != null && !request.getPos().isBlank()) {
+                dict.setPos(request.getPos());
+            }
+            if (request.getDefinition() != null && !request.getDefinition().isBlank()) {
+                dict.setDefinition(request.getDefinition());
+            }
+            if (request.getExample() != null && !request.getExample().isBlank()) {
+                dict.setExample(request.getExample());
+            }
+            dictionaryRepository.save(dict);
+        }
+
+        // Resolve VocabList
+        VocabList vocabList = resolveVocabList(user, request.getVocabListId());
+
+        Vocab vocab = Vocab.builder()
+                .word(word)
+                .phonetic(dict.getPhonetic())
+                .pos(dict.getPos())
+                .definition(dict.getDefinition())
+                .example(dict.getExample())
+                .audioUrl(dict.getAudioUrl())
+                .meaning(dict.getMeaning())
+                .status(VocabStatus.ACTIVE)
+                .sourceType(request.getSourceType() != null ? request.getSourceType() : VocabSourceType.MANUAL)
                 .user(user)
                 .vocabList(vocabList)
                 .dictionary(dict)
@@ -176,7 +253,7 @@ public class VocabServiceImpl implements VocabService {
     private Dictionary findOrCreateDictionary(String word, String sentence) {
         return dictionaryRepository.findFirstByWordIgnoreCase(word).orElseGet(() -> {
             try {
-                var lookup = vocabLookupService.lookupWord(word, sentence);
+                var lookup = vocabLookupService.lookupWord(word);
                 // lookupWord already saves to DB; refetch
                 return dictionaryRepository.findFirstByWordIgnoreCase(word).orElseGet(() -> {
                     Dictionary d = new Dictionary();
@@ -205,6 +282,18 @@ public class VocabServiceImpl implements VocabService {
     }
 
     private VocabResponse toResponse(Vocab v) {
+        // Parse examples from dictionary
+        List<String> exampleList = new ArrayList<>();
+        if (v.getDictionary() != null
+                && v.getDictionary().getExamples() != null
+                && !v.getDictionary().getExamples().isBlank()) {
+            try {
+                exampleList =
+                        objectMapper.readValue(v.getDictionary().getExamples(), new TypeReference<List<String>>() {});
+            } catch (Exception ignored) {
+            }
+        }
+
         return VocabResponse.builder()
                 .id(v.getId())
                 .word(v.getWord())
@@ -215,6 +304,10 @@ public class VocabServiceImpl implements VocabService {
                 .meaning(v.getMeaning())
                 .audioUrl(v.getAudioUrl())
                 .status(v.getStatus())
+                .sourceType(v.getSourceType())
+                .collocation(v.getDictionary() != null ? v.getDictionary().getCollocation() : null)
+                .explanation(v.getDictionary() != null ? v.getDictionary().getExplanation() : null)
+                .examples(exampleList.isEmpty() ? null : exampleList)
                 .collectionName(v.getVocabList() != null ? v.getVocabList().getTitle() : null)
                 .nextReviewAt(v.getNextReviewAt())
                 .createdAt(v.getCreatedAt())
