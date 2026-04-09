@@ -15,4 +15,8 @@ public interface TaskRepository extends JpaRepository<Task, Integer> {
     List<Task> findAllByRoadmapOrderByOrderAsc(Roadmap roadmap);
 
     List<Task> findAllByRoadmapAndTaskType(Roadmap roadmap, String taskType);
+
+    double countByRoadmapId(Integer id);
+
+    List<Task> findAllByRoadmap(Roadmap currentRoadmap);
 }

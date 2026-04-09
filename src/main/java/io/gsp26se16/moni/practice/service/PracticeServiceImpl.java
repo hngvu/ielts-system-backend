@@ -134,73 +134,73 @@ public class PracticeServiceImpl implements PracticeService {
             attemptAnswer.setChangeCount(0);
             attemptAnswerRepository.save(attemptAnswer);
 
-                    double S = isCorrect ? 1.0 : 0.0; // S: Điểm của câu hỏi này
+            double S = isCorrect ? 1.0 : 0.0; // S: Điểm của câu hỏi này
 
-                    // Lấy tất cả các Tag đang gắn vào câu hỏi này (Ví dụ: TFNG, BAND_6.0)
-                    Set<Tag> questionTags = question.getTags();
+            // Lấy tất cả các Tag đang gắn vào câu hỏi này (Ví dụ: TFNG, BAND_6.0)
+            Set<Tag> questionTags = question.getTags();
 
-                    if (questionTags != null && !questionTags.isEmpty()) {
-                        for (Tag tag : questionTags) {
-                            // ============================================================
-                            // [BKT UPDATE] Bayesian Knowledge Tracing Algorithm
-                            // ============================================================
-                            // Bài toán Cold Start: Tìm metric cũ, nếu chưa có thì tạo mới
-                            LearnerMetric metric = learnerMetricRepository
-                                    .findByUserAndTag(user, tag)
-                                    .orElseGet(() -> {
-                                        LearnerMetric newMetric = new LearnerMetric();
-                                        newMetric.setUser(user);
-                                        newMetric.setTag(tag);
-                                        // BKT initialization
-                                        newMetric.setMasteryLevel(0.3);     // P(L=1) prior
-                                        newMetric.setConfidenceScore(0.0);
-                                        newMetric.setPTransit(0.1);         // Learning rate
-                                        newMetric.setPGuess(0.25);          // Guessing probability
-                                        newMetric.setPSlip(0.1);            // Mistake probability
-                                        return newMetric;
-                                    });
+            if (questionTags != null && !questionTags.isEmpty()) {
+                for (Tag tag : questionTags) {
+                    // ============================================================
+                    // [BKT UPDATE] Bayesian Knowledge Tracing Algorithm
+                    // ============================================================
+                    // Bài toán Cold Start: Tìm metric cũ, nếu chưa có thì tạo mới
+                    LearnerMetric metric = learnerMetricRepository
+                            .findByUserAndTag(user, tag)
+                            .orElseGet(() -> {
+                                LearnerMetric newMetric = new LearnerMetric();
+                                newMetric.setUser(user);
+                                newMetric.setTag(tag);
+                                // BKT initialization
+                                newMetric.setMasteryLevel(0.3); // P(L=1) prior
+                                newMetric.setConfidenceScore(0.0);
+                                newMetric.setPTransit(0.1); // Learning rate
+                                newMetric.setPGuess(0.25); // Guessing probability
+                                newMetric.setPSlip(0.1); // Mistake probability
+                                return newMetric;
+                            });
 
-                            // Extract BKT parameters
-                            double pL = metric.getMasteryLevel();      // Prior P(L=1)
-                            double pGuess = metric.getPGuess();         // P(correct | not learned)
-                            double pSlip = metric.getPSlip();           // P(incorrect | learned)
-                            double pTransit = metric.getPTransit();     // Learning rate
+                    // Extract BKT parameters
+                    double pL = metric.getMasteryLevel(); // Prior P(L=1)
+                    double pGuess = metric.getPGuess(); // P(correct | not learned)
+                    double pSlip = metric.getPSlip(); // P(incorrect | learned)
+                    double pTransit = metric.getPTransit(); // Learning rate
 
-                            // Bayesian update: calculate posterior P(L=1 | observation)
-                            double pLnew;
-                            if (isCorrect) {
-                                // Observation: correct answer
-                                // P(correct | learned) = 1 - pSlip
-                                // P(correct | not learned) = pGuess
-                                double pCorrectGivenL = 1.0 - pSlip;
-                                double pCorrectGivenNotL = pGuess;
-                                double pCorrect = (pL * pCorrectGivenL) + ((1.0 - pL) * pCorrectGivenNotL);
-                                pLnew = (pL * pCorrectGivenL) / pCorrect;
-                            } else {
-                                // Observation: incorrect answer
-                                // P(incorrect | learned) = pSlip
-                                // P(incorrect | not learned) = 1 - pGuess
-                                double pIncorrectGivenL = pSlip;
-                                double pIncorrectGivenNotL = 1.0 - pGuess;
-                                double pIncorrect = (pL * pIncorrectGivenL) + ((1.0 - pL) * pIncorrectGivenNotL);
-                                pLnew = (pL * pIncorrectGivenL) / pIncorrect;
-                            }
-
-                            // Apply transition probability
-                            // Student may learn even if they got the answer wrong
-                            double pLfinal = pLnew + ((1.0 - pLnew) * pTransit);
-                            pLfinal = Math.max(0.0, Math.min(1.0, pLfinal));
-
-                            // Update metric
-                            metric.setMasteryLevel(pLfinal);
-                            metric.setConfidenceScore(Math.min(1.0, metric.getConfidenceScore() + 0.05));
-
-                            // Lưu lại ngay lập tức
-                            learnerMetricRepository.save(metric);
-                            log.debug("[BKT] Tag={}, pL(prior)={}, pL(post)={}, pL(final)={}",
-                                tag.getName(), pL, pLnew, pLfinal);
-                        }
+                    // Bayesian update: calculate posterior P(L=1 | observation)
+                    double pLnew;
+                    if (isCorrect) {
+                        // Observation: correct answer
+                        // P(correct | learned) = 1 - pSlip
+                        // P(correct | not learned) = pGuess
+                        double pCorrectGivenL = 1.0 - pSlip;
+                        double pCorrectGivenNotL = pGuess;
+                        double pCorrect = (pL * pCorrectGivenL) + ((1.0 - pL) * pCorrectGivenNotL);
+                        pLnew = (pL * pCorrectGivenL) / pCorrect;
+                    } else {
+                        // Observation: incorrect answer
+                        // P(incorrect | learned) = pSlip
+                        // P(incorrect | not learned) = 1 - pGuess
+                        double pIncorrectGivenL = pSlip;
+                        double pIncorrectGivenNotL = 1.0 - pGuess;
+                        double pIncorrect = (pL * pIncorrectGivenL) + ((1.0 - pL) * pIncorrectGivenNotL);
+                        pLnew = (pL * pIncorrectGivenL) / pIncorrect;
                     }
+
+                    // Apply transition probability
+                    // Student may learn even if they got the answer wrong
+                    double pLfinal = pLnew + ((1.0 - pLnew) * pTransit);
+                    pLfinal = Math.max(0.0, Math.min(1.0, pLfinal));
+
+                    // Update metric
+                    metric.setMasteryLevel(pLfinal);
+                    metric.setConfidenceScore(Math.min(1.0, metric.getConfidenceScore() + 0.05));
+
+                    // Lưu lại ngay lập tức
+                    learnerMetricRepository.save(metric);
+                    log.debug(
+                            "[BKT] Tag={}, pL(prior)={}, pL(post)={}, pL(final)={}", tag.getName(), pL, pLnew, pLfinal);
+                }
+            }
 
             results.add(buildAnswerResult(question, answerReq, selectedOption, isCorrect, correctOption));
         }

@@ -264,7 +264,7 @@ public class WritingTask2Service {
 
         // Extract final band for each criterion
         Map<String, Double> criterionBands = new java.util.LinkedHashMap<>();
-        for (String criterion : new String[]{"TR", "CC", "LR", "GRA"}) {
+        for (String criterion : new String[] {"TR", "CC", "LR", "GRA"}) {
             Object obj = criteriaMap.get(criterion);
             if (obj instanceof Map<?, ?> map) {
                 Object adjusted = map.get("adjusted_band");
@@ -285,7 +285,8 @@ public class WritingTask2Service {
             Double band = entry.getValue();
 
             // Find or create tag for this criterion
-            io.gsp26se16.moni.tag.entity.Tag tag = tagRepository.findByCode(criterion).orElse(null);
+            io.gsp26se16.moni.tag.entity.Tag tag =
+                    tagRepository.findByCode(criterion).orElse(null);
             if (tag == null) {
                 log.debug("Tag not found for criterion={}, skipping metric update", criterion);
                 continue;
@@ -293,7 +294,7 @@ public class WritingTask2Service {
 
             // Convert band (0-9) to observation for BKT (0-1)
             double S = band / 9.0;
-            boolean isCorrect = S >= 0.6;  // Band >= 5.4 counts as "correct"
+            boolean isCorrect = S >= 0.6; // Band >= 5.4 counts as "correct"
 
             // Update with BKT algorithm
             updateMetricBKT(user, tag, isCorrect, S);
@@ -304,14 +305,15 @@ public class WritingTask2Service {
      * Update single metric using BKT formula.
      * Integrated from MasteryService for inline use.
      */
-    private void updateMetricBKT(Users user, io.gsp26se16.moni.tag.entity.Tag tag, boolean isCorrect, double scoreNormalized) {
+    private void updateMetricBKT(
+            Users user, io.gsp26se16.moni.tag.entity.Tag tag, boolean isCorrect, double scoreNormalized) {
         LearnerMetric metric = learnerMetricRepository
                 .findByUserAndTag(user, tag)
                 .orElseGet(() -> {
                     LearnerMetric m = new LearnerMetric();
                     m.setUser(user);
                     m.setTag(tag);
-                    m.setMasteryLevel(0.3);     // BKT prior
+                    m.setMasteryLevel(0.3); // BKT prior
                     m.setConfidenceScore(0.0);
                     m.setPTransit(0.1);
                     m.setPGuess(0.25);
