@@ -1,0 +1,38 @@
+{
+  "title": "Writing Task 1 - Pie Chart: Transport Modes",
+  "description": "IELTS Writing Task 1: Describe pie charts showing modes of transport used by commuters in two cities.",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 20,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=400",
+  "tagIds": [3, 6, 19],
+  "stimuli": [
+    {
+      "title": "Task 1: Commuter Transport Modes — London vs Singapore",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 20 minutes on this task.</strong></p><p class=\"mb-4\">The pie charts below show the modes of transport used by commuters in London and Singapore in 2021.</p><p class=\"mb-4\">Summarise the information by selecting and reporting the main features, and make comparisons where relevant.</p><p class=\"mb-4\"><strong>Write at least 150 words.</strong></p><p class=\"mb-4\"><em>Data — London: Car 34%, Underground 28%, Bus 21%, Cycling 9%, Walking 8%. Singapore: MRT/Bus 62%, Car 24%, Cycling 7%, Walking 7%.</em></p>",
+      "questionGroups": [
+        {
+          "instruction": "Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+          "questionTypeCode": "PIE_CHART",
+          "questions": [
+            {
+              "content": "Describe the pie charts showing commuter transport modes in London and Singapore in 2021.",
+              "position": 1,
+              "explanation": {
+                "keyFeatures": [
+                  "Public transport was dominant in Singapore (62%) compared to London where car use led (34%)",
+                  "London commuters had a more diverse spread across transport options",
+                  "Private car use was notably higher in London than in Singapore (34% vs 24%)",
+                  "Active transport (cycling and walking) accounted for similar proportions in both cities"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

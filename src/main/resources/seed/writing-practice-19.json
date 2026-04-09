@@ -1,0 +1,44 @@
+{
+  "title": "Writing Task 2 - Healthcare Funding",
+  "description": "IELTS Writing Task 2: Should healthcare be funded by the government or should individuals pay for their own healthcare?",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 40,
+  "testMode": "PRACTICE",
+  "section": 2,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=400",
+  "tagIds": [3, 5, 18],
+  "stimuli": [
+    {
+      "title": "Task 2: Government vs Private Healthcare Funding",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 40 minutes on this task.</strong></p><p class=\"mb-4\">Write about the following topic:</p><p class=\"mb-4 italic\">Some people believe that the government should be responsible for funding healthcare for all citizens. Others argue that individuals should pay for their own medical care through private insurance. Discuss both views and give your own opinion.</p><p class=\"mb-4\">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p><p class=\"mb-4\"><strong>Write at least 250 words.</strong></p>",
+      "questionGroups": [
+        {
+          "instruction": "Write an essay discussing both views on healthcare funding and giving your own opinion.",
+          "questionTypeCode": "DISCUSSION",
+          "questions": [
+            {
+              "content": "Discuss whether government or individuals should fund healthcare, and give your own opinion.",
+              "position": 1,
+              "explanation": {
+                "bandDescriptors": {
+                  "taskResponse": "Discuss both funding models with clear arguments; present and justify a personal view",
+                  "coherence": "Use clear discourse markers to signal transitions between contrasting arguments",
+                  "lexicalResource": "Use healthcare policy vocabulary: universal coverage, premiums, NHS, means-testing, equity",
+                  "grammaticalRange": "Use a variety of complex structures with accurate punctuation and grammar"
+                },
+                "sampleIdeas": [
+                  "Universal healthcare ensures all citizens access treatment regardless of income",
+                  "Government-funded systems can be expensive, leading to higher taxes and waiting lists",
+                  "Private insurance encourages personal responsibility and can fund higher-quality care",
+                  "Low-income individuals may go without treatment under a purely private system"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

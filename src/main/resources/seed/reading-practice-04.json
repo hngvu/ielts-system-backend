@@ -1,0 +1,284 @@
+{
+  "title": "Reading Practice 4 - Coral Reef Ecosystems",
+  "description": "IELTS Academic Reading practice about coral reef conservation and marine biodiversity.",
+  "skill": "READING",
+  "testType": "ACADEMIC",
+  "duration": 20,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1546026423-cc4642628d2b?w=400",
+  "tagIds": [
+    2,
+    6,
+    15
+  ],
+  "stimuli": [
+    {
+      "title": "Passage 1: Coral Reef Ecosystems",
+      "section": 1,
+      "content": "<p class=\"mb-6\"><strong class=\"font-bold text-lg\">A</strong> Coral reefs, often called the rainforests of the sea, are among the most biodiverse ecosystems on Earth. Despite covering less than 1% of the ocean floor, they support approximately 25% of all marine species. These remarkable structures are built by tiny animals called coral polyps, which secrete calcium carbonate to form hard skeletons. Over thousands of years, these skeletons accumulate to create the massive reef structures we see today.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">B</strong> The health of coral reefs is intimately connected to water temperature. Corals live in a symbiotic relationship with microscopic algae called zooxanthellae, which live within the coral tissues and provide them with up to 90% of their energy through photosynthesis. When water temperatures rise even 1-2 degrees Celsius above the normal maximum, corals expel these algae in a process known as coral bleaching. Without their algal partners, the corals turn white and, if conditions do not improve within weeks, they starve and die.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">C</strong> Human activities pose numerous threats to coral reefs beyond climate change. Overfishing disrupts the delicate balance of reef ecosystems, while destructive fishing practices such as dynamite fishing physically destroy reef structures. Agricultural runoff carries sediment, pesticides, and fertilizers into coastal waters, smothering corals and promoting harmful algal blooms. Coastal development and dredging further degrade reef habitats.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">D</strong> Conservation efforts are underway around the world to protect remaining coral reefs. Marine Protected Areas have been established in many countries, restricting fishing and other destructive activities. Scientists are also experimenting with coral gardening, growing fragments of resilient coral species in underwater nurseries and transplanting them onto degraded reefs. Some researchers are even exploring genetic modification to create heat-resistant coral strains.</p>",
+      "questionGroups": [
+        {
+          "instruction": "Questions 1-5: Do the following statements agree with the information given in the passage? Write TRUE, FALSE, or NOT GIVEN.",
+          "questionTypeCode": "TFNG",
+          "questions": [
+            {
+              "content": "The passage states that coral reef ecosystems has been extensively studied.",
+              "position": 1,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "According to the passage, coral reef ecosystems originated in the 20th century.",
+              "position": 2,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "The author suggests that coral reef ecosystems is universally accepted.",
+              "position": 3,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": true
+                }
+              ]
+            },
+            {
+              "content": "The passage indicates that modern technology has improved coral reef ecosystems.",
+              "position": 4,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "Research into coral reef ecosystems has produced conclusive results.",
+              "position": 5,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "instruction": "Questions 6-9: Choose the correct letter, A, B, C or D.",
+          "questionTypeCode": "MCQ",
+          "questions": [
+            {
+              "content": "What is the main purpose of the passage?",
+              "position": 6,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "It was discovered recently",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "It has been known for centuries",
+                  "isCorrect": true
+                },
+                {
+                  "label": "C",
+                  "content": "It is purely theoretical",
+                  "isCorrect": false
+                },
+                {
+                  "label": "D",
+                  "content": "It was rejected by scientists",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "According to the passage, what is the primary challenge?",
+              "position": 7,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "To reduce costs",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "To improve efficiency",
+                  "isCorrect": true
+                },
+                {
+                  "label": "C",
+                  "content": "To increase competition",
+                  "isCorrect": false
+                },
+                {
+                  "label": "D",
+                  "content": "To meet regulations",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "What does the author suggest about future developments?",
+              "position": 8,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "Economic factors",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "Political changes",
+                  "isCorrect": false
+                },
+                {
+                  "label": "C",
+                  "content": "Environmental concerns",
+                  "isCorrect": true
+                },
+                {
+                  "label": "D",
+                  "content": "Social movements",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "Which of the following best summarises the main argument?",
+              "position": 9,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "It had minimal impact",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "It transformed the field completely",
+                  "isCorrect": true
+                },
+                {
+                  "label": "C",
+                  "content": "It was controversial at first",
+                  "isCorrect": false
+                },
+                {
+                  "label": "D",
+                  "content": "It was immediately accepted",
+                  "isCorrect": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "instruction": "Questions 10-12: Complete the sentences. Write NO MORE THAN TWO WORDS.",
+          "questionTypeCode": "SENTENCE_COMPLETION",
+          "questions": [
+            {
+              "content": "The earliest evidence dates back to approximately ______.",
+              "position": 10,
+              "options": [
+                {
+                  "label": "ANSWER",
+                  "content": "key term 1",
+                  "isCorrect": true
+                }
+              ]
+            },
+            {
+              "content": "The main benefit described is improved ______.",
+              "position": 11,
+              "options": [
+                {
+                  "label": "ANSWER",
+                  "content": "key term 2",
+                  "isCorrect": true
+                }
+              ]
+            },
+            {
+              "content": "Scientists have identified ______ as a key factor.",
+              "position": 12,
+              "options": [
+                {
+                  "label": "ANSWER",
+                  "content": "key term 3",
+                  "isCorrect": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

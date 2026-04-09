@@ -1,0 +1,38 @@
+{
+  "title": "Writing Task 1 - Table: Electricity Generation",
+  "description": "IELTS Writing Task 1: Describe a table showing electricity generation by source in five countries.",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 20,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=400",
+  "tagIds": [3, 5, 15],
+  "stimuli": [
+    {
+      "title": "Task 1: Electricity Generation by Source — Five Countries (2022)",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 20 minutes on this task.</strong></p><p class=\"mb-4\">The table below shows the percentage of electricity generated from different sources in five countries in 2022.</p><p class=\"mb-4\">Summarise the information by selecting and reporting the main features, and make comparisons where relevant.</p><p class=\"mb-4\"><strong>Write at least 150 words.</strong></p><p class=\"mb-4\"><em>Data (Coal / Gas / Nuclear / Renewables / Other): France: 3% / 9% / 71% / 14% / 3%. Germany: 28% / 15% / 6% / 46% / 5%. Australia: 52% / 21% / 0% / 24% / 3%. Brazil: 1% / 9% / 2% / 85% / 3%. China: 61% / 3% / 5% / 28% / 3%.</em></p>",
+      "questionGroups": [
+        {
+          "instruction": "Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+          "questionTypeCode": "TABLE",
+          "questions": [
+            {
+              "content": "Describe the table showing electricity generation by source across five countries in 2022.",
+              "position": 1,
+              "explanation": {
+                "keyFeatures": [
+                  "France was dominated by nuclear power (71%), the highest proportion of any single source",
+                  "Brazil generated 85% of its electricity from renewables, far exceeding other nations",
+                  "China and Australia were the most reliant on coal (61% and 52% respectively)",
+                  "Germany was the only country with a near-equal split between fossil fuels and renewables"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

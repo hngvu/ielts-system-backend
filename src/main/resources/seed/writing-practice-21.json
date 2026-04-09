@@ -1,0 +1,44 @@
+{
+  "title": "Writing Task 2 - Gender Equality",
+  "description": "IELTS Writing Task 2: To what extent has gender equality been achieved in the workplace?",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 40,
+  "testMode": "PRACTICE",
+  "section": 2,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400",
+  "tagIds": [3, 7, 18],
+  "stimuli": [
+    {
+      "title": "Task 2: Gender Equality in the Workplace",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 40 minutes on this task.</strong></p><p class=\"mb-4\">Write about the following topic:</p><p class=\"mb-4 italic\">Despite progress in recent decades, many argue that true gender equality in the workplace has not yet been achieved. Some believe that further government intervention is necessary, while others think that change should come naturally over time. Discuss both views and give your own opinion.</p><p class=\"mb-4\">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p><p class=\"mb-4\"><strong>Write at least 250 words.</strong></p>",
+      "questionGroups": [
+        {
+          "instruction": "Discuss both views on how to achieve gender equality in the workplace and give your opinion.",
+          "questionTypeCode": "DISCUSSION",
+          "questions": [
+            {
+              "content": "Discuss whether government intervention or natural change is the better path to workplace gender equality.",
+              "position": 1,
+              "explanation": {
+                "bandDescriptors": {
+                  "taskResponse": "Engage with both positions meaningfully and present a justified personal opinion",
+                  "coherence": "Maintain clear paragraph focus with effective use of concessive and additive linking",
+                  "lexicalResource": "Use relevant terms: gender pay gap, glass ceiling, parental leave, quotas, unconscious bias",
+                  "grammaticalRange": "Use passive constructions, complex noun phrases, and a variety of clause types"
+                },
+                "sampleIdeas": [
+                  "Gender pay gaps and underrepresentation in leadership persist despite decades of progress",
+                  "Mandatory quotas can promote diversity but may undermine meritocracy arguments",
+                  "Cultural and social attitudes are slow to change without active policy intervention",
+                  "Improved parental leave policies benefit both men and women and support workplace equity"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

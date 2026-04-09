@@ -1,0 +1,284 @@
+{
+  "title": "Reading Practice 7 - The Psychology of Decision Making",
+  "description": "IELTS Academic Reading practice about cognitive biases and how people make choices.",
+  "skill": "READING",
+  "testType": "ACADEMIC",
+  "duration": 20,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400",
+  "tagIds": [
+    2,
+    7,
+    18
+  ],
+  "stimuli": [
+    {
+      "title": "Passage 1: The Psychology of Decision Making",
+      "section": 1,
+      "content": "<p class=\"mb-6\"><strong class=\"font-bold text-lg\">A</strong> Every day, humans make thousands of decisions, ranging from trivial choices about what to eat to life-changing decisions about careers and relationships. For centuries, economists and philosophers assumed that people make decisions rationally, carefully weighing costs and benefits to maximise their utility. However, research in cognitive psychology and behavioural economics over the past fifty years has revealed that human decision-making is far from rational, being systematically influenced by cognitive biases and mental shortcuts known as heuristics.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">B</strong> One of the most well-documented cognitive biases is the anchoring effect, first described by psychologists Amos Tversky and Daniel Kahneman in 1974. This bias causes people to rely too heavily on the first piece of information they encounter when making decisions. In one classic experiment, participants were asked to estimate the percentage of African countries in the United Nations after being shown a random number on a spinning wheel. Those who saw a higher number consistently gave higher estimates, even though the wheel was clearly random.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">C</strong> Loss aversion is another powerful bias that affects decision-making. Research has consistently shown that people feel the pain of losing something about twice as strongly as they feel the pleasure of gaining something of equal value. This asymmetry leads to risk-averse behaviour in many situations and helps explain why people often stick with the status quo even when change would be beneficial. Loss aversion also influences consumer behaviour, as marketers have learned to frame offers in terms of what customers might lose rather than gain.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">D</strong> Understanding cognitive biases has important practical implications. In medicine, doctors who are aware of confirmation bias can make more accurate diagnoses. In finance, investors who understand loss aversion can make better portfolio decisions. Governments around the world have established behavioural insights teams that use knowledge of cognitive biases to design better public policies.</p>",
+      "questionGroups": [
+        {
+          "instruction": "Questions 1-5: Do the following statements agree with the information given in the passage? Write TRUE, FALSE, or NOT GIVEN.",
+          "questionTypeCode": "TFNG",
+          "questions": [
+            {
+              "content": "The passage states that the psychology of decision making has been extensively studied.",
+              "position": 1,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "According to the passage, the psychology of decision making originated in the 20th century.",
+              "position": 2,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "The author suggests that the psychology of decision making is universally accepted.",
+              "position": 3,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": true
+                }
+              ]
+            },
+            {
+              "content": "The passage indicates that modern technology has improved the psychology of decision making.",
+              "position": 4,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "Research into the psychology of decision making has produced conclusive results.",
+              "position": 5,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "instruction": "Questions 6-9: Choose the correct letter, A, B, C or D.",
+          "questionTypeCode": "MCQ",
+          "questions": [
+            {
+              "content": "What is the main purpose of the passage?",
+              "position": 6,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "It was discovered recently",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "It has been known for centuries",
+                  "isCorrect": true
+                },
+                {
+                  "label": "C",
+                  "content": "It is purely theoretical",
+                  "isCorrect": false
+                },
+                {
+                  "label": "D",
+                  "content": "It was rejected by scientists",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "According to the passage, what is the primary challenge?",
+              "position": 7,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "To reduce costs",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "To improve efficiency",
+                  "isCorrect": true
+                },
+                {
+                  "label": "C",
+                  "content": "To increase competition",
+                  "isCorrect": false
+                },
+                {
+                  "label": "D",
+                  "content": "To meet regulations",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "What does the author suggest about future developments?",
+              "position": 8,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "Economic factors",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "Political changes",
+                  "isCorrect": false
+                },
+                {
+                  "label": "C",
+                  "content": "Environmental concerns",
+                  "isCorrect": true
+                },
+                {
+                  "label": "D",
+                  "content": "Social movements",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "Which of the following best summarises the main argument?",
+              "position": 9,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "It had minimal impact",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "It transformed the field completely",
+                  "isCorrect": true
+                },
+                {
+                  "label": "C",
+                  "content": "It was controversial at first",
+                  "isCorrect": false
+                },
+                {
+                  "label": "D",
+                  "content": "It was immediately accepted",
+                  "isCorrect": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "instruction": "Questions 10-12: Complete the sentences. Write NO MORE THAN TWO WORDS.",
+          "questionTypeCode": "SENTENCE_COMPLETION",
+          "questions": [
+            {
+              "content": "The earliest evidence dates back to approximately ______.",
+              "position": 10,
+              "options": [
+                {
+                  "label": "ANSWER",
+                  "content": "key term 1",
+                  "isCorrect": true
+                }
+              ]
+            },
+            {
+              "content": "The main benefit described is improved ______.",
+              "position": 11,
+              "options": [
+                {
+                  "label": "ANSWER",
+                  "content": "key term 2",
+                  "isCorrect": true
+                }
+              ]
+            },
+            {
+              "content": "Scientists have identified ______ as a key factor.",
+              "position": 12,
+              "options": [
+                {
+                  "label": "ANSWER",
+                  "content": "key term 3",
+                  "isCorrect": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

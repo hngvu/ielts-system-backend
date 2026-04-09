@@ -1,0 +1,284 @@
+{
+  "title": "Reading Practice 8 - Ancient Roman Engineering",
+  "description": "IELTS Academic Reading practice about Roman roads, aqueducts and architectural achievements.",
+  "skill": "READING",
+  "testType": "ACADEMIC",
+  "duration": 20,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=400",
+  "tagIds": [
+    2,
+    6,
+    19
+  ],
+  "stimuli": [
+    {
+      "title": "Passage 1: Ancient Roman Engineering",
+      "section": 1,
+      "content": "<p class=\"mb-6\"><strong class=\"font-bold text-lg\">A</strong> The engineering achievements of ancient Rome stand as some of the most impressive accomplishments in human history. At its height, the Roman Empire maintained a road network spanning over 80,000 kilometres, connecting every corner of the empire from Britain to Mesopotamia. These roads were masterpieces of engineering, built in layers of gravel, sand, and stone that provided remarkable durability. Many Roman roads survived for centuries after the fall of the empire, and some are still in use today.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">B</strong> Roman aqueducts represent another extraordinary engineering feat. The city of Rome alone was served by eleven major aqueducts, which together delivered approximately one million cubic metres of water per day. The aqueducts used gravity to transport water over distances of up to 100 kilometres, maintaining a precise gradient that required extraordinary surveying skills. Where valleys or low ground had to be crossed, the Romans built spectacular multi-tiered bridges, such as the Pont du Gard in southern France.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">C</strong> Perhaps the most iconic Roman engineering achievement is concrete. The Romans developed a remarkable form of concrete using volcanic ash, lime, and seawater that was stronger and more durable than modern Portland cement. Recent scientific analysis has revealed that seawater actually strengthened Roman concrete over time, as chemical reactions created reinforcing mineral crystals within the material. The Pantheon in Rome, built around 125 CE, still has the largest unreinforced concrete dome in the world.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">D</strong> The decline of Roman engineering after the fall of the Western Empire in 476 CE led to centuries of reduced building capability in Europe. Many of the techniques developed by Roman engineers were not rediscovered until the Renaissance. The legacy of Roman engineering is visible not only in surviving structures but also in modern engineering principles.</p>",
+      "questionGroups": [
+        {
+          "instruction": "Questions 1-5: Do the following statements agree with the information given in the passage? Write TRUE, FALSE, or NOT GIVEN.",
+          "questionTypeCode": "TFNG",
+          "questions": [
+            {
+              "content": "The passage states that ancient roman engineering has been extensively studied.",
+              "position": 1,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "According to the passage, ancient roman engineering originated in the 20th century.",
+              "position": 2,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "The author suggests that ancient roman engineering is universally accepted.",
+              "position": 3,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": true
+                }
+              ]
+            },
+            {
+              "content": "The passage indicates that modern technology has improved ancient roman engineering.",
+              "position": 4,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "Research into ancient roman engineering has produced conclusive results.",
+              "position": 5,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "instruction": "Questions 6-9: Choose the correct letter, A, B, C or D.",
+          "questionTypeCode": "MCQ",
+          "questions": [
+            {
+              "content": "What is the main purpose of the passage?",
+              "position": 6,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "It was discovered recently",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "It has been known for centuries",
+                  "isCorrect": true
+                },
+                {
+                  "label": "C",
+                  "content": "It is purely theoretical",
+                  "isCorrect": false
+                },
+                {
+                  "label": "D",
+                  "content": "It was rejected by scientists",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "According to the passage, what is the primary challenge?",
+              "position": 7,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "To reduce costs",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "To improve efficiency",
+                  "isCorrect": true
+                },
+                {
+                  "label": "C",
+                  "content": "To increase competition",
+                  "isCorrect": false
+                },
+                {
+                  "label": "D",
+                  "content": "To meet regulations",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "What does the author suggest about future developments?",
+              "position": 8,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "Economic factors",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "Political changes",
+                  "isCorrect": false
+                },
+                {
+                  "label": "C",
+                  "content": "Environmental concerns",
+                  "isCorrect": true
+                },
+                {
+                  "label": "D",
+                  "content": "Social movements",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "Which of the following best summarises the main argument?",
+              "position": 9,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "It had minimal impact",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "It transformed the field completely",
+                  "isCorrect": true
+                },
+                {
+                  "label": "C",
+                  "content": "It was controversial at first",
+                  "isCorrect": false
+                },
+                {
+                  "label": "D",
+                  "content": "It was immediately accepted",
+                  "isCorrect": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "instruction": "Questions 10-12: Complete the sentences. Write NO MORE THAN TWO WORDS.",
+          "questionTypeCode": "SENTENCE_COMPLETION",
+          "questions": [
+            {
+              "content": "The earliest evidence dates back to approximately ______.",
+              "position": 10,
+              "options": [
+                {
+                  "label": "ANSWER",
+                  "content": "key term 1",
+                  "isCorrect": true
+                }
+              ]
+            },
+            {
+              "content": "The main benefit described is improved ______.",
+              "position": 11,
+              "options": [
+                {
+                  "label": "ANSWER",
+                  "content": "key term 2",
+                  "isCorrect": true
+                }
+              ]
+            },
+            {
+              "content": "Scientists have identified ______ as a key factor.",
+              "position": 12,
+              "options": [
+                {
+                  "label": "ANSWER",
+                  "content": "key term 3",
+                  "isCorrect": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

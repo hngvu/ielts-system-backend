@@ -1,0 +1,38 @@
+{
+  "title": "Writing Task 1 - Pie Chart: Household Spending",
+  "description": "IELTS Writing Task 1: Describe two pie charts showing household spending in two countries.",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 20,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400",
+  "tagIds": [3, 6, 18],
+  "stimuli": [
+    {
+      "title": "Task 1: Household Spending — UK vs Japan",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 20 minutes on this task.</strong></p><p class=\"mb-4\">The two pie charts below show the proportion of household income spent on different categories in the UK and Japan in 2019.</p><p class=\"mb-4\">Summarise the information by selecting and reporting the main features, and make comparisons where relevant.</p><p class=\"mb-4\"><strong>Write at least 150 words.</strong></p><p class=\"mb-4\"><em>Data: UK — Housing 31%, Food 18%, Transport 14%, Healthcare 8%, Education 7%, Entertainment 12%, Other 10%. Japan — Housing 26%, Food 24%, Transport 11%, Healthcare 12%, Education 10%, Entertainment 9%, Other 8%.</em></p>",
+      "questionGroups": [
+        {
+          "instruction": "Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+          "questionTypeCode": "PIE_CHART",
+          "questions": [
+            {
+              "content": "Describe the two pie charts showing household spending proportions in the UK and Japan.",
+              "position": 1,
+              "explanation": {
+                "keyFeatures": [
+                  "Housing was the largest expenditure in both countries, though higher in the UK (31% vs 26%)",
+                  "Japanese households spent considerably more on food (24% vs 18%)",
+                  "Healthcare spending was notably higher in Japan (12% vs 8%)",
+                  "UK residents allocated more to entertainment (12% vs 9%)"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

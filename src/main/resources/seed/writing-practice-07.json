@@ -1,0 +1,38 @@
+{
+  "title": "Writing Task 1 - Map: City Changes",
+  "description": "IELTS Writing Task 1: Describe two maps showing how a coastal town changed between 1980 and 2020.",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 20,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400",
+  "tagIds": [3, 6, 19],
+  "stimuli": [
+    {
+      "title": "Task 1: Coastal Town Development — 1980 vs 2020",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 20 minutes on this task.</strong></p><p class=\"mb-4\">The maps below show the layout of a coastal town in 1980 and in 2020.</p><p class=\"mb-4\">Summarise the information by selecting and reporting the main features, and make comparisons where relevant.</p><p class=\"mb-4\"><strong>Write at least 150 words.</strong></p><p class=\"mb-4\"><em>Changes: The fishing harbour was replaced by a marina. Farmland to the north was converted to a residential estate. The town centre expanded eastward with a new shopping mall. A coastal road was built. The old lighthouse was preserved as a heritage site. A new hotel complex was built on the seafront.</em></p>",
+      "questionGroups": [
+        {
+          "instruction": "Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+          "questionTypeCode": "MAP",
+          "questions": [
+            {
+              "content": "Describe the two maps showing how the coastal town changed between 1980 and 2020.",
+              "position": 1,
+              "explanation": {
+                "keyFeatures": [
+                  "The harbour area underwent the most dramatic transformation, shifting from fishing to tourism",
+                  "Agricultural land to the north was entirely replaced by housing",
+                  "The town centre expanded significantly towards the east",
+                  "Transport infrastructure improved with the addition of a coastal road"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

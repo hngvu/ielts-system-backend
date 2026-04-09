@@ -1,0 +1,284 @@
+{
+  "title": "Reading Practice 16 - Migration Patterns in Birds",
+  "description": "IELTS Academic Reading practice about how and why birds migrate across continents.",
+  "skill": "READING",
+  "testType": "ACADEMIC",
+  "duration": 20,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1480044965905-02098d419e96?w=400",
+  "tagIds": [
+    2,
+    6,
+    15
+  ],
+  "stimuli": [
+    {
+      "title": "Passage 1: Migration Patterns in Birds",
+      "section": 1,
+      "content": "<p class=\"mb-6\"><strong class=\"font-bold text-lg\">A</strong> The study of migration patterns in birds has attracted growing attention from researchers worldwide. This field encompasses a wide range of disciplines and has significant implications for our understanding of the natural world and human society. Recent advances in technology have enabled scientists to gather data and conduct experiments that were previously impossible.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">B</strong> Historical records show that interest in migration patterns in birds dates back centuries, though systematic scientific investigation is relatively recent. Early researchers faced numerous challenges, including limited funding, inadequate equipment, and scepticism from the broader scientific community. Despite these obstacles, pioneering work laid the foundation for modern understanding.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">C</strong> Current research in migration patterns in birds has produced several important findings. Studies have demonstrated complex relationships between various factors and outcomes. New methodologies and analytical tools have allowed researchers to identify patterns that were previously invisible. International collaboration has been essential in advancing knowledge in this area.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">D</strong> The future of research into migration patterns in birds holds both promise and challenges. Funding constraints, political considerations, and ethical questions all influence the direction of investigation. Nevertheless, continued advances in technology and methodology suggest that significant discoveries lie ahead, with potential applications that could benefit society in numerous ways.</p>",
+      "questionGroups": [
+        {
+          "instruction": "Questions 1-5: Do the following statements agree with the information? Write TRUE, FALSE, or NOT GIVEN.",
+          "questionTypeCode": "TFNG",
+          "questions": [
+            {
+              "content": "The passage states that migration patterns in birds has been extensively studied.",
+              "position": 1,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "According to the passage, migration patterns in birds originated in the 20th century.",
+              "position": 2,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "The author suggests that migration patterns in birds is universally accepted.",
+              "position": 3,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": true
+                }
+              ]
+            },
+            {
+              "content": "The passage indicates that modern technology has improved migration patterns in birds.",
+              "position": 4,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "Research into migration patterns in birds has produced conclusive results.",
+              "position": 5,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "instruction": "Questions 6-9: Choose the correct letter, A, B, C or D.",
+          "questionTypeCode": "MCQ",
+          "questions": [
+            {
+              "content": "What is the main purpose of the passage?",
+              "position": 6,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "It was discovered recently",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "It has been known for centuries",
+                  "isCorrect": true
+                },
+                {
+                  "label": "C",
+                  "content": "It is purely theoretical",
+                  "isCorrect": false
+                },
+                {
+                  "label": "D",
+                  "content": "It was rejected by scientists",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "According to the passage, what is the primary challenge?",
+              "position": 7,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "To reduce costs",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "To improve efficiency",
+                  "isCorrect": true
+                },
+                {
+                  "label": "C",
+                  "content": "To increase competition",
+                  "isCorrect": false
+                },
+                {
+                  "label": "D",
+                  "content": "To meet regulations",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "What does the author suggest about future developments?",
+              "position": 8,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "Economic factors",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "Political changes",
+                  "isCorrect": false
+                },
+                {
+                  "label": "C",
+                  "content": "Environmental concerns",
+                  "isCorrect": true
+                },
+                {
+                  "label": "D",
+                  "content": "Social movements",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "Which of the following best summarises the main argument?",
+              "position": 9,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "It had minimal impact",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "It transformed the field completely",
+                  "isCorrect": true
+                },
+                {
+                  "label": "C",
+                  "content": "It was controversial at first",
+                  "isCorrect": false
+                },
+                {
+                  "label": "D",
+                  "content": "It was immediately accepted",
+                  "isCorrect": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "instruction": "Questions 10-12: Complete the sentences. Write NO MORE THAN TWO WORDS.",
+          "questionTypeCode": "SENTENCE_COMPLETION",
+          "questions": [
+            {
+              "content": "The earliest evidence dates back to approximately ______.",
+              "position": 10,
+              "options": [
+                {
+                  "label": "ANSWER",
+                  "content": "key term 1",
+                  "isCorrect": true
+                }
+              ]
+            },
+            {
+              "content": "The main benefit described is improved ______.",
+              "position": 11,
+              "options": [
+                {
+                  "label": "ANSWER",
+                  "content": "key term 2",
+                  "isCorrect": true
+                }
+              ]
+            },
+            {
+              "content": "Scientists have identified ______ as a key factor.",
+              "position": 12,
+              "options": [
+                {
+                  "label": "ANSWER",
+                  "content": "key term 3",
+                  "isCorrect": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "title": "Writing Task 2 - Cultural Globalisation",
+  "description": "IELTS Writing Task 2: Is cultural globalisation a positive or negative development for local cultures?",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 40,
+  "testMode": "PRACTICE",
+  "section": 2,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400",
+  "tagIds": [3, 5, 19],
+  "stimuli": [
+    {
+      "title": "Task 2: Cultural Globalisation — Threat or Opportunity?",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 40 minutes on this task.</strong></p><p class=\"mb-4\">Write about the following topic:</p><p class=\"mb-4 italic\">As the world becomes increasingly connected, Western culture is spreading rapidly and local cultures are being threatened. Some people see this cultural globalisation as a positive development, while others believe it is harmful. Is cultural globalisation more of a positive or negative development?</p><p class=\"mb-4\">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p><p class=\"mb-4\"><strong>Write at least 250 words.</strong></p>",
+      "questionGroups": [
+        {
+          "instruction": "Write an essay evaluating whether cultural globalisation is more positive or negative.",
+          "questionTypeCode": "POSITIVE_NEGATIVE",
+          "questions": [
+            {
+              "content": "Is cultural globalisation more of a positive or negative development? Discuss and give your opinion.",
+              "position": 1,
+              "explanation": {
+                "bandDescriptors": {
+                  "taskResponse": "Weigh both positive and negative aspects before stating a reasoned overall judgement",
+                  "coherence": "Move logically through benefits, drawbacks, and conclusion with clear signposting",
+                  "lexicalResource": "Use culturally relevant vocabulary: homogenisation, cultural heritage, indigenous, diaspora",
+                  "grammaticalRange": "Use a range of complex structures including relative clauses and passive constructions"
+                },
+                "sampleIdeas": [
+                  "Globalisation exposes people to diverse cultures, fostering mutual understanding and tolerance",
+                  "Dominant cultures can overshadow smaller ones, leading to language extinction and lost traditions",
+                  "The internet allows minority cultures to preserve and share their heritage globally",
+                  "Local communities can adopt global influences while maintaining their unique identities"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

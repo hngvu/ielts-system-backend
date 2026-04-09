@@ -1,0 +1,284 @@
+{
+  "title": "Reading Practice 15 - The History of Photography",
+  "description": "IELTS Academic Reading practice about from daguerreotypes to digital cameras.",
+  "skill": "READING",
+  "testType": "ACADEMIC",
+  "duration": 20,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=400",
+  "tagIds": [
+    2,
+    5,
+    17
+  ],
+  "stimuli": [
+    {
+      "title": "Passage 1: The History of Photography",
+      "section": 1,
+      "content": "<p class=\"mb-6\"><strong class=\"font-bold text-lg\">A</strong> The history of photography began long before the first photograph was taken. The camera obscura, a darkened room or box with a small hole that projects an inverted image of the outside scene, was known to ancient Chinese and Greek scholars. Renaissance artists used camera obscuras as drawing aids, but the challenge of permanently capturing the projected image remained unsolved for centuries.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">B</strong> The first permanent photograph was produced by French inventor Nicephore Niepce in 1826, using a process he called heliography. The exposure time required was approximately eight hours, making it impractical for anything other than still scenes. It was Niepce's partner Louis Daguerre who developed the first commercially viable photographic process, the daguerreotype, announced to the world in 1839.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">C</strong> The 20th century brought colour photography, instant cameras, and eventually digital technology. The first digital camera was built by Kodak engineer Steven Sasson in 1975. It weighed 3.6 kilograms and took 23 seconds to capture a single black-and-white image at a resolution of 0.01 megapixels. The irony was that Kodak, the company that invented digital photography, would eventually be bankrupted by it.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">D</strong> Today, an estimated 1.4 trillion photographs are taken annually, the vast majority on smartphones. Photography has become so ubiquitous that it has fundamentally altered how humans experience and remember events. Social media platforms built around photo sharing have created new forms of visual communication.</p>",
+      "questionGroups": [
+        {
+          "instruction": "Questions 1-5: Do the following statements agree with the information? Write TRUE, FALSE, or NOT GIVEN.",
+          "questionTypeCode": "TFNG",
+          "questions": [
+            {
+              "content": "The passage states that the history of photography has been extensively studied.",
+              "position": 1,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "According to the passage, the history of photography originated in the 20th century.",
+              "position": 2,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "The author suggests that the history of photography is universally accepted.",
+              "position": 3,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": true
+                }
+              ]
+            },
+            {
+              "content": "The passage indicates that modern technology has improved the history of photography.",
+              "position": 4,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "Research into the history of photography has produced conclusive results.",
+              "position": 5,
+              "options": [
+                {
+                  "label": "TRUE",
+                  "content": "TRUE",
+                  "isCorrect": false
+                },
+                {
+                  "label": "FALSE",
+                  "content": "FALSE",
+                  "isCorrect": true
+                },
+                {
+                  "label": "NOT GIVEN",
+                  "content": "NOT GIVEN",
+                  "isCorrect": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "instruction": "Questions 6-9: Choose the correct letter, A, B, C or D.",
+          "questionTypeCode": "MCQ",
+          "questions": [
+            {
+              "content": "What is the main purpose of the passage?",
+              "position": 6,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "It was discovered recently",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "It has been known for centuries",
+                  "isCorrect": true
+                },
+                {
+                  "label": "C",
+                  "content": "It is purely theoretical",
+                  "isCorrect": false
+                },
+                {
+                  "label": "D",
+                  "content": "It was rejected by scientists",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "According to the passage, what is the primary challenge?",
+              "position": 7,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "To reduce costs",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "To improve efficiency",
+                  "isCorrect": true
+                },
+                {
+                  "label": "C",
+                  "content": "To increase competition",
+                  "isCorrect": false
+                },
+                {
+                  "label": "D",
+                  "content": "To meet regulations",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "What does the author suggest about future developments?",
+              "position": 8,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "Economic factors",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "Political changes",
+                  "isCorrect": false
+                },
+                {
+                  "label": "C",
+                  "content": "Environmental concerns",
+                  "isCorrect": true
+                },
+                {
+                  "label": "D",
+                  "content": "Social movements",
+                  "isCorrect": false
+                }
+              ]
+            },
+            {
+              "content": "Which of the following best summarises the main argument?",
+              "position": 9,
+              "options": [
+                {
+                  "label": "A",
+                  "content": "It had minimal impact",
+                  "isCorrect": false
+                },
+                {
+                  "label": "B",
+                  "content": "It transformed the field completely",
+                  "isCorrect": true
+                },
+                {
+                  "label": "C",
+                  "content": "It was controversial at first",
+                  "isCorrect": false
+                },
+                {
+                  "label": "D",
+                  "content": "It was immediately accepted",
+                  "isCorrect": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "instruction": "Questions 10-12: Complete the sentences. Write NO MORE THAN TWO WORDS.",
+          "questionTypeCode": "SENTENCE_COMPLETION",
+          "questions": [
+            {
+              "content": "The earliest evidence dates back to approximately ______.",
+              "position": 10,
+              "options": [
+                {
+                  "label": "ANSWER",
+                  "content": "key term 1",
+                  "isCorrect": true
+                }
+              ]
+            },
+            {
+              "content": "The main benefit described is improved ______.",
+              "position": 11,
+              "options": [
+                {
+                  "label": "ANSWER",
+                  "content": "key term 2",
+                  "isCorrect": true
+                }
+              ]
+            },
+            {
+              "content": "Scientists have identified ______ as a key factor.",
+              "position": 12,
+              "options": [
+                {
+                  "label": "ANSWER",
+                  "content": "key term 3",
+                  "isCorrect": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

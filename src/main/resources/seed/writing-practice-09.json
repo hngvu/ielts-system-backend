@@ -1,0 +1,38 @@
+{
+  "title": "Writing Task 1 - Bar Chart: Tourist Arrivals",
+  "description": "IELTS Writing Task 1: Describe a bar chart showing international tourist arrivals in six countries.",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 20,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400",
+  "tagIds": [3, 6, 19],
+  "stimuli": [
+    {
+      "title": "Task 1: International Tourist Arrivals — 2010 and 2022",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 20 minutes on this task.</strong></p><p class=\"mb-4\">The bar chart below shows the number of international tourist arrivals (in millions) in six countries in 2010 and 2022.</p><p class=\"mb-4\">Summarise the information by selecting and reporting the main features, and make comparisons where relevant.</p><p class=\"mb-4\"><strong>Write at least 150 words.</strong></p><p class=\"mb-4\"><em>Data (2010 / 2022 in millions): France: 77 / 90. Spain: 53 / 84. USA: 60 / 77. China: 56 / 65. Italy: 44 / 62. Turkey: 27 / 51.</em></p>",
+      "questionGroups": [
+        {
+          "instruction": "Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+          "questionTypeCode": "BAR_CHART",
+          "questions": [
+            {
+              "content": "Describe the bar chart comparing international tourist arrivals in six countries in 2010 and 2022.",
+              "position": 1,
+              "explanation": {
+                "keyFeatures": [
+                  "France remained the top tourist destination in both years, though Spain closed the gap significantly",
+                  "Turkey experienced the largest proportional growth, nearly doubling its arrivals",
+                  "All six countries showed increases in tourist arrivals over the period",
+                  "Italy and Turkey swapped relative positions, with Italy overtaking Turkey by 2022"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

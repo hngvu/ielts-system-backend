@@ -1,0 +1,38 @@
+{
+  "title": "Writing Task 1 - Mixed Graph: Population Growth",
+  "description": "IELTS Writing Task 1: Describe a mixed graph showing population growth and urbanisation trends.",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 20,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400",
+  "tagIds": [3, 7, 18],
+  "stimuli": [
+    {
+      "title": "Task 1: World Population Growth and Urban Population Share",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 20 minutes on this task.</strong></p><p class=\"mb-4\">The graph below combines a bar chart showing total world population (in billions) and a line graph showing the percentage living in urban areas, from 1950 to 2020.</p><p class=\"mb-4\">Summarise the information by selecting and reporting the main features, and make comparisons where relevant.</p><p class=\"mb-4\"><strong>Write at least 150 words.</strong></p><p class=\"mb-4\"><em>Data: Total population (bn): 2.5 (1950), 3.0 (1960), 3.7 (1970), 4.4 (1980), 5.3 (1990), 6.1 (2000), 6.9 (2010), 7.8 (2020). Urban %: 30% (1950), 34% (1960), 37% (1970), 40% (1980), 43% (1990), 47% (2000), 52% (2010), 56% (2020).</em></p>",
+      "questionGroups": [
+        {
+          "instruction": "Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+          "questionTypeCode": "MIXED_GRAPH",
+          "questions": [
+            {
+              "content": "Describe the mixed graph showing world population growth and urbanisation trends from 1950 to 2020.",
+              "position": 1,
+              "explanation": {
+                "keyFeatures": [
+                  "World population more than tripled from 2.5 to 7.8 billion over the 70-year period",
+                  "The urban share crossed the 50% threshold between 2000 and 2010",
+                  "Both indicators showed consistent upward trends with no reversals",
+                  "The rate of population growth appears to have slowed slightly in later decades"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

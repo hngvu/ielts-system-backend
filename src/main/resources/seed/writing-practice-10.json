@@ -1,0 +1,38 @@
+{
+  "title": "Writing Task 1 - Process: Water Cycle",
+  "description": "IELTS Writing Task 1: Describe a diagram showing the natural water cycle.",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 20,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400",
+  "tagIds": [3, 5, 15],
+  "stimuli": [
+    {
+      "title": "Task 1: The Natural Water Cycle",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 20 minutes on this task.</strong></p><p class=\"mb-4\">The diagram below illustrates the natural water cycle, showing how water moves through the environment.</p><p class=\"mb-4\">Summarise the information by selecting and reporting the main features, and make comparisons where relevant.</p><p class=\"mb-4\"><strong>Write at least 150 words.</strong></p><p class=\"mb-4\"><em>Stages: Solar energy heats ocean/lake surfaces causing evaporation → Water vapour rises and cools, forming clouds (condensation) → Precipitation falls as rain or snow → Surface runoff flows to rivers → Groundwater percolation feeds underground aquifers → Rivers and groundwater return to oceans → Cycle repeats. Transpiration from plants also contributes water vapour.</em></p>",
+      "questionGroups": [
+        {
+          "instruction": "Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+          "questionTypeCode": "PROCESS",
+          "questions": [
+            {
+              "content": "Describe the diagram illustrating the natural water cycle and its key stages.",
+              "position": 1,
+              "explanation": {
+                "keyFeatures": [
+                  "The cycle is driven by solar energy, which initiates evaporation from water bodies",
+                  "Condensation and precipitation are the key mechanisms for transferring water to land",
+                  "Water returns to the ocean via two parallel pathways: surface runoff and groundwater",
+                  "Plant transpiration is an additional input that contributes to cloud formation"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

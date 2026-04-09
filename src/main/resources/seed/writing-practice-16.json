@@ -1,0 +1,44 @@
+{
+  "title": "Writing Task 2 - Animal Testing",
+  "description": "IELTS Writing Task 2: To what extent do you agree or disagree that animal testing for medical research is justified?",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 40,
+  "testMode": "PRACTICE",
+  "section": 2,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=400",
+  "tagIds": [3, 5, 16],
+  "stimuli": [
+    {
+      "title": "Task 2: Animal Testing in Medical Research",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 40 minutes on this task.</strong></p><p class=\"mb-4\">Write about the following topic:</p><p class=\"mb-4 italic\">Some people believe that experimenting on animals for medical research is a necessary and justified practice, while others argue that it is cruel and should be banned. To what extent do you agree or disagree that animal testing is justified?</p><p class=\"mb-4\">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p><p class=\"mb-4\"><strong>Write at least 250 words.</strong></p>",
+      "questionGroups": [
+        {
+          "instruction": "Write an essay giving your opinion on whether animal testing for medical research is justified.",
+          "questionTypeCode": "AGREE_DISAGREE",
+          "questions": [
+            {
+              "content": "To what extent do you agree or disagree that animal testing for medical research is justified?",
+              "position": 1,
+              "explanation": {
+                "bandDescriptors": {
+                  "taskResponse": "State a clear position and support it consistently with relevant arguments and examples",
+                  "coherence": "Develop arguments logically, using clear paragraph organisation and cohesive devices",
+                  "lexicalResource": "Use precise scientific and ethical vocabulary: clinical trials, vivisection, alternatives, ethics",
+                  "grammaticalRange": "Demonstrate complex structures: passive voice for scientific processes, modal verbs for obligation"
+                },
+                "sampleIdeas": [
+                  "Animal testing has led to life-saving vaccines and treatments, including polio vaccines and insulin",
+                  "Animals cannot consent and may experience significant suffering during experiments",
+                  "Modern alternatives such as cell cultures and computer modelling can replace some animal tests",
+                  "Strict regulations in many countries minimise unnecessary animal suffering"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

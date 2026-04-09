@@ -1,0 +1,38 @@
+{
+  "title": "Writing Task 1 - Line Graph: CO2 Emissions",
+  "description": "IELTS Writing Task 1: Describe a line graph showing CO2 emissions from different energy sources over time.",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 20,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?w=400",
+  "tagIds": [3, 5, 15],
+  "stimuli": [
+    {
+      "title": "Task 1: CO2 Emissions by Energy Source (1990–2020)",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 20 minutes on this task.</strong></p><p class=\"mb-4\">The line graph below shows CO2 emissions (in million tonnes) from three energy sources — coal, oil, and natural gas — in a European country between 1990 and 2020.</p><p class=\"mb-4\">Summarise the information by selecting and reporting the main features, and make comparisons where relevant.</p><p class=\"mb-4\"><strong>Write at least 150 words.</strong></p><p class=\"mb-4\"><em>Data summary: Coal: 450mt (1990), 380mt (2000), 290mt (2010), 180mt (2020). Oil: 320mt (1990), 340mt (2000), 310mt (2010), 260mt (2020). Natural gas: 120mt (1990), 150mt (2000), 170mt (2010), 155mt (2020).</em></p>",
+      "questionGroups": [
+        {
+          "instruction": "Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+          "questionTypeCode": "LINE_GRAPH",
+          "questions": [
+            {
+              "content": "Describe the line graph showing CO2 emissions by energy source from 1990 to 2020.",
+              "position": 1,
+              "explanation": {
+                "keyFeatures": [
+                  "Coal emissions declined most sharply, falling from 450mt to 180mt over 30 years",
+                  "Oil emissions remained relatively stable with a slight overall decrease",
+                  "Natural gas rose from 120mt to a peak of 170mt in 2010, then fell slightly",
+                  "By 2020, oil became the largest single source of CO2 emissions"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

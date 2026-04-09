@@ -1,0 +1,44 @@
+{
+  "title": "Writing Task 2 - University Education Value",
+  "description": "IELTS Writing Task 2: Is a university degree still necessary for career success in the modern world?",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 40,
+  "testMode": "PRACTICE",
+  "section": 2,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400",
+  "tagIds": [3, 7, 16],
+  "stimuli": [
+    {
+      "title": "Task 2: The Value of a University Degree",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 40 minutes on this task.</strong></p><p class=\"mb-4\">Write about the following topic:</p><p class=\"mb-4 italic\">In the past, a university degree was considered essential for a successful career. Nowadays, many people argue that practical skills and experience are more important than academic qualifications. To what extent do you agree or disagree?</p><p class=\"mb-4\">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p><p class=\"mb-4\"><strong>Write at least 250 words.</strong></p>",
+      "questionGroups": [
+        {
+          "instruction": "Write an essay giving your opinion on whether a university degree is still essential for career success.",
+          "questionTypeCode": "AGREE_DISAGREE",
+          "questions": [
+            {
+              "content": "To what extent do you agree that practical skills and experience are more important than a university degree?",
+              "position": 1,
+              "explanation": {
+                "bandDescriptors": {
+                  "taskResponse": "Clearly state a position and support it throughout with well-developed arguments",
+                  "coherence": "Organise arguments with clear topic sentences and logical progression between paragraphs",
+                  "lexicalResource": "Use education-specific vocabulary: vocational training, employability, graduate premium, credentials",
+                  "grammaticalRange": "Use complex structures including conditionals, comparatives, and concessive clauses"
+                },
+                "sampleIdeas": [
+                  "Many high-paying tech jobs value demonstrable skills and portfolios over degree certificates",
+                  "University provides critical thinking, networking, and breadth of knowledge beyond job skills",
+                  "Rising tuition costs and student debt challenge the return on investment of degrees",
+                  "Professional fields like medicine, law, and engineering still require formal qualifications"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

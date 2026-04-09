@@ -1,0 +1,44 @@
+{
+  "title": "Writing Task 2 - Immigration Policy",
+  "description": "IELTS Writing Task 2: Discuss the benefits and drawbacks of immigration for host countries.",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 40,
+  "testMode": "PRACTICE",
+  "section": 2,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=400",
+  "tagIds": [3, 5, 19],
+  "stimuli": [
+    {
+      "title": "Task 2: Immigration — Benefits and Drawbacks for Host Countries",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 40 minutes on this task.</strong></p><p class=\"mb-4\">Write about the following topic:</p><p class=\"mb-4 italic\">Immigration has been a major topic of political debate in many countries. While some people believe that immigration brings significant economic and cultural benefits to host nations, others argue that it places undue pressure on public services and creates social tension. Discuss both views and give your own opinion.</p><p class=\"mb-4\">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p><p class=\"mb-4\"><strong>Write at least 250 words.</strong></p>",
+      "questionGroups": [
+        {
+          "instruction": "Write an essay discussing both views on immigration and its effects on host countries, and give your opinion.",
+          "questionTypeCode": "DISCUSSION",
+          "questions": [
+            {
+              "content": "Discuss the benefits and drawbacks of immigration for host countries and give your own opinion.",
+              "position": 1,
+              "explanation": {
+                "bandDescriptors": {
+                  "taskResponse": "Engage thoughtfully with both views and offer a well-reasoned personal position",
+                  "coherence": "Use clear paragraph structure with effective cohesion across ideas and arguments",
+                  "lexicalResource": "Use immigration vocabulary: brain drain, integration, social cohesion, xenophobia, skilled workers",
+                  "grammaticalRange": "Use a variety of structures including relative clauses, passives, and complex conditionals"
+                },
+                "sampleIdeas": [
+                  "Immigrants fill critical labour shortages in sectors like healthcare, construction, and agriculture",
+                  "Cultural diversity enriches society through food, art, language, and fresh perspectives",
+                  "High levels of immigration can strain housing, schools, and public health systems",
+                  "Managed immigration policies can maximise economic benefits while maintaining social cohesion"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

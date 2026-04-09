@@ -1,0 +1,38 @@
+{
+  "title": "Writing Task 1 - Process Diagram: Manufacturing",
+  "description": "IELTS Writing Task 1: Describe a process diagram showing how glass bottles are manufactured and recycled.",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 20,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1565043589221-1a6fd9ae45c7?w=400",
+  "tagIds": [3, 5, 15],
+  "stimuli": [
+    {
+      "title": "Task 1: Glass Bottle Manufacturing and Recycling Process",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 20 minutes on this task.</strong></p><p class=\"mb-4\">The diagram below shows the process of manufacturing glass bottles and how they are recycled after use.</p><p class=\"mb-4\">Summarise the information by selecting and reporting the main features, and make comparisons where relevant.</p><p class=\"mb-4\"><strong>Write at least 150 words.</strong></p><p class=\"mb-4\"><em>Process stages — Manufacturing: Raw materials (sand, soda ash, limestone) → Mixing → Furnace (1500°C melting) → Moulding → Cooling → Quality check → Distribution. Recycling: Collection → Sorting by colour → Crushing into cullet → Returned to furnace → Remoulding.</em></p>",
+      "questionGroups": [
+        {
+          "instruction": "Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+          "questionTypeCode": "PROCESS",
+          "questions": [
+            {
+              "content": "Describe the process diagram showing glass bottle manufacturing and recycling.",
+              "position": 1,
+              "explanation": {
+                "keyFeatures": [
+                  "The manufacturing process begins with three raw materials being combined before melting",
+                  "The furnace stage at 1500 degrees Celsius is the most energy-intensive step",
+                  "Recycling re-enters the cycle at the furnace stage, bypassing raw material extraction",
+                  "The recycling loop is shorter with only five stages compared to seven in manufacturing"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "title": "Writing Task 2 - Urban vs Rural Living",
+  "description": "IELTS Writing Task 2: Compare the advantages of living in cities versus rural areas.",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 40,
+  "testMode": "PRACTICE",
+  "section": 2,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400",
+  "tagIds": [3, 7, 19],
+  "stimuli": [
+    {
+      "title": "Task 2: Urban Life vs Rural Life",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 40 minutes on this task.</strong></p><p class=\"mb-4\">Write about the following topic:</p><p class=\"mb-4 italic\">Some people prefer to live in cities because of the opportunities they offer, while others prefer the peace and simplicity of rural life. Discuss both views and give your own opinion.</p><p class=\"mb-4\">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p><p class=\"mb-4\"><strong>Write at least 250 words.</strong></p>",
+      "questionGroups": [
+        {
+          "instruction": "Write an essay discussing both views on urban and rural living, then give your own opinion.",
+          "questionTypeCode": "DISCUSSION",
+          "questions": [
+            {
+              "content": "Some prefer city life for opportunities; others prefer rural life for peace. Discuss both views and give your opinion.",
+              "position": 1,
+              "explanation": {
+                "bandDescriptors": {
+                  "taskResponse": "Present both perspectives fully and develop a clear personal position with supporting arguments",
+                  "coherence": "Organise ideas with clear paragraphs; use linking phrases to connect contrasting views",
+                  "lexicalResource": "Use topic-specific terms: urbanisation, infrastructure, community ties, cost of living",
+                  "grammaticalRange": "Use a range of sentence structures including relative clauses and passive constructions"
+                },
+                "sampleIdeas": [
+                  "Cities offer employment opportunities, cultural amenities, and better healthcare",
+                  "Urban areas often have higher crime rates, pollution, and cost of living",
+                  "Rural living provides clean air, lower stress, and stronger community bonds",
+                  "Rural areas may lack job opportunities and access to quality education"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

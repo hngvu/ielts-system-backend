@@ -1,0 +1,44 @@
+{
+  "title": "Writing Task 2 - Genetic Engineering",
+  "description": "IELTS Writing Task 2: Discuss the benefits and ethical concerns of genetic engineering in food production.",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 40,
+  "testMode": "PRACTICE",
+  "section": 2,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1530026405186-ed1f139313f8?w=400",
+  "tagIds": [3, 6, 15],
+  "stimuli": [
+    {
+      "title": "Task 2: Genetic Engineering in Food Production",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 40 minutes on this task.</strong></p><p class=\"mb-4\">Write about the following topic:</p><p class=\"mb-4 italic\">Genetic engineering is increasingly used in food production to create crops that are more resistant to disease and produce higher yields. However, many people are concerned about the long-term effects of genetically modified foods. Do the benefits of genetic engineering in food production outweigh the risks?</p><p class=\"mb-4\">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p><p class=\"mb-4\"><strong>Write at least 250 words.</strong></p>",
+      "questionGroups": [
+        {
+          "instruction": "Write an essay evaluating whether the benefits of genetic engineering in food production outweigh the risks.",
+          "questionTypeCode": "POSITIVE_NEGATIVE",
+          "questions": [
+            {
+              "content": "Do the benefits of genetic engineering in food production outweigh the risks? Discuss and give your view.",
+              "position": 1,
+              "explanation": {
+                "bandDescriptors": {
+                  "taskResponse": "Weigh benefits against risks clearly, with a reasoned conclusion about which side prevails",
+                  "coherence": "Balance discussion with equal treatment of both sides before stating a final position",
+                  "lexicalResource": "Use scientific and agricultural vocabulary: GMO, biodiversity, pesticide resistance, crop yield",
+                  "grammaticalRange": "Use passive voice for scientific processes and varied complex sentence structures"
+                },
+                "sampleIdeas": [
+                  "GM crops can be engineered to withstand drought, pests, and disease, improving food security",
+                  "Higher yields from GM crops could help feed a growing global population",
+                  "Potential risks include reduced biodiversity, unforeseen ecosystem impacts, and allergic reactions",
+                  "Large corporations controlling GM seed patents may create dependency for small-scale farmers"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

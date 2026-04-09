@@ -1,0 +1,44 @@
+{
+  "title": "Writing Task 2 - Social Media Influence",
+  "description": "IELTS Writing Task 2: Discuss the positive and negative effects of social media on young people.",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 40,
+  "testMode": "PRACTICE",
+  "section": 2,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400",
+  "tagIds": [3, 6, 17],
+  "stimuli": [
+    {
+      "title": "Task 2: Social Media and Young People",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 40 minutes on this task.</strong></p><p class=\"mb-4\">Write about the following topic:</p><p class=\"mb-4 italic\">Social media platforms have transformed the way young people communicate and access information. However, concerns have been raised about their negative impact on mental health and social behaviour. Discuss the positive and negative effects of social media on young people.</p><p class=\"mb-4\">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p><p class=\"mb-4\"><strong>Write at least 250 words.</strong></p>",
+      "questionGroups": [
+        {
+          "instruction": "Write an essay discussing both the positive and negative effects of social media on young people.",
+          "questionTypeCode": "ADVANTAGES_DISADVANTAGES",
+          "questions": [
+            {
+              "content": "Discuss the positive and negative effects of social media on young people's communication and mental health.",
+              "position": 1,
+              "explanation": {
+                "bandDescriptors": {
+                  "taskResponse": "Cover both positive and negative effects with balanced development and specific examples",
+                  "coherence": "Use clear contrast and addition linking words; maintain consistent paragraph focus",
+                  "lexicalResource": "Use digital-era vocabulary: online presence, cyberbullying, viral content, digital literacy",
+                  "grammaticalRange": "Use reported speech, complex noun phrases, and subordinate clauses effectively"
+                },
+                "sampleIdeas": [
+                  "Social media enables young people to connect with peers globally and build support networks",
+                  "Platforms expose users to cyberbullying, anxiety, and unrealistic body image standards",
+                  "Access to educational content and awareness campaigns is a key benefit",
+                  "Excessive screen time can interfere with sleep, physical activity and face-to-face relationships"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

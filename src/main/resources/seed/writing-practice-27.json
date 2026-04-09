@@ -1,0 +1,44 @@
+{
+  "title": "Writing Task 2 - Childhood Obesity",
+  "description": "IELTS Writing Task 2: What causes childhood obesity and what can be done to tackle this growing problem?",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 40,
+  "testMode": "PRACTICE",
+  "section": 2,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400",
+  "tagIds": [3, 7, 18],
+  "stimuli": [
+    {
+      "title": "Task 2: The Problem of Childhood Obesity",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 40 minutes on this task.</strong></p><p class=\"mb-4\">Write about the following topic:</p><p class=\"mb-4 italic\">Rates of childhood obesity have increased significantly in many countries over the past two decades. What are the main causes of this problem, and what measures can be taken by governments, schools, and families to address it?</p><p class=\"mb-4\">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p><p class=\"mb-4\"><strong>Write at least 250 words.</strong></p>",
+      "questionGroups": [
+        {
+          "instruction": "Write an essay identifying causes of childhood obesity and recommending solutions at different levels.",
+          "questionTypeCode": "CAUSES_PROBLEMS_SOLUTIONS",
+          "questions": [
+            {
+              "content": "What causes childhood obesity and what can governments, schools, and families do to address it?",
+              "position": 1,
+              "explanation": {
+                "bandDescriptors": {
+                  "taskResponse": "Address all three stakeholder groups (government, schools, families) with specific and relevant measures",
+                  "coherence": "Organise causes and solutions in distinct paragraphs with clear signposting language",
+                  "lexicalResource": "Use health and diet vocabulary: sedentary lifestyle, processed food, nutritional education, BMI",
+                  "grammaticalRange": "Use a variety of clause types including purpose, result, and conditional clauses"
+                },
+                "sampleIdeas": [
+                  "Increased consumption of cheap processed and fast food high in sugar and fat is a primary driver",
+                  "Sedentary lifestyles involving excessive screen time and reduced physical activity contribute significantly",
+                  "Governments can regulate advertising of unhealthy food to children and impose sugar taxes",
+                  "Schools should provide nutritious meals, daily physical education, and health literacy programmes"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

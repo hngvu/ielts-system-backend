@@ -1,0 +1,44 @@
+{
+  "title": "Writing Task 2 - Crime Prevention",
+  "description": "IELTS Writing Task 2: What are the causes of crime and what measures can governments and individuals take?",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 40,
+  "testMode": "PRACTICE",
+  "section": 2,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400",
+  "tagIds": [3, 5, 18],
+  "stimuli": [
+    {
+      "title": "Task 2: Causes and Prevention of Crime",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 40 minutes on this task.</strong></p><p class=\"mb-4\">Write about the following topic:</p><p class=\"mb-4 italic\">Crime rates in many cities around the world are rising. What are the main causes of this trend, and what measures can governments and individuals take to address it?</p><p class=\"mb-4\">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p><p class=\"mb-4\"><strong>Write at least 250 words.</strong></p>",
+      "questionGroups": [
+        {
+          "instruction": "Write an essay identifying causes of rising crime rates and proposing solutions for governments and individuals.",
+          "questionTypeCode": "CAUSES_PROBLEMS_SOLUTIONS",
+          "questions": [
+            {
+              "content": "What are the main causes of rising crime rates, and what measures can governments and individuals take?",
+              "position": 1,
+              "explanation": {
+                "bandDescriptors": {
+                  "taskResponse": "Identify multiple causes and propose corresponding measures; cover both government and individual levels",
+                  "coherence": "Use cause-and-effect and problem-solution discourse patterns with clear signposting",
+                  "lexicalResource": "Use crime-related vocabulary: recidivism, deterrence, rehabilitation, poverty cycle, law enforcement",
+                  "grammaticalRange": "Use a mix of complex sentence types including causal, conditional, and purpose clauses"
+                },
+                "sampleIdeas": [
+                  "Poverty and unemployment are key drivers as people turn to crime for economic survival",
+                  "Weak law enforcement and lenient sentencing may fail to deter potential offenders",
+                  "Governments can invest in education, youth programmes, and community policing",
+                  "Individuals can improve neighbourhood watch schemes and report suspicious activity"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "title": "Writing Task 2 - Space Exploration Funding",
+  "description": "IELTS Writing Task 2: Should governments spend money on space exploration when there are pressing problems on Earth?",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 40,
+  "testMode": "PRACTICE",
+  "section": 2,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=400",
+  "tagIds": [3, 7, 16],
+  "stimuli": [
+    {
+      "title": "Task 2: Funding Space Exploration vs Solving Earth's Problems",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 40 minutes on this task.</strong></p><p class=\"mb-4\">Write about the following topic:</p><p class=\"mb-4 italic\">Some people believe that governments should invest heavily in space exploration, as it leads to important scientific discoveries and technological advances. Others argue that this money should be spent on solving the problems we face on Earth, such as poverty, disease, and climate change. Discuss both views and give your own opinion.</p><p class=\"mb-4\">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p><p class=\"mb-4\"><strong>Write at least 250 words.</strong></p>",
+      "questionGroups": [
+        {
+          "instruction": "Write an essay discussing the merits of funding space exploration versus addressing problems on Earth.",
+          "questionTypeCode": "DISCUSSION",
+          "questions": [
+            {
+              "content": "Discuss whether governments should fund space exploration or prioritise solving Earth's problems.",
+              "position": 1,
+              "explanation": {
+                "bandDescriptors": {
+                  "taskResponse": "Give equal weight to both sides with developed reasoning; present and justify personal view",
+                  "coherence": "Use clear discourse structure with signposting language for contrasting arguments",
+                  "lexicalResource": "Use space and policy vocabulary: interplanetary, NASA, satellite technology, opportunity cost",
+                  "grammaticalRange": "Employ varied structures: conditionals, comparatives, and complex noun phrases"
+                },
+                "sampleIdeas": [
+                  "Space missions have yielded everyday technologies like GPS, MRI scanners, and weather forecasting",
+                  "The International Space Station has facilitated vital medical and materials science research",
+                  "Billions in space budgets could provide clean water, vaccines, and education for millions",
+                  "Space exploration is a long-term investment; both priorities need not be mutually exclusive"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

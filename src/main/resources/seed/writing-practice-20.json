@@ -1,0 +1,44 @@
+{
+  "title": "Writing Task 2 - Tourism Impact",
+  "description": "IELTS Writing Task 2: Discuss the positive and negative impacts of mass tourism on local communities.",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 40,
+  "testMode": "PRACTICE",
+  "section": 2,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1530521954074-e64f6810b32d?w=400",
+  "tagIds": [3, 6, 19],
+  "stimuli": [
+    {
+      "title": "Task 2: The Impact of Mass Tourism",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 40 minutes on this task.</strong></p><p class=\"mb-4\">Write about the following topic:</p><p class=\"mb-4 italic\">Mass tourism has grown significantly in recent decades, bringing both benefits and problems to local communities. What are the positive and negative impacts of mass tourism, and how can the negative effects be reduced?</p><p class=\"mb-4\">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p><p class=\"mb-4\"><strong>Write at least 250 words.</strong></p>",
+      "questionGroups": [
+        {
+          "instruction": "Write an essay discussing the positive and negative impacts of mass tourism and suggesting solutions.",
+          "questionTypeCode": "CAUSES_PROBLEMS_SOLUTIONS",
+          "questions": [
+            {
+              "content": "Discuss the positive and negative impacts of mass tourism on local communities and suggest ways to reduce negative effects.",
+              "position": 1,
+              "explanation": {
+                "bandDescriptors": {
+                  "taskResponse": "Address all parts — positive impacts, negative impacts, and solutions — with adequate development",
+                  "coherence": "Structure response in clear sections; use signposting language for problems and solutions",
+                  "lexicalResource": "Use tourism vocabulary: overtourism, heritage sites, ecotourism, revenue, infrastructure strain",
+                  "grammaticalRange": "Use modal verbs for recommendations and complex conditional structures for solutions"
+                },
+                "sampleIdeas": [
+                  "Tourism brings foreign revenue, creates jobs, and funds preservation of cultural sites",
+                  "Overcrowding damages natural environments and disrupts the daily lives of residents",
+                  "Rising property prices in tourist areas price out local residents",
+                  "Solutions include visitor caps, tourist taxes, and promoting off-peak travel"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

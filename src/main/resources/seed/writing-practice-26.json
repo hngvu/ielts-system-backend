@@ -1,0 +1,44 @@
+{
+  "title": "Writing Task 2 - Elderly Care",
+  "description": "IELTS Writing Task 2: Who should be responsible for caring for the elderly — family or the state?",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 40,
+  "testMode": "PRACTICE",
+  "section": 2,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1566140967404-b8b3932483f5?w=400",
+  "tagIds": [3, 6, 18],
+  "stimuli": [
+    {
+      "title": "Task 2: Responsibility for Caring for the Elderly",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 40 minutes on this task.</strong></p><p class=\"mb-4\">Write about the following topic:</p><p class=\"mb-4 italic\">In many countries, the proportion of elderly people is increasing rapidly. Some people argue that families should take responsibility for looking after their elderly relatives, while others believe this is a duty of the state. Discuss both views and give your own opinion.</p><p class=\"mb-4\">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p><p class=\"mb-4\"><strong>Write at least 250 words.</strong></p>",
+      "questionGroups": [
+        {
+          "instruction": "Write an essay discussing whether families or the state should be responsible for elderly care.",
+          "questionTypeCode": "DISCUSSION",
+          "questions": [
+            {
+              "content": "Discuss whether families or the state should bear responsibility for caring for the elderly.",
+              "position": 1,
+              "explanation": {
+                "bandDescriptors": {
+                  "taskResponse": "Present both perspectives fairly and offer a nuanced personal opinion supported by evidence",
+                  "coherence": "Transition smoothly between family-centred and state-centred arguments",
+                  "lexicalResource": "Use social care vocabulary: aged care facilities, filial duty, pension system, social welfare",
+                  "grammaticalRange": "Use modal verbs for obligation and possibility, and complex adverbial clauses"
+                },
+                "sampleIdeas": [
+                  "Family care preserves emotional bonds and cultural values around respect for elders",
+                  "Working adults face time and financial constraints that make full-time family care difficult",
+                  "State-funded care homes provide professional medical attention that families cannot provide",
+                  "A hybrid model combining family support and state assistance may be the most practical solution"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

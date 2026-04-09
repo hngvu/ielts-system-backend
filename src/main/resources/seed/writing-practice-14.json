@@ -1,0 +1,44 @@
+{
+  "title": "Writing Task 2 - Remote Work",
+  "description": "IELTS Writing Task 2: Discuss the advantages and disadvantages of remote working for employees and employers.",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 40,
+  "testMode": "PRACTICE",
+  "section": 2,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=400",
+  "tagIds": [3, 6, 17],
+  "stimuli": [
+    {
+      "title": "Task 2: The Rise of Remote Working",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 40 minutes on this task.</strong></p><p class=\"mb-4\">Write about the following topic:</p><p class=\"mb-4 italic\">In recent years, working from home has become increasingly common. Discuss the advantages and disadvantages of remote working for both employees and employers.</p><p class=\"mb-4\">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p><p class=\"mb-4\"><strong>Write at least 250 words.</strong></p>",
+      "questionGroups": [
+        {
+          "instruction": "Write an essay discussing both the advantages and disadvantages of remote working.",
+          "questionTypeCode": "ADVANTAGES_DISADVANTAGES",
+          "questions": [
+            {
+              "content": "Discuss the advantages and disadvantages of remote working for employees and employers.",
+              "position": 1,
+              "explanation": {
+                "bandDescriptors": {
+                  "taskResponse": "Discuss both advantages and disadvantages clearly for both employees and employers",
+                  "coherence": "Use clear topic sentences and logical paragraph structure throughout",
+                  "lexicalResource": "Use workplace vocabulary: productivity, work-life balance, collaboration, overhead costs",
+                  "grammaticalRange": "Employ complex structures including conditionals, comparatives and concessive clauses"
+                },
+                "sampleIdeas": [
+                  "Advantages for employees: no commute, flexible hours, better work-life balance, reduced expenses",
+                  "Advantages for employers: lower office costs, access to global talent pool, higher retention rates",
+                  "Disadvantages for employees: isolation, difficulty separating work from home, career progression challenges",
+                  "Disadvantages for employers: harder to monitor performance, reduced team cohesion, cybersecurity risks"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
