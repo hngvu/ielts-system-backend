@@ -105,7 +105,9 @@ public class RuleEngine {
             Map.entry("weak_argument_depth", new HardRule(Map.of("TR", 7.0), null)),
 
             // [NEW] Spam or Gibberish — catches essays > 20 words that make no sense
-            Map.entry("spam_or_gibberish", new HardRule(Map.of("TR", 1.0, "TA", 1.0), 1.0)),
+            Map.entry(
+                    "spam_or_gibberish",
+                    new HardRule(Map.of("TR", 1.0, "TA", 1.0, "CC", 1.0, "LR", 1.0, "GRA", 1.0), 1.0)),
 
             // ---------- GRA ----------
             Map.entry("too_many_errors", new HardRule(Map.of("GRA", 6.0), 6.5)),

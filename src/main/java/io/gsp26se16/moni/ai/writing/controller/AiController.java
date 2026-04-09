@@ -43,7 +43,7 @@ public class AiController {
             throws JsonProcessingException {
 
         if (request.getAnswer() == null || request.getAnswer().trim().split("\\s+").length < 20) {
-            throw new AppException(ErrorCode.ESSAY_TOO_SHORT);
+            throw new AppException(ErrorCode.SPAM_ESSAY);
         }
 
         String userId = getCurrentUserId();

@@ -11,7 +11,7 @@ public enum ErrorCode {
     UNCATEGORIZED_EXCEPTION(9999, "Đã xảy ra lỗi không xác định", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1001, "Yêu cầu không hợp lệ", HttpStatus.BAD_REQUEST),
 
-    // --- 2. AUTHENTICATION & USER  ---
+    // --- 2. AUTHENTICATION & USER ---
     USER_EXISTED(1002, "Tài khoản đã tồn tại", HttpStatus.BAD_REQUEST),
     USERNAME_INVALID(1003, "Tên đăng nhập phải có ít nhất {min} ký tự", HttpStatus.BAD_REQUEST),
     INVALID_PASSWORD(1004, "Mật khẩu phải có ít nhất {min} ký tự", HttpStatus.BAD_REQUEST),
@@ -83,7 +83,7 @@ public enum ErrorCode {
 
     // --- WRITING MODULE ---
     WRITING_SUBMISSION_NOT_FOUND(1090, "Không tìm thấy bài viết", HttpStatus.NOT_FOUND),
-    ESSAY_TOO_SHORT(1091, "Bài viết quá ngắn. Vui lòng viết ít nhất 20 từ để được chấm điểm.", HttpStatus.BAD_REQUEST),
+    SPAM_ESSAY(1091, "Bài viết được xác định là SPAM nên không thể chấm điểm", HttpStatus.BAD_REQUEST),
 
     // --- AI MODULE ---
     AI_EVALUATION_FAILED(1070, "Đánh giá AI thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
