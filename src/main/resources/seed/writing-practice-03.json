@@ -1,0 +1,44 @@
+{
+  "title": "Writing Task 2 - Environment vs Economic Growth",
+  "description": "IELTS Writing Task 2: Should governments prioritize environmental protection over economic growth?",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 40,
+  "testMode": "PRACTICE",
+  "section": 2,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400",
+  "tagIds": [3, 7, 15],
+  "stimuli": [
+    {
+      "title": "Task 2: Environmental Protection vs Economic Growth",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 40 minutes on this task.</strong></p><p class=\"mb-4\">Write about the following topic:</p><p class=\"mb-4 italic\">Some people think that governments should prioritize environmental protection, even if it slows down economic growth. Others believe that economic development should take priority because it improves people's standard of living. Discuss both views and give your own opinion.</p><p class=\"mb-4\">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p><p class=\"mb-4\"><strong>Write at least 250 words.</strong></p>",
+      "questionGroups": [
+        {
+          "instruction": "Write an essay discussing both views and giving your own opinion.",
+          "questionTypeCode": "DISCUSSION",
+          "questions": [
+            {
+              "content": "Environment vs Economic Growth: Discuss both views and give your own opinion.",
+              "position": 1,
+              "explanation": {
+                "bandDescriptors": {
+                  "taskResponse": "Discuss both perspectives thoroughly and present a clear, well-supported personal position",
+                  "coherence": "Use clear topic sentences, logical progression, and effective paragraphing",
+                  "lexicalResource": "Demonstrate topic-specific vocabulary: sustainability, carbon emissions, GDP, green economy",
+                  "grammaticalRange": "Use conditional structures, passive voice, and complex noun phrases"
+                },
+                "sampleIdeas": [
+                  "Environmental degradation costs more in the long run (healthcare, disaster recovery)",
+                  "A green economy can create new jobs and industries",
+                  "Developing nations need economic growth to lift people out of poverty",
+                  "Sustainable development balances both priorities"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "title": "Speaking Practice 1 - Hometown & Travel",
+  "description": "IELTS Speaking Part 1: Questions about your hometown and travel experiences.",
+  "skill": "SPEAKING",
+  "testType": "ACADEMIC",
+  "duration": 5,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=400",
+  "tagIds": [4, 5, 19],
+  "stimuli": [
+    {
+      "title": "Part 1: Hometown & Travel",
+      "section": 1,
+      "content": "<p class=\"mb-4\">In this part, the examiner will ask you questions about yourself and familiar topics. Answer each question in 2-3 sentences.</p>",
+      "questionGroups": [
+        {
+          "instruction": "Answer the following questions about your hometown.",
+          "questionTypeCode": "SPEAKING_PART_1",
+          "questions": [
+            {
+              "content": "Where is your hometown?",
+              "position": 1,
+              "questionCategory": "MAIN",
+              "explanation": {
+                "sampleAnswer": "My hometown is Ho Chi Minh City, which is the largest city in Vietnam. It's located in the southern part of the country.",
+                "tips": "Give specific details about location and briefly describe it"
+              }
+            },
+            {
+              "content": "What do you like most about your hometown?",
+              "position": 2,
+              "questionCategory": "FOLLOW_UP",
+              "parentQuestionPosition": 1,
+              "explanation": {
+                "sampleAnswer": "What I love most is the vibrant street food culture. You can find delicious and affordable food on almost every corner.",
+                "tips": "Express a clear preference and give a reason"
+              }
+            },
+            {
+              "content": "Has your hometown changed much in recent years?",
+              "position": 3,
+              "questionCategory": "FOLLOW_UP",
+              "parentQuestionPosition": 1,
+              "explanation": {
+                "sampleAnswer": "Yes, it has changed dramatically. Many new skyscrapers and shopping malls have been built, and the metro system is now under construction.",
+                "tips": "Use present perfect tense and give specific examples of changes"
+              }
+            },
+            {
+              "content": "Do you enjoy travelling?",
+              "position": 4,
+              "questionCategory": "MAIN",
+              "explanation": {
+                "sampleAnswer": "Absolutely, I'm passionate about travelling. I try to visit at least one new place every year because I find it really enriching.",
+                "tips": "Show enthusiasm and explain why"
+              }
+            },
+            {
+              "content": "What was the last place you visited?",
+              "position": 5,
+              "questionCategory": "FOLLOW_UP",
+              "parentQuestionPosition": 4,
+              "explanation": {
+                "sampleAnswer": "The last place I visited was Da Nang, a coastal city in central Vietnam. I went there last summer for a short holiday with my friends.",
+                "tips": "Use past simple tense and provide specific details"
+              }
+            },
+            {
+              "content": "Do you prefer travelling alone or with others?",
+              "position": 6,
+              "questionCategory": "FOLLOW_UP",
+              "parentQuestionPosition": 4,
+              "explanation": {
+                "sampleAnswer": "I generally prefer travelling with friends because it's more fun to share experiences. However, I sometimes enjoy solo trips when I want some quiet time.",
+                "tips": "State preference clearly and give balanced reasoning"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

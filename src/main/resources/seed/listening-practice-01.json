@@ -1,0 +1,103 @@
+{
+  "title": "Listening Practice 1 - University Library Tour",
+  "description": "IELTS Listening Section 1: A conversation about a university library tour and registration.",
+  "skill": "LISTENING",
+  "testType": "ACADEMIC",
+  "duration": 10,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400",
+  "tagIds": [1, 5, 16],
+  "stimuli": [
+    {
+      "title": "Section 1: University Library Registration",
+      "section": 1,
+      "content": "<p class=\"mb-4\">You will hear a conversation between a new student and a library assistant about registering for the university library.</p>",
+      "questionGroups": [
+        {
+          "instruction": "Questions 1-5: Complete the form below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+          "questionTypeCode": "FORM_COMPLETION",
+          "groupContent": "Library Registration Form\n\nName: Sarah {{1}}\nStudent ID: {{2}}\nDepartment: {{3}}\nPreferred contact: {{4}}\nLibrary card collection date: {{5}}",
+          "questions": [
+            {
+              "content": "Surname",
+              "position": 1,
+              "options": [{"label": "ANSWER", "content": "Henderson", "isCorrect": true}]
+            },
+            {
+              "content": "Student ID number",
+              "position": 2,
+              "options": [{"label": "ANSWER", "content": "ST2847561", "isCorrect": true}]
+            },
+            {
+              "content": "Department name",
+              "position": 3,
+              "options": [{"label": "ANSWER", "content": "Marine Biology", "isCorrect": true}]
+            },
+            {
+              "content": "Preferred contact method",
+              "position": 4,
+              "options": [{"label": "ANSWER", "content": "email", "isCorrect": true}]
+            },
+            {
+              "content": "Collection date",
+              "position": 5,
+              "options": [{"label": "ANSWER", "content": "15 September", "isCorrect": true}]
+            }
+          ]
+        },
+        {
+          "instruction": "Questions 6-10: Choose the correct letter, A, B or C.",
+          "questionTypeCode": "MCQ_L",
+          "questions": [
+            {
+              "content": "How many books can undergraduate students borrow at one time?",
+              "position": 6,
+              "options": [
+                {"label": "A", "content": "8", "isCorrect": false},
+                {"label": "B", "content": "10", "isCorrect": true},
+                {"label": "C", "content": "15", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "What is the standard loan period for books?",
+              "position": 7,
+              "options": [
+                {"label": "A", "content": "Two weeks", "isCorrect": false},
+                {"label": "B", "content": "Three weeks", "isCorrect": true},
+                {"label": "C", "content": "Four weeks", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "What is the fine for returning books late?",
+              "position": 8,
+              "options": [
+                {"label": "A", "content": "20p per day", "isCorrect": false},
+                {"label": "B", "content": "50p per day", "isCorrect": true},
+                {"label": "C", "content": "£1 per day", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "Where is the photocopying room located?",
+              "position": 9,
+              "options": [
+                {"label": "A", "content": "Ground floor", "isCorrect": false},
+                {"label": "B", "content": "First floor", "isCorrect": false},
+                {"label": "C", "content": "Second floor", "isCorrect": true}
+              ]
+            },
+            {
+              "content": "What time does the library close on weekdays?",
+              "position": 10,
+              "options": [
+                {"label": "A", "content": "9 pm", "isCorrect": false},
+                {"label": "B", "content": "10 pm", "isCorrect": true},
+                {"label": "C", "content": "11 pm", "isCorrect": false}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "title": "Writing Task 1 - Bar Chart: Internet Usage",
+  "description": "IELTS Writing Task 1: Describe a bar chart showing internet usage across different age groups.",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 20,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400",
+  "tagIds": [3, 5, 17],
+  "stimuli": [
+    {
+      "title": "Task 1: Internet Usage by Age Group",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 20 minutes on this task.</strong></p><p class=\"mb-4\">The bar chart below shows the percentage of people in different age groups who used the internet daily in 2010 and 2020.</p><p class=\"mb-4\">Summarise the information by selecting and reporting the main features, and make comparisons where relevant.</p><p class=\"mb-4\"><strong>Write at least 150 words.</strong></p><p class=\"mb-4\"><em>Data summary: In 2010, internet usage was 95% (16-24), 82% (25-34), 65% (35-44), 48% (45-54), 30% (55-64), 15% (65+). In 2020, internet usage was 99% (16-24), 97% (25-34), 93% (35-44), 88% (45-54), 78% (55-64), 54% (65+).</em></p>",
+      "questionGroups": [
+        {
+          "instruction": "Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+          "questionTypeCode": "BAR_CHART",
+          "questions": [
+            {
+              "content": "Describe the bar chart showing internet usage by age group in 2010 and 2020.",
+              "position": 1,
+              "explanation": {
+                "keyFeatures": [
+                  "Internet usage increased across all age groups between 2010 and 2020",
+                  "The biggest increase was among the 65+ group (from 15% to 54%)",
+                  "The 16-24 age group had the highest usage in both years",
+                  "The gap between youngest and oldest groups narrowed from 80% to 45%"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

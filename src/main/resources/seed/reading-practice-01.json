@@ -1,0 +1,173 @@
+{
+  "title": "Reading Practice 1 - The History of Tea",
+  "description": "IELTS Academic Reading practice test about the history and cultural significance of tea.",
+  "skill": "READING",
+  "testType": "ACADEMIC",
+  "duration": 20,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "tagIds": [2, 6],
+  "stimuli": [
+    {
+      "title": "Passage 1: The History of Tea",
+      "section": 1,
+      "content": "<p class=\"mb-6\"><strong class=\"font-bold text-lg\">A</strong> Tea is the most widely consumed beverage in the world after water, and its history stretches back nearly 5,000 years. According to Chinese legend, tea was discovered in 2737 BCE by Emperor Shen Nung when dried leaves from a wild tea tree blew into his pot of boiling water. He found the resulting drink refreshing and restorative. Although this legend is almost certainly apocryphal, archaeological evidence suggests that tea was being consumed in China as early as the second century BCE.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">B</strong> For centuries, tea remained a Chinese secret. It was during the Tang Dynasty (618–907 CE) that tea drinking became widespread among all classes of Chinese society. Lu Yu, often called the \"Sage of Tea,\" wrote the first comprehensive treatise on tea, the Cha Jing (The Classic of Tea), around 760 CE. This work covered everything from the cultivation of tea plants to the preparation and drinking of tea, and it helped elevate tea from a mere beverage to an art form. The Tang Dynasty also saw tea spread to Japan, where it would eventually give rise to the elaborate Japanese tea ceremony.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">C</strong> Tea first reached Europe in the early 17th century, brought by Portuguese and Dutch traders. Initially, it was extremely expensive and consumed only by the wealthy elite. In England, tea became fashionable after Catherine of Braganza, the Portuguese wife of King Charles II, introduced it to the English court in 1662. By the 18th century, tea had become Britain's national drink, consumed by people of all social classes. The British East India Company held a virtual monopoly on the tea trade, importing vast quantities from China.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">D</strong> The importance of tea in British culture led to one of the most significant events in world history: the Boston Tea Party of 1773. American colonists, angry at being taxed on tea by the British Parliament without having any representation, dumped an entire shipment of tea into Boston Harbor. This act of defiance was a catalyst for the American Revolution. Thus, a simple beverage played a pivotal role in the birth of a nation.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">E</strong> In the 19th century, the British Empire sought to break China's monopoly on tea production by establishing tea plantations in India and Sri Lanka (then Ceylon). Robert Fortune, a Scottish botanist, was sent on a secret mission to China in 1848 to steal tea plants and the secrets of tea production. His mission was successful, and within a few decades, India had become the world's largest tea producer. The tea plantations of Darjeeling and Assam became famous for producing distinctive varieties of black tea.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">F</strong> Today, tea is grown in more than 50 countries, and global production exceeds 6 million tonnes annually. China has reclaimed its position as the world's largest producer, followed by India, Kenya, and Sri Lanka. The tea industry employs millions of people worldwide, though it has faced criticism for poor working conditions on some plantations. Modern research has also highlighted numerous health benefits associated with tea consumption, including reduced risk of heart disease, certain cancers, and neurodegenerative conditions. From its legendary origins in ancient China to its current status as a global commodity, tea continues to shape cultures and economies around the world.</p>",
+      "questionGroups": [
+        {
+          "instruction": "Questions 1-5: The reading passage has six paragraphs, A-F. Which paragraph contains the following information? Write the correct letter, A-F.",
+          "questionTypeCode": "MATCHING_INFORMATION",
+          "questions": [
+            {
+              "content": "A reference to the health advantages of drinking tea",
+              "position": 1,
+              "options": [
+                {"label": "A", "content": "A", "isCorrect": false},
+                {"label": "B", "content": "B", "isCorrect": false},
+                {"label": "C", "content": "C", "isCorrect": false},
+                {"label": "D", "content": "D", "isCorrect": false},
+                {"label": "E", "content": "E", "isCorrect": false},
+                {"label": "F", "content": "F", "isCorrect": true}
+              ]
+            },
+            {
+              "content": "Details of how tea was used as a form of political protest",
+              "position": 2,
+              "options": [
+                {"label": "A", "content": "A", "isCorrect": false},
+                {"label": "B", "content": "B", "isCorrect": false},
+                {"label": "C", "content": "C", "isCorrect": false},
+                {"label": "D", "content": "D", "isCorrect": true},
+                {"label": "E", "content": "E", "isCorrect": false},
+                {"label": "F", "content": "F", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "A description of a book that transformed the perception of tea",
+              "position": 3,
+              "options": [
+                {"label": "A", "content": "A", "isCorrect": false},
+                {"label": "B", "content": "B", "isCorrect": true},
+                {"label": "C", "content": "C", "isCorrect": false},
+                {"label": "D", "content": "D", "isCorrect": false},
+                {"label": "E", "content": "E", "isCorrect": false},
+                {"label": "F", "content": "F", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "An explanation of how a spy mission changed the tea industry",
+              "position": 4,
+              "options": [
+                {"label": "A", "content": "A", "isCorrect": false},
+                {"label": "B", "content": "B", "isCorrect": false},
+                {"label": "C", "content": "C", "isCorrect": false},
+                {"label": "D", "content": "D", "isCorrect": false},
+                {"label": "E", "content": "E", "isCorrect": true},
+                {"label": "F", "content": "F", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "A mention of an unverified story about the origins of tea",
+              "position": 5,
+              "options": [
+                {"label": "A", "content": "A", "isCorrect": true},
+                {"label": "B", "content": "B", "isCorrect": false},
+                {"label": "C", "content": "C", "isCorrect": false},
+                {"label": "D", "content": "D", "isCorrect": false},
+                {"label": "E", "content": "E", "isCorrect": false},
+                {"label": "F", "content": "F", "isCorrect": false}
+              ]
+            }
+          ]
+        },
+        {
+          "instruction": "Questions 6-9: Do the following statements agree with the information given in the reading passage? Write TRUE if the statement agrees with the information, FALSE if the statement contradicts the information, NOT GIVEN if there is no information on this.",
+          "questionTypeCode": "TFNG",
+          "questions": [
+            {
+              "content": "Tea was initially affordable for all Europeans when it first arrived.",
+              "position": 6,
+              "options": [
+                {"label": "TRUE", "content": "TRUE", "isCorrect": false},
+                {"label": "FALSE", "content": "FALSE", "isCorrect": true},
+                {"label": "NOT GIVEN", "content": "NOT GIVEN", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "Lu Yu's book only discussed how to prepare and drink tea.",
+              "position": 7,
+              "options": [
+                {"label": "TRUE", "content": "TRUE", "isCorrect": false},
+                {"label": "FALSE", "content": "FALSE", "isCorrect": true},
+                {"label": "NOT GIVEN", "content": "NOT GIVEN", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "Robert Fortune learned to speak Chinese fluently before his mission.",
+              "position": 8,
+              "options": [
+                {"label": "TRUE", "content": "TRUE", "isCorrect": false},
+                {"label": "FALSE", "content": "FALSE", "isCorrect": false},
+                {"label": "NOT GIVEN", "content": "NOT GIVEN", "isCorrect": true}
+              ]
+            },
+            {
+              "content": "India is currently the world's largest tea producer.",
+              "position": 9,
+              "options": [
+                {"label": "TRUE", "content": "TRUE", "isCorrect": false},
+                {"label": "FALSE", "content": "FALSE", "isCorrect": true},
+                {"label": "NOT GIVEN", "content": "NOT GIVEN", "isCorrect": false}
+              ]
+            }
+          ]
+        },
+        {
+          "instruction": "Questions 10-13: Choose the correct letter, A, B, C or D.",
+          "questionTypeCode": "MCQ",
+          "questions": [
+            {
+              "content": "According to the passage, when was tea first consumed in China?",
+              "position": 10,
+              "options": [
+                {"label": "A", "content": "Around 2737 BCE", "isCorrect": false},
+                {"label": "B", "content": "During the Tang Dynasty", "isCorrect": false},
+                {"label": "C", "content": "As early as the second century BCE", "isCorrect": true},
+                {"label": "D", "content": "In the 17th century", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "What role did Catherine of Braganza play in the history of tea?",
+              "position": 11,
+              "options": [
+                {"label": "A", "content": "She brought tea from China to Portugal", "isCorrect": false},
+                {"label": "B", "content": "She made tea popular in the English court", "isCorrect": true},
+                {"label": "C", "content": "She established the British East India Company", "isCorrect": false},
+                {"label": "D", "content": "She wrote a book about tea preparation", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "What was the main cause of the Boston Tea Party?",
+              "position": 12,
+              "options": [
+                {"label": "A", "content": "The high price of tea in America", "isCorrect": false},
+                {"label": "B", "content": "The poor quality of British tea", "isCorrect": false},
+                {"label": "C", "content": "Taxation without political representation", "isCorrect": true},
+                {"label": "D", "content": "A dispute between American and Chinese traders", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "Which of the following best describes the current state of the global tea industry?",
+              "position": 13,
+              "options": [
+                {"label": "A", "content": "China no longer produces significant amounts of tea", "isCorrect": false},
+                {"label": "B", "content": "Tea production has declined due to health concerns", "isCorrect": false},
+                {"label": "C", "content": "The industry provides employment but faces ethical challenges", "isCorrect": true},
+                {"label": "D", "content": "India remains the world's largest tea producer", "isCorrect": false}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "title": "Speaking Practice 3 - Technology & Society",
+  "description": "IELTS Speaking Part 3: Discussion questions about technology's impact on society.",
+  "skill": "SPEAKING",
+  "testType": "ACADEMIC",
+  "duration": 5,
+  "testMode": "PRACTICE",
+  "section": 3,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1518770660439-4636190af475?w=400",
+  "tagIds": [4, 7, 17],
+  "stimuli": [
+    {
+      "title": "Part 3: Technology and Society Discussion",
+      "section": 1,
+      "content": "<p class=\"mb-4\">In this part of the test, the examiner will ask you more abstract questions related to the topic in Part 2. You should give extended answers and support your opinions with examples.</p>",
+      "questionGroups": [
+        {
+          "instruction": "Discuss the following questions about technology and society. Give detailed answers with examples.",
+          "questionTypeCode": "SPEAKING_PART_3",
+          "questions": [
+            {
+              "content": "How has technology changed the way people communicate?",
+              "position": 1,
+              "questionCategory": "MAIN",
+              "explanation": {
+                "sampleAnswer": "Technology has fundamentally transformed communication. Social media platforms like Facebook and Zalo allow people to stay connected regardless of distance. Video calling has made face-to-face conversations possible even across continents. However, some argue that digital communication has made interactions more superficial compared to in-person meetings.",
+                "tips": "Give a balanced view with specific examples of technology"
+              }
+            },
+            {
+              "content": "Do you think people rely too much on technology nowadays?",
+              "position": 2,
+              "questionCategory": "FOLLOW_UP",
+              "parentQuestionPosition": 1,
+              "explanation": {
+                "sampleAnswer": "To some extent, yes. Many people feel anxious without their smartphones, which suggests an unhealthy dependency. On the other hand, technology has made many tasks more efficient, so reliance on it isn't necessarily negative — it depends on whether people can still function without it.",
+                "tips": "Acknowledge both sides before giving your opinion"
+              }
+            },
+            {
+              "content": "What are the advantages and disadvantages of children using technology from a young age?",
+              "position": 3,
+              "questionCategory": "MAIN",
+              "explanation": {
+                "sampleAnswer": "On the positive side, early exposure to technology can develop digital literacy skills that are essential in today's world. Educational apps can make learning more engaging. However, excessive screen time has been linked to attention problems and reduced physical activity. I think the key is finding the right balance.",
+                "tips": "Structure answer with advantages first, then disadvantages, then your conclusion"
+              }
+            },
+            {
+              "content": "How might technology change education in the future?",
+              "position": 4,
+              "questionCategory": "FOLLOW_UP",
+              "parentQuestionPosition": 3,
+              "explanation": {
+                "sampleAnswer": "I believe AI will play a much bigger role in personalising education. Virtual reality could make learning more immersive — imagine studying history by virtually visiting ancient civilisations. However, I think human teachers will always be needed for emotional support and mentoring.",
+                "tips": "Use future tenses and speculative language (might, could, will probably)"
+              }
+            },
+            {
+              "content": "Do you think artificial intelligence will replace human workers?",
+              "position": 5,
+              "questionCategory": "MAIN",
+              "explanation": {
+                "sampleAnswer": "I don't think AI will completely replace human workers, but it will certainly change the nature of work. Routine and repetitive jobs are most at risk, while creative and interpersonal roles are harder to automate. The key challenge for society is ensuring that workers can adapt through retraining and education.",
+                "tips": "Show nuanced thinking rather than a simple yes/no answer"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "title": "Speaking Practice 2 - Describe a Memorable Event",
+  "description": "IELTS Speaking Part 2: Describe a memorable event in your life.",
+  "skill": "SPEAKING",
+  "testType": "ACADEMIC",
+  "duration": 5,
+  "testMode": "PRACTICE",
+  "section": 2,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400",
+  "tagIds": [4, 6],
+  "stimuli": [
+    {
+      "title": "Part 2: Describe a Memorable Event",
+      "section": 1,
+      "content": "<p class=\"mb-4\">You will have 1 minute to prepare and then you should speak for 1-2 minutes.</p><p class=\"mb-4\"><strong>Describe a memorable event in your life.</strong></p><p class=\"mb-4\">You should say:</p><ul class=\"list-disc pl-6 mb-4\"><li>what the event was</li><li>when and where it happened</li><li>who was involved</li></ul><p>and explain why it was memorable for you.</p>",
+      "questionGroups": [
+        {
+          "instruction": "Speak about the topic for 1-2 minutes. Use the prompts to help structure your response.",
+          "questionTypeCode": "SPEAKING_PART_2",
+          "questions": [
+            {
+              "content": "Describe a memorable event in your life.",
+              "position": 1,
+              "questionCategory": "MAIN",
+              "explanation": {
+                "sampleAnswer": "One of the most memorable events in my life was my high school graduation ceremony. It took place in June 2019 at our school auditorium. All of my classmates, teachers, and family members were there. What made it truly special was the speech given by our class president, who spoke about all the challenges we had overcome together. I felt a mixture of pride and sadness — proud of what we had achieved, but sad that we would be going our separate ways. I still remember the moment when we threw our graduation caps into the air. It marked the end of one chapter and the beginning of another.",
+                "tips": "Structure your answer chronologically, include feelings and sensory details"
+              }
+            },
+            {
+              "content": "Do you think it's important for people to celebrate special events?",
+              "position": 2,
+              "questionCategory": "FOLLOW_UP",
+              "parentQuestionPosition": 1,
+              "explanation": {
+                "sampleAnswer": "Yes, I believe celebrations are important because they create lasting memories and strengthen bonds between people.",
+                "tips": "Give a clear opinion with reasoning"
+              }
+            },
+            {
+              "content": "How do people in your country typically celebrate important events?",
+              "position": 3,
+              "questionCategory": "FOLLOW_UP",
+              "parentQuestionPosition": 1,
+              "explanation": {
+                "sampleAnswer": "In Vietnam, people usually celebrate with a big family gathering and a special meal. For example, Tet (Lunar New Year) involves visiting relatives, giving lucky money, and preparing traditional dishes.",
+                "tips": "Give cultural context with specific examples"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

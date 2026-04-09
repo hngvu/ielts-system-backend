@@ -1,0 +1,151 @@
+{
+  "title": "Reading Practice 2 - Urban Vertical Farming",
+  "description": "IELTS Academic Reading practice about vertical farming and sustainable agriculture.",
+  "skill": "READING",
+  "testType": "ACADEMIC",
+  "duration": 20,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?w=400",
+  "tagIds": [2, 6, 15],
+  "stimuli": [
+    {
+      "title": "Passage 1: Urban Vertical Farming",
+      "section": 1,
+      "content": "<p class=\"mb-6\"><strong class=\"font-bold text-lg\">A</strong> As the world's population continues to grow — projected to reach 9.7 billion by 2050 — the challenge of feeding everyone sustainably becomes increasingly urgent. Traditional agriculture already occupies roughly 40% of the Earth's ice-free land surface, and expanding farmland further would mean destroying more forests and natural habitats. In response, a growing number of entrepreneurs, scientists, and urban planners have turned their attention to vertical farming: the practice of growing crops in vertically stacked layers, often inside controlled-environment buildings located in or near cities.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">B</strong> The concept of vertical farming is not entirely new. In 1999, Professor Dickson Despommier of Columbia University began developing the idea with his students as a theoretical exercise. They envisioned skyscraper-sized farms that could feed tens of thousands of people. While no full skyscraper farm has been built, the core principles of Despommier's vision have been realised on a smaller scale. Today, commercial vertical farms operate in shipping containers, repurposed warehouses, and purpose-built facilities around the world, from Singapore to Newark, New Jersey.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">C</strong> Vertical farms typically use one of three soil-free growing methods. Hydroponics, the most common, involves growing plants in nutrient-rich water solutions. Aeroponics, developed by NASA for space research, suspends plant roots in air and mists them with nutrient solutions, using up to 90% less water than conventional agriculture. Aquaponics combines fish farming with plant cultivation in a symbiotic system: fish waste provides nutrients for the plants, and the plants filter the water for the fish. All three methods allow precise control over the nutrients each plant receives.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">D</strong> One of the most significant advantages of vertical farming is its dramatically reduced water usage. Conventional agriculture accounts for approximately 70% of global freshwater withdrawals. Vertical farms, by contrast, can recirculate water through closed-loop systems, reducing water consumption by 90-95% compared to field farming. Furthermore, because vertical farms operate indoors, crops are protected from extreme weather events such as droughts, floods, and storms, which are becoming more frequent due to climate change. This weather independence means that vertical farms can produce crops year-round, regardless of season or external conditions.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">E</strong> Despite these benefits, vertical farming faces substantial economic challenges. The initial capital investment for building a vertical farm is enormous, often running into tens of millions of dollars. Energy costs represent the single largest operational expense, as artificial lighting (typically LED) must replace sunlight entirely for indoor facilities. A study by the Association for Vertical Farming estimated that lighting alone can account for 25-30% of total operating costs. Labour costs are also significant, though increasing automation is gradually addressing this issue. Currently, most commercial vertical farms focus on high-value, fast-growing crops such as leafy greens, herbs, and strawberries, which can generate sufficient revenue to offset these costs. Staple crops like wheat and rice remain economically unviable in vertical farms.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">F</strong> Looking ahead, the vertical farming industry is poised for significant growth. Market analysts project the global vertical farming market will reach $20 billion by 2030. Advances in LED technology are steadily reducing energy costs, while artificial intelligence and robotics are improving efficiency and lowering labour expenses. Some companies are even experimenting with using renewable energy sources such as solar panels and wind turbines to power their facilities. As the technology matures and costs decrease, vertical farming has the potential to transform urban food systems, bringing fresh, locally grown produce to city dwellers while reducing agriculture's environmental footprint.</p>",
+      "questionGroups": [
+        {
+          "instruction": "Questions 1-6: The reading passage has six paragraphs, A-F. Choose the correct heading for each paragraph from the list of headings below.",
+          "questionTypeCode": "MATCHING_HEADINGS",
+          "sharedOptions": [
+            {"label": "i", "content": "The environmental advantages of growing food indoors"},
+            {"label": "ii", "content": "How
+
+
+ vertical farming works without soil"},
+            {"label": "iii", "content": "The future prospects for vertical farming"},
+            {"label": "iv", "content": "The financial obstacles to vertical farming"},
+            {"label": "v", "content": "The origins of the vertical farming concept"},
+            {"label": "vi", "content": "The growing crisis in global food production"},
+            {"label": "vii", "content": "Government support for vertical farming initiatives"},
+            {"label": "viii", "content": "A comparison between vertical and horizontal farming"}
+          ],
+          "questions": [
+            {
+              "content": "Paragraph A",
+              "position": 1,
+              "options": [
+                {"label": "vi", "content": "vi", "isCorrect": true}
+              ]
+            },
+            {
+              "content": "Paragraph B",
+              "position": 2,
+              "options": [
+                {"label": "v", "content": "v", "isCorrect": true}
+              ]
+            },
+            {
+              "content": "Paragraph C",
+              "position": 3,
+              "options": [
+                {"label": "ii", "content": "ii", "isCorrect": true}
+              ]
+            },
+            {
+              "content": "Paragraph D",
+              "position": 4,
+              "options": [
+                {"label": "i", "content": "i", "isCorrect": true}
+              ]
+            },
+            {
+              "content": "Paragraph E",
+              "position": 5,
+              "options": [
+                {"label": "iv", "content": "iv", "isCorrect": true}
+              ]
+            },
+            {
+              "content": "Paragraph F",
+              "position": 6,
+              "options": [
+                {"label": "iii", "content": "iii", "isCorrect": true}
+              ]
+            }
+          ]
+        },
+        {
+          "instruction": "Questions 7-10: Complete the sentences below. Choose NO MORE THAN TWO WORDS from the passage for each answer.",
+          "questionTypeCode": "SENTENCE_COMPLETION",
+          "questions": [
+            {
+              "content": "Traditional farming currently uses about 40% of the Earth's land that is free from ______.",
+              "position": 7,
+              "options": [
+                {"label": "ANSWER", "content": "ice", "isCorrect": true}
+              ]
+            },
+            {
+              "content": "The growing method called ______ was originally created by NASA for use in space.",
+              "position": 8,
+              "options": [
+                {"label": "ANSWER", "content": "aeroponics", "isCorrect": true}
+              ]
+            },
+            {
+              "content": "The biggest operational cost for vertical farms is ______ energy.",
+              "position": 9,
+              "options": [
+                {"label": "ANSWER", "content": "lighting", "isCorrect": true}
+              ]
+            },
+            {
+              "content": "Vertical farms currently focus on growing high-value crops like leafy greens, herbs, and ______.",
+              "position": 10,
+              "options": [
+                {"label": "ANSWER", "content": "strawberries", "isCorrect": true}
+              ]
+            }
+          ]
+        },
+        {
+          "instruction": "Questions 11-13: Choose the correct letter, A, B, C or D.",
+          "questionTypeCode": "MCQ",
+          "questions": [
+            {
+              "content": "What happened to Professor Despommier's original vision of skyscraper-sized farms?",
+              "position": 11,
+              "options": [
+                {"label": "A", "content": "It was fully realised in Singapore", "isCorrect": false},
+                {"label": "B", "content": "It was implemented on a smaller scale", "isCorrect": true},
+                {"label": "C", "content": "It was abandoned due to lack of funding", "isCorrect": false},
+                {"label": "D", "content": "It was rejected by urban planners", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "In an aquaponics system, what role do fish play?",
+              "position": 12,
+              "options": [
+                {"label": "A", "content": "They consume excess plant material", "isCorrect": false},
+                {"label": "B", "content": "They regulate the water temperature", "isCorrect": false},
+                {"label": "C", "content": "They supply nutrients for plant growth", "isCorrect": true},
+                {"label": "D", "content": "They help control insects in the farm", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "Why are staple crops like wheat and rice not grown in vertical farms?",
+              "position": 13,
+              "options": [
+                {"label": "A", "content": "They require natural sunlight to grow", "isCorrect": false},
+                {"label": "B", "content": "They cannot grow without soil", "isCorrect": false},
+                {"label": "C", "content": "They do not generate enough income to cover costs", "isCorrect": true},
+                {"label": "D", "content": "They take too long to harvest", "isCorrect": false}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

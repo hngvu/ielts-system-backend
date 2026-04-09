@@ -1,0 +1,44 @@
+{
+  "title": "Writing Task 2 - Technology and Education",
+  "description": "IELTS Writing Task 2: Discuss whether technology has a positive or negative impact on education.",
+  "skill": "WRITING",
+  "testType": "ACADEMIC",
+  "duration": 40,
+  "testMode": "PRACTICE",
+  "section": 2,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=400",
+  "tagIds": [3, 6, 16],
+  "stimuli": [
+    {
+      "title": "Task 2: Technology in Education",
+      "section": 1,
+      "content": "<p class=\"mb-4\"><strong>You should spend about 40 minutes on this task.</strong></p><p class=\"mb-4\">Write about the following topic:</p><p class=\"mb-4 italic\">Some people believe that technology has made education more accessible and effective, while others argue that it has created more problems than benefits. Discuss both views and give your own opinion.</p><p class=\"mb-4\">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</p><p class=\"mb-4\"><strong>Write at least 250 words.</strong></p>",
+      "questionGroups": [
+        {
+          "instruction": "Write an essay discussing both views and giving your own opinion.",
+          "questionTypeCode": "AGREE_DISAGREE",
+          "questions": [
+            {
+              "content": "Some people believe that technology has made education more accessible and effective, while others argue that it has created more problems than benefits. Discuss both views and give your own opinion.",
+              "position": 1,
+              "explanation": {
+                "bandDescriptors": {
+                  "taskResponse": "Address both views clearly and present a well-developed personal opinion",
+                  "coherence": "Organise ideas logically with clear paragraphing and cohesive devices",
+                  "lexicalResource": "Use a wide range of vocabulary with natural and sophisticated control",
+                  "grammaticalRange": "Use a wide range of structures with flexibility and accuracy"
+                },
+                "sampleIdeas": [
+                  "Technology provides access to online courses, educational videos, and digital textbooks",
+                  "Students in remote areas can access quality education through the internet",
+                  "Technology can be distracting and reduce face-to-face interaction",
+                  "The digital divide means not all students benefit equally"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

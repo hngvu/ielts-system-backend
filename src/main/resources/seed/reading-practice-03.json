@@ -1,0 +1,127 @@
+{
+  "title": "Reading Practice 3 - The Science of Sleep",
+  "description": "IELTS Academic Reading practice about sleep science and its impact on health.",
+  "skill": "READING",
+  "testType": "ACADEMIC",
+  "duration": 20,
+  "testMode": "PRACTICE",
+  "section": 1,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=400",
+  "tagIds": [2, 6, 18],
+  "stimuli": [
+    {
+      "title": "Passage 1: The Science of Sleep",
+      "section": 1,
+      "content": "<p class=\"mb-6\"><strong class=\"font-bold text-lg\">A</strong> Sleep is one of the most fundamental biological processes, yet for much of human history, it remained deeply mysterious. It was not until the 1950s that scientists Eugene Aserinsky and Nathaniel Kleitman discovered Rapid Eye Movement (REM) sleep, opening a new era in sleep research. Today, scientists understand that sleep is not a passive state but an active, highly organised process that plays a critical role in physical health, cognitive function, and emotional well-being.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">B</strong> A typical night's sleep consists of four to six cycles, each lasting approximately 90 minutes. Each cycle includes stages of progressively deeper non-REM sleep followed by a period of REM sleep. During the deepest stages of non-REM sleep, the body repairs tissues, builds bone and muscle, and strengthens the immune system. Growth hormone is predominantly released during these stages, which is why adequate sleep is particularly important for children and adolescents. REM sleep, on the other hand, is associated with vivid dreaming and is believed to play a crucial role in memory consolidation and emotional regulation.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">C</strong> The consequences of sleep deprivation are far-reaching and potentially severe. In the short term, even a single night of poor sleep can impair attention, working memory, and decision-making ability. Studies have shown that being awake for 24 hours produces cognitive impairment equivalent to having a blood alcohol level of 0.10% — above the legal driving limit in most countries. Chronic sleep deprivation has been linked to a wide range of health problems, including obesity, type 2 diabetes, cardiovascular disease, and depression. Research published in the journal Sleep found that people who regularly sleep fewer than six hours per night have a 13% higher mortality risk than those who sleep seven to eight hours.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">D</strong> One of the most fascinating areas of current sleep research concerns the brain's glymphatic system, discovered in 2012 by Dr. Maiken Nedergaard at the University of Rochester. During sleep, the spaces between brain cells expand by up to 60%, allowing cerebrospinal fluid to flow more freely and wash away metabolic waste products, including beta-amyloid, a protein associated with Alzheimer's disease. This discovery has profound implications for understanding neurodegenerative conditions and suggests that chronic sleep deprivation may accelerate cognitive decline in older adults.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">E</strong> Despite the clear importance of sleep, modern society seems designed to undermine it. Artificial lighting, particularly the blue light emitted by smartphones and computer screens, suppresses the production of melatonin, the hormone that signals the body to prepare for sleep. The 24-hour economy means that shift work is increasingly common, affecting an estimated 20% of the workforce in industrialised nations. Social media and streaming services encourage late-night screen time. The result is what some researchers call a \"global sleep loss epidemic\": surveys consistently show that a significant proportion of adults in developed countries do not get the recommended seven to nine hours of sleep per night.</p><p class=\"mb-6\"><strong class=\"font-bold text-lg\">F</strong> Addressing this epidemic requires both individual and societal changes. Sleep hygiene practices — such as maintaining a consistent sleep schedule, limiting caffeine and alcohol, creating a dark and cool sleeping environment, and avoiding screens before bedtime — can significantly improve sleep quality. At the societal level, some organisations have begun to take sleep seriously: several major companies now offer nap rooms for employees, and some school districts have pushed back start times to accommodate teenagers' natural sleep patterns, which tend to shift later during adolescence. These changes, while modest, represent a growing recognition that sleep is not a luxury but a biological necessity.</p>",
+      "questionGroups": [
+        {
+          "instruction": "Questions 1-5: Do the following statements agree with the information given in the reading passage? Write TRUE if the statement agrees with the information, FALSE if the statement contradicts the information, NOT GIVEN if there is no information on this.",
+          "questionTypeCode": "TFNG",
+          "questions": [
+            {
+              "content": "REM sleep was discovered before the 20th century.",
+              "position": 1,
+              "options": [
+                {"label": "TRUE", "content": "TRUE", "isCorrect": false},
+                {"label": "FALSE", "content": "FALSE", "isCorrect": true},
+                {"label": "NOT GIVEN", "content": "NOT GIVEN", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "Each sleep cycle typically lasts about 90 minutes.",
+              "position": 2,
+              "options": [
+                {"label": "TRUE", "content": "TRUE", "isCorrect": true},
+                {"label": "FALSE", "content": "FALSE", "isCorrect": false},
+                {"label": "NOT GIVEN", "content": "NOT GIVEN", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "Women require more sleep than men on average.",
+              "position": 3,
+              "options": [
+                {"label": "TRUE", "content": "TRUE", "isCorrect": false},
+                {"label": "FALSE", "content": "FALSE", "isCorrect": false},
+                {"label": "NOT GIVEN", "content": "NOT GIVEN", "isCorrect": true}
+              ]
+            },
+            {
+              "content": "Being awake for 24 hours is comparable to being legally drunk.",
+              "position": 4,
+              "options": [
+                {"label": "TRUE", "content": "TRUE", "isCorrect": true},
+                {"label": "FALSE", "content": "FALSE", "isCorrect": false},
+                {"label": "NOT GIVEN", "content": "NOT GIVEN", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "The glymphatic system was discovered by researchers at Harvard University.",
+              "position": 5,
+              "options": [
+                {"label": "TRUE", "content": "TRUE", "isCorrect": false},
+                {"label": "FALSE", "content": "FALSE", "isCorrect": true},
+                {"label": "NOT GIVEN", "content": "NOT GIVEN", "isCorrect": false}
+              ]
+            }
+          ]
+        },
+        {
+          "instruction": "Questions 6-10: Choose the correct letter, A, B, C or D.",
+          "questionTypeCode": "MCQ",
+          "questions": [
+            {
+              "content": "During the deepest stages of non-REM sleep, the body primarily:",
+              "position": 6,
+              "options": [
+                {"label": "A", "content": "Processes emotional memories", "isCorrect": false},
+                {"label": "B", "content": "Produces vivid dreams", "isCorrect": false},
+                {"label": "C", "content": "Repairs physical tissues and strengthens immunity", "isCorrect": true},
+                {"label": "D", "content": "Increases brain activity for learning", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "What does the glymphatic system do during sleep?",
+              "position": 7,
+              "options": [
+                {"label": "A", "content": "It consolidates long-term memories", "isCorrect": false},
+                {"label": "B", "content": "It removes waste products from the brain", "isCorrect": true},
+                {"label": "C", "content": "It regulates body temperature", "isCorrect": false},
+                {"label": "D", "content": "It produces growth hormones", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "How does blue light from screens affect sleep?",
+              "position": 8,
+              "options": [
+                {"label": "A", "content": "It increases brain activity during sleep", "isCorrect": false},
+                {"label": "B", "content": "It reduces the production of melatonin", "isCorrect": true},
+                {"label": "C", "content": "It shortens the duration of REM sleep", "isCorrect": false},
+                {"label": "D", "content": "It causes nightmares", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "What percentage of the workforce in industrialised nations does shift work?",
+              "position": 9,
+              "options": [
+                {"label": "A", "content": "About 10%", "isCorrect": false},
+                {"label": "B", "content": "About 13%", "isCorrect": false},
+                {"label": "C", "content": "About 20%", "isCorrect": true},
+                {"label": "D", "content": "About 30%", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "Why have some school districts changed their start times?",
+              "position": 10,
+              "options": [
+                {"label": "A", "content": "To reduce traffic congestion", "isCorrect": false},
+                {"label": "B", "content": "To allow teachers more preparation time", "isCorrect": false},
+                {"label": "C", "content": "To match teenagers' natural sleep patterns", "isCorrect": true},
+                {"label": "D", "content": "To save energy costs", "isCorrect": false}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

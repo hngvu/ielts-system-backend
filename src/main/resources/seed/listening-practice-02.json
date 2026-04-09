@@ -1,0 +1,103 @@
+{
+  "title": "Listening Practice 2 - Renewable Energy Lecture",
+  "description": "IELTS Listening Section 3: An academic lecture about renewable energy sources.",
+  "skill": "LISTENING",
+  "testType": "ACADEMIC",
+  "duration": 10,
+  "testMode": "PRACTICE",
+  "section": 3,
+  "thumbnailUrl": "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400",
+  "tagIds": [1, 7, 15],
+  "stimuli": [
+    {
+      "title": "Section 3: Renewable Energy Sources - Academic Discussion",
+      "section": 1,
+      "content": "<p class=\"mb-4\">You will hear a tutorial discussion between a professor and two students about renewable energy research.</p>",
+      "questionGroups": [
+        {
+          "instruction": "Questions 1-5: Choose the correct letter, A, B or C.",
+          "questionTypeCode": "MCQ_L",
+          "questions": [
+            {
+              "content": "What is the main focus of the students' research project?",
+              "position": 1,
+              "options": [
+                {"label": "A", "content": "Comparing costs of different energy sources", "isCorrect": false},
+                {"label": "B", "content": "Evaluating the efficiency of solar panels", "isCorrect": true},
+                {"label": "C", "content": "Designing a new wind turbine", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "What problem did the students encounter with their data collection?",
+              "position": 2,
+              "options": [
+                {"label": "A", "content": "The weather was too cloudy during the test period", "isCorrect": true},
+                {"label": "B", "content": "Their equipment malfunctioned", "isCorrect": false},
+                {"label": "C", "content": "They didn't have enough test subjects", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "According to the professor, what is the biggest challenge for solar energy?",
+              "position": 3,
+              "options": [
+                {"label": "A", "content": "Manufacturing costs", "isCorrect": false},
+                {"label": "B", "content": "Energy storage", "isCorrect": true},
+                {"label": "C", "content": "Public acceptance", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "What does the professor suggest the students do next?",
+              "position": 4,
+              "options": [
+                {"label": "A", "content": "Repeat the experiment over a longer period", "isCorrect": true},
+                {"label": "B", "content": "Change their research question entirely", "isCorrect": false},
+                {"label": "C", "content": "Focus only on wind energy instead", "isCorrect": false}
+              ]
+            },
+            {
+              "content": "When is the final report due?",
+              "position": 5,
+              "options": [
+                {"label": "A", "content": "End of November", "isCorrect": false},
+                {"label": "B", "content": "Mid-December", "isCorrect": true},
+                {"label": "C", "content": "Early January", "isCorrect": false}
+              ]
+            }
+          ]
+        },
+        {
+          "instruction": "Questions 6-10: Complete the notes below. Write NO MORE THAN TWO WORDS for each answer.",
+          "questionTypeCode": "NOTE_COMPLETION",
+          "groupContent": "Research Notes - Renewable Energy\n\nSolar panel efficiency in the UK: average {{6}} percent\nMain advantage of wind energy: relatively {{7}} to install\nBiggest environmental concern with solar farms: impact on {{8}}\nNew battery technology uses {{9}} instead of lithium\nThe professor recommends reading the journal article by Dr. {{10}}",
+          "questions": [
+            {
+              "content": "Average efficiency percentage",
+              "position": 6,
+              "options": [{"label": "ANSWER", "content": "15-20", "isCorrect": true}]
+            },
+            {
+              "content": "Main advantage description",
+              "position": 7,
+              "options": [{"label": "ANSWER", "content": "cheap", "isCorrect": true}]
+            },
+            {
+              "content": "Environmental concern",
+              "position": 8,
+              "options": [{"label": "ANSWER", "content": "local wildlife", "isCorrect": true}]
+            },
+            {
+              "content": "Alternative battery material",
+              "position": 9,
+              "options": [{"label": "ANSWER", "content": "sodium", "isCorrect": true}]
+            },
+            {
+              "content": "Professor's recommended author",
+              "position": 10,
+              "options": [{"label": "ANSWER", "content": "Martinez", "isCorrect": true}]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
