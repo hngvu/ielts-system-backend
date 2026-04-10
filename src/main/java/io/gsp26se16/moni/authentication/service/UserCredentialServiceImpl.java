@@ -28,6 +28,7 @@ public class UserCredentialServiceImpl implements UserCredentialService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public UserProfileResponse register(RegisterRequest request) {
         var existing = userCredentialsRepository.findByEmail(request.getEmail());
 
