@@ -70,5 +70,9 @@ public class LearnerRoadmapInsightsResponse {
         Double masteryLevel;
         Double confidenceScore;
         LocalDateTime updatedAt;
+        private Integer attemptCount;
+        private Double pTransit;
+        private Double pGuess;
+        private Double pSlip;
     }
 }
