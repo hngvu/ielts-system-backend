@@ -234,8 +234,15 @@ public class PracticeServiceImpl implements PracticeService {
     @Override
     @Transactional(readOnly = true)
     public SubmitAttemptResponse getAttemptResult(Integer attemptId) {
+        Users user = getCurrentUser();
+
         Attempt attempt =
                 attemptRepository.findById(attemptId).orElseThrow(() -> new AppException(ErrorCode.ATTEMPT_NOT_FOUND));
+
+        // Validate ownership: ensure the attempt belongs to the current user
+        if (!attempt.getUser().getId().equals(user.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
 
         List<AttemptAnswer> answers = attemptAnswerRepository.findAllByAttempt(attempt);
         List<SubmitAttemptResponse.AnswerResult> results = new ArrayList<>();

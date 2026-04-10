@@ -59,7 +59,8 @@ public class ScoringSessionController {
         int rating = ((Number) body.get("rating")).intValue();
         String comment = (String) body.getOrDefault("comment", "");
         String recordingUrl = (String) body.getOrDefault("recordingUrl", null);
-        ScoringSessionResponse rated = sessionService.rateSession(id, rating, comment, recordingUrl);
+        String credentialId = getCurrentUserId();
+        ScoringSessionResponse rated = sessionService.rateSession(id, rating, comment, recordingUrl, credentialId);
         return ResponseEntity.ok(
                 ApiResponse.<ScoringSessionResponse>builder().result(rated).build());
     }
@@ -81,8 +82,9 @@ public class ScoringSessionController {
 
     @GetMapping("/{id}/evaluation")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getEvaluation(@PathVariable Integer id) {
+        String credentialId = getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
-                .result(sessionService.getEvaluation(id))
+                .result(sessionService.getEvaluation(id, credentialId))
                 .build());
     }
 

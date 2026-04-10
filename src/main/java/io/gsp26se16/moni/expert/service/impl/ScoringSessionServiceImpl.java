@@ -95,9 +95,19 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
     @Override
     @Transactional
     public ScoringSessionResponse cancelSession(Integer sessionId, String credentialId) {
+        var credential = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
         ScoringSession session = sessionRepository
                 .findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
+
+        // Validate that the caller owns this session
+        if (session.getUser() == null
+                || !session.getUser().getId().equals(credential.getUser().getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
 
         if (session.getStatus() != SessionStatus.QUEUED) {
             throw new AppException(ErrorCode.SESSION_NOT_CANCELLABLE);
@@ -105,7 +115,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
 
         session.setStatus(SessionStatus.CANCELLED);
 
-        // Hoàn credit khi huỷ phiên chưa bắt đầu
+        // Hoàn credit cho người dùng đã tạo session
         String serviceCode =
                 "SPEAKING".equalsIgnoreCase(session.getSkill()) ? "EXPERT_SPEAKING_SCORE" : "EXPERT_WRITING_SCORE";
         creditService.refund(credentialId, serviceCode);
@@ -122,10 +132,29 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
     }
 
     @Override
-    public ScoringSessionResponse getSessionById(Integer sessionId) {
+    public ScoringSessionResponse getSessionById(Integer sessionId, String credentialId) {
+        var credential = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
         ScoringSession session = sessionRepository
                 .findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
+
+        // Validate ownership: caller must be either the session owner (user) or the assigned expert
+        boolean isSessionOwner = session.getUser() != null
+                && session.getUser().getId().equals(credential.getUser().getId());
+        boolean isAssignedExpert = session.getExpert() != null
+                && session.getExpert().getUser() != null
+                && session.getExpert()
+                        .getUser()
+                        .getId()
+                        .equals(credential.getUser().getId());
+
+        if (!isSessionOwner && !isAssignedExpert) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
         return toResponse(session);
     }
 
@@ -142,10 +171,24 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
 
     @Override
     @Transactional
-    public ScoringSessionResponse startSession(Integer sessionId) {
+    public ScoringSessionResponse startSession(Integer sessionId, String credentialId) {
+        var credential = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
         ScoringSession session = sessionRepository
                 .findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
+
+        // Validate that the caller is the assigned expert for this session
+        if (session.getExpert() == null
+                || session.getExpert().getUser() == null
+                || !session.getExpert()
+                        .getUser()
+                        .getId()
+                        .equals(credential.getUser().getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
 
         String roomName = "scoring-" + sessionId + "-" + System.currentTimeMillis();
         String roomUrl = dailyCoService.createRoom(roomName);
@@ -160,10 +203,24 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
 
     @Override
     @Transactional
-    public ScoringSessionResponse completeSession(Integer sessionId, SubmitEvaluationRequest req) {
+    public ScoringSessionResponse completeSession(Integer sessionId, SubmitEvaluationRequest req, String credentialId) {
+        var credential = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
         ScoringSession session = sessionRepository
                 .findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
+
+        // Validate that the caller is the assigned expert for this session
+        if (session.getExpert() == null
+                || session.getExpert().getUser() == null
+                || !session.getExpert()
+                        .getUser()
+                        .getId()
+                        .equals(credential.getUser().getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
 
         // Auto-calculate overall from criteria scores
         double overall = 0;
@@ -260,10 +317,26 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
 
     @Override
     @Transactional
-    public ScoringSessionResponse saveExpertRecording(Integer sessionId, String expertRecordingUrl) {
+    public ScoringSessionResponse saveExpertRecording(
+            Integer sessionId, String expertRecordingUrl, String credentialId) {
+        var credential = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
         ScoringSession session = sessionRepository
                 .findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
+
+        // Validate that the caller is the assigned expert for this session
+        if (session.getExpert() == null
+                || session.getExpert().getUser() == null
+                || !session.getExpert()
+                        .getUser()
+                        .getId()
+                        .equals(credential.getUser().getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
         if (expertRecordingUrl != null && !expertRecordingUrl.isBlank()) {
             session.setExpertRecordingUrl(expertRecordingUrl);
         }
@@ -272,10 +345,22 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
 
     @Override
     @Transactional
-    public ScoringSessionResponse rateSession(Integer sessionId, int rating, String comment, String recordingUrl) {
+    public ScoringSessionResponse rateSession(
+            Integer sessionId, int rating, String comment, String recordingUrl, String credentialId) {
+        var credential = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
         ScoringSession session = sessionRepository
                 .findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
+
+        // Validate that the caller owns this session (only the learner who booked can rate)
+        if (session.getUser() == null
+                || !session.getUser().getId().equals(credential.getUser().getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
         // rating=0 means user skipped rating, only save recordingUrl
         if (rating > 0) {
             session.setUserRating(rating);
@@ -325,7 +410,29 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
     }
 
     @Override
-    public java.util.Map<String, Object> getEvaluation(Integer sessionId) {
+    public java.util.Map<String, Object> getEvaluation(Integer sessionId, String credentialId) {
+        var credential = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        ScoringSession session = sessionRepository
+                .findById(sessionId)
+                .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
+
+        // Validate ownership: caller must be either the session owner or the assigned expert
+        boolean isSessionOwner = session.getUser() != null
+                && session.getUser().getId().equals(credential.getUser().getId());
+        boolean isAssignedExpert = session.getExpert() != null
+                && session.getExpert().getUser() != null
+                && session.getExpert()
+                        .getUser()
+                        .getId()
+                        .equals(credential.getUser().getId());
+
+        if (!isSessionOwner && !isAssignedExpert) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
         var eval = evaluationRepository
                 .findByScoringSession_Id(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));

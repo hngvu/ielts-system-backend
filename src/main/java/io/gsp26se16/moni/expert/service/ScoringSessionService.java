@@ -21,25 +21,26 @@ public interface ScoringSessionService {
 
     Map<String, Object> getQueuePositionWithStatus(Integer sessionId);
 
-    ScoringSessionResponse getSessionById(Integer sessionId);
+    ScoringSessionResponse getSessionById(Integer sessionId, String credentialId);
 
-    ScoringSessionResponse startSession(Integer sessionId);
+    ScoringSessionResponse startSession(Integer sessionId, String credentialId);
 
-    ScoringSessionResponse completeSession(Integer sessionId, SubmitEvaluationRequest evaluation);
+    ScoringSessionResponse completeSession(Integer sessionId, SubmitEvaluationRequest evaluation, String credentialId);
 
     List<ScoringSessionResponse> getSessionsForExpert(String credentialId);
 
-    ScoringSessionResponse rateSession(Integer sessionId, int rating, String comment, String recordingUrl);
+    ScoringSessionResponse rateSession(
+            Integer sessionId, int rating, String comment, String recordingUrl, String credentialId);
 
     List<Map<String, Object>> getExpertReviews(Integer expertId);
 
     List<ScoringSessionResponse> getUserSessions(String credentialId);
 
-    Map<String, Object> getEvaluation(Integer sessionId);
+    Map<String, Object> getEvaluation(Integer sessionId, String credentialId);
 
     List<ScoringSessionResponse> getAllSessions();
 
     List<ScoringSessionResponse> getAllSessionsForExpert(String credentialId);
 
-    ScoringSessionResponse saveExpertRecording(Integer sessionId, String expertRecordingUrl);
+    ScoringSessionResponse saveExpertRecording(Integer sessionId, String expertRecordingUrl, String credentialId);
 }

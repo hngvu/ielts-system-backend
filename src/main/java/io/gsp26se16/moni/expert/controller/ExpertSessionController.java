@@ -40,22 +40,25 @@ public class ExpertSessionController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ScoringSessionResponse>> getSession(@PathVariable Integer id) {
+        String credentialId = getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.<ScoringSessionResponse>builder()
-                .result(sessionService.getSessionById(id))
+                .result(sessionService.getSessionById(id, credentialId))
                 .build());
     }
 
     @PatchMapping("/{id}/start")
     public ResponseEntity<ApiResponse<ScoringSessionResponse>> startSession(@PathVariable Integer id) {
+        String credentialId = getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.<ScoringSessionResponse>builder()
-                .result(sessionService.startSession(id))
+                .result(sessionService.startSession(id, credentialId))
                 .build());
     }
 
     @PostMapping("/{id}/evaluate")
     public ResponseEntity<ApiResponse<ScoringSessionResponse>> submitEvaluation(
             @PathVariable Integer id, @RequestBody SubmitEvaluationRequest request) {
-        ScoringSessionResponse completed = sessionService.completeSession(id, request);
+        String credentialId = getCurrentUserId();
+        ScoringSessionResponse completed = sessionService.completeSession(id, request, credentialId);
         return ResponseEntity.ok(
                 ApiResponse.<ScoringSessionResponse>builder().result(completed).build());
     }
@@ -63,8 +66,9 @@ public class ExpertSessionController {
     @PostMapping("/{id}/recording")
     public ResponseEntity<ApiResponse<ScoringSessionResponse>> saveExpertRecording(
             @PathVariable Integer id, @RequestBody java.util.Map<String, String> body) {
+        String credentialId = getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.<ScoringSessionResponse>builder()
-                .result(sessionService.saveExpertRecording(id, body.get("expertRecordingUrl")))
+                .result(sessionService.saveExpertRecording(id, body.get("expertRecordingUrl"), credentialId))
                 .build());
     }
 
