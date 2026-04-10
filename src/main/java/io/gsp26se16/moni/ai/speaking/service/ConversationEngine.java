@@ -15,7 +15,10 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.gsp26se16.moni.ai.speaking.entity.SpeakingSession;
 import io.gsp26se16.moni.ai.speaking.entity.SpeakingSubmission;
+import io.gsp26se16.moni.ai.speaking.model.ActiveExamSession;
+import io.gsp26se16.moni.ai.speaking.repository.SpeakingSessionRepository;
 import io.gsp26se16.moni.ai.speaking.repository.SpeakingSubmissionRepository;
 import io.gsp26se16.moni.ai.writing.entity.AiEvaluation;
 import io.gsp26se16.moni.ai.writing.repository.AiEvaluationRepository;
@@ -53,6 +56,7 @@ public class ConversationEngine {
     private final SpeakingRuleEngine speakingRuleEngine;
     private final AiEvaluationRepository aiEvaluationRepository;
     private final SpeakingSubmissionRepository speakingSubmissionRepository;
+    private final SpeakingSessionRepository speakingSessionRepository;
     private final UsersRepository usersRepository;
     private final UserCredentialsRepository userCredentialsRepository;
     private final LearnerMetricRepository learnerMetricRepository;
@@ -62,6 +66,7 @@ public class ConversationEngine {
     private final ObjectMapper objectMapper;
     private final ChatClient.Builder chatClientBuilder;
     private final Executor aiExecutor;
+    private final io.gsp26se16.moni.content.repository.TestRepository testRepository;
 
     // ─────────────────────────────── Public API ───────────────────────────────
 
@@ -69,12 +74,14 @@ public class ConversationEngine {
      * Đánh giá toàn bộ transcript 3 parts từ exam pipeline.
      * Gọi bởi SpeakingExamHandler sau khi user hoàn thành cả 3 parts.
      *
-     * @param examSessionId  WebSocket session ID
-     * @param userId         ID của user
-     * @param fullTranscript toàn bộ transcript 3 parts (từ ActiveExamSession.getFullTranscript())
+     * @param session ActiveExamSession chứa toàn bộ thông tin buổi thi
      */
-    public Map<String, Object> evaluateFromExam(
-            String examSessionId, String userId, String fullTranscript, java.util.List<String> audioUrls) {
+    public Map<String, Object> evaluateFromExam(ActiveExamSession session) {
+        String fullTranscript = session.getFullTranscriptWithQuestions();
+        List<String> audioUrls = session.getAudioUrls();
+        String examSessionId = session.getSessionId();
+        String userId = session.getUserId();
+
         if (fullTranscript == null || fullTranscript.isBlank() || isNoResponseTranscript(fullTranscript)) {
             log.warn("Transcript rỗng cho exam session {}", examSessionId);
             return defaultResult();
@@ -82,7 +89,7 @@ public class ConversationEngine {
 
         log.info("Bắt đầu đánh giá exam session {} — {} chars", examSessionId, fullTranscript.length());
 
-        SpeakingSubmission submission = createSubmission(userId, fullTranscript, audioUrls);
+        SpeakingSubmission submission = createExamSubmission(session, fullTranscript, audioUrls);
 
         try {
             ChatClient chatClient = chatClientBuilder.build();
@@ -96,30 +103,31 @@ public class ConversationEngine {
                         "justification", "Fallback due to evaluation error");
             };
 
-            // Run song song + fallback từng cái
+            // The transcript already contains questions inline, so pass it as the "question" context
+            // AI prompts use {question} placeholder — now it receives the full Q&A context
             CompletableFuture<Map<String, Object>> fcFuture = CompletableFuture.supplyAsync(
-                            () -> phase1FC(chatClient, fullTranscript, "IELTS Speaking Test"), aiExecutor)
+                            () -> phase1FC(chatClient, fullTranscript, fullTranscript), aiExecutor)
                     .exceptionally(ex -> {
                         log.error("FC failed", ex);
                         return fallback.apply("FC");
                     });
 
             CompletableFuture<Map<String, Object>> lrFuture = CompletableFuture.supplyAsync(
-                            () -> phase2LR(chatClient, fullTranscript, "IELTS Speaking Test"), aiExecutor)
+                            () -> phase2LR(chatClient, fullTranscript, fullTranscript), aiExecutor)
                     .exceptionally(ex -> {
                         log.error("LR failed", ex);
                         return fallback.apply("LR");
                     });
 
             CompletableFuture<Map<String, Object>> graFuture = CompletableFuture.supplyAsync(
-                            () -> phase3GRA(chatClient, fullTranscript, "IELTS Speaking Test"), aiExecutor)
+                            () -> phase3GRA(chatClient, fullTranscript, fullTranscript), aiExecutor)
                     .exceptionally(ex -> {
                         log.error("GRA failed", ex);
                         return fallback.apply("GRA");
                     });
 
             CompletableFuture<Map<String, Object>> prFuture = CompletableFuture.supplyAsync(
-                            () -> phase4PR(chatClient, fullTranscript, "IELTS Speaking Test"), aiExecutor)
+                            () -> phase4PR(chatClient, fullTranscript, fullTranscript), aiExecutor)
                     .exceptionally(ex -> {
                         log.error("PR failed", ex);
                         return fallback.apply("PR");
@@ -191,7 +199,7 @@ public class ConversationEngine {
                 transcript.length());
 
         String formattedTranscript = "Question: " + question + "\nAnswer: " + transcript;
-        SpeakingSubmission submission = createSubmission(userId, formattedTranscript, null);
+        SpeakingSubmission submission = createPracticeSubmission(userId, formattedTranscript);
 
         try {
             ChatClient chatClient =
@@ -302,8 +310,9 @@ public class ConversationEngine {
 
     // ─────────────────────────────── Private ─────────────────────────────────
 
-    private SpeakingSubmission createSubmission(
-            String credentialId, String transcript, java.util.List<String> audioUrls) {
+    private SpeakingSubmission createExamSubmission(
+            ActiveExamSession session, String transcript, List<String> audioUrls) {
+        String credentialId = session.getUserId();
         // userId from JWT is credential ID, need to resolve to Users entity
         Users user = null;
         if (credentialId != null) {
@@ -312,7 +321,6 @@ public class ConversationEngine {
             if (cred != null) user = cred.getUser();
         }
         if (user == null) {
-            // Fallback: try direct lookup
             user = usersRepository.findById(credentialId).orElse(null);
         }
 
@@ -325,10 +333,47 @@ public class ConversationEngine {
             log.warn("Failed to serialize audioUrls", e);
         }
 
+        // Resolve Test entity
+        io.gsp26se16.moni.content.entity.Test test = null;
+        if (session.getTestId() != null) {
+            test = testRepository.findById(session.getTestId()).orElse(null);
+        }
+
+        // Resolve SpeakingSession entity
+        SpeakingSession speakingSession = null;
+        if (session.getSpeakingSessionId() != null) {
+            speakingSession = speakingSessionRepository
+                    .findById(session.getSpeakingSessionId())
+                    .orElse(null);
+        }
+
+        SpeakingSubmission submission = SpeakingSubmission.builder()
+                .user(user)
+                .test(test)
+                .speakingSession(speakingSession)
+                .audioTranscript(transcript)
+                .audioUrl(audioUrlsJson)
+                .evaluationStatus(EvaluationStatus.PROCESSING)
+                .build();
+
+        return speakingSubmissionRepository.save(submission);
+    }
+
+    /** createSubmission for practice mode (no ActiveExamSession) */
+    private SpeakingSubmission createPracticeSubmission(String credentialId, String transcript) {
+        Users user = null;
+        if (credentialId != null) {
+            UserCredentials cred =
+                    userCredentialsRepository.findById(credentialId).orElse(null);
+            if (cred != null) user = cred.getUser();
+        }
+        if (user == null) {
+            user = usersRepository.findById(credentialId).orElse(null);
+        }
+
         SpeakingSubmission submission = SpeakingSubmission.builder()
                 .user(user)
                 .audioTranscript(transcript)
-                .audioUrl(audioUrlsJson)
                 .evaluationStatus(EvaluationStatus.PROCESSING)
                 .build();
 

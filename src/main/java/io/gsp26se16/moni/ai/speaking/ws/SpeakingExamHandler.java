@@ -168,11 +168,7 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
                 () -> {
                     try {
                         session.setState(ExamState.EVALUATING);
-                        Map<String, Object> result = conversationEngine.evaluateFromExam(
-                                session.getSessionId(),
-                                session.getUserId(),
-                                session.getFullTranscript(),
-                                session.getAudioUrls());
+                        Map<String, Object> result = conversationEngine.evaluateFromExam(session);
 
                         if (session.isOpen()) {
                             session.getWsSession()

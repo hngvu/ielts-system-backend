@@ -58,6 +58,7 @@ public class ActiveExamSession {
     private final List<TranscriptEntry> part1Transcripts = new CopyOnWriteArrayList<>();
     private volatile String part2Transcript = "";
     private volatile String part2AudioUrl = "";
+    private volatile String part2QuestionContent = "";
     private final List<TranscriptEntry> part3Transcripts = new CopyOnWriteArrayList<>();
 
     public ActiveExamSession(String sessionId, String userId, Integer testId, WebSocketSession wsSession) {
@@ -69,28 +70,40 @@ public class ActiveExamSession {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    public void addPart1Transcript(Integer questionId, String text, String audioUrl) {
-        part1Transcripts.add(new TranscriptEntry(questionId, text, audioUrl));
+    public void addPart1Transcript(Integer questionId, String questionContent, String text, String audioUrl) {
+        part1Transcripts.add(new TranscriptEntry(questionId, questionContent, text, audioUrl));
     }
 
-    public void addPart3Transcript(Integer questionId, String text, String audioUrl) {
-        part3Transcripts.add(new TranscriptEntry(questionId, text, audioUrl));
+    public void addPart3Transcript(Integer questionId, String questionContent, String text, String audioUrl) {
+        part3Transcripts.add(new TranscriptEntry(questionId, questionContent, text, audioUrl));
     }
 
-    /** Gộp toàn bộ transcript 3 parts để chuyển cho ConversationEngine chấm */
-    public String getFullTranscript() {
+    /** Gộp toàn bộ transcript 3 parts kèm câu hỏi để AI chấm chính xác */
+    public String getFullTranscriptWithQuestions() {
         StringBuilder sb = new StringBuilder();
 
         sb.append("=== PART 1 ===\n");
         for (TranscriptEntry e : part1Transcripts) {
-            sb.append("Q").append(e.questionId()).append(": ").append(e.text()).append("\n");
+            sb.append("Q").append(e.questionId());
+            if (e.questionContent() != null && !e.questionContent().isBlank()) {
+                sb.append(" [").append(e.questionContent()).append("]");
+            }
+            sb.append(": ").append(e.text()).append("\n");
         }
 
-        sb.append("\n=== PART 2 ===\n").append(part2Transcript).append("\n");
+        sb.append("\n=== PART 2 ===\n");
+        if (part2QuestionContent != null && !part2QuestionContent.isBlank()) {
+            sb.append("[Topic: ").append(part2QuestionContent).append("]\n");
+        }
+        sb.append(part2Transcript).append("\n");
 
         sb.append("\n=== PART 3 ===\n");
         for (TranscriptEntry e : part3Transcripts) {
-            sb.append("Q").append(e.questionId()).append(": ").append(e.text()).append("\n");
+            sb.append("Q").append(e.questionId());
+            if (e.questionContent() != null && !e.questionContent().isBlank()) {
+                sb.append(" [").append(e.questionContent()).append("]");
+            }
+            sb.append(": ").append(e.text()).append("\n");
         }
 
         return sb.toString();
@@ -116,5 +129,5 @@ public class ActiveExamSession {
         return wsSession != null && wsSession.isOpen();
     }
 
-    public record TranscriptEntry(Integer questionId, String text, String audioUrl) {}
+    public record TranscriptEntry(Integer questionId, String questionContent, String text, String audioUrl) {}
 }

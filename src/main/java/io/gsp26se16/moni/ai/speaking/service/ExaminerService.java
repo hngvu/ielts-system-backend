@@ -117,10 +117,16 @@ public class ExaminerService {
      */
     public void handleTranscript(ActiveExamSession session, Integer questionId, String transcript, String audioUrl)
             throws IOException {
+        // Get current question content for AI evaluation context
+        String questionContent = "";
+        if (session.getCurrentQuestion() != null) {
+            questionContent = session.getCurrentQuestion().getContent();
+        }
+
         if (session.getState() == ExamState.PART1_QUESTIONING) {
-            session.addPart1Transcript(questionId, transcript, audioUrl);
+            session.addPart1Transcript(questionId, questionContent, transcript, audioUrl);
         } else if (session.getState() == ExamState.PART3_QUESTIONING) {
-            session.addPart3Transcript(questionId, transcript, audioUrl);
+            session.addPart3Transcript(questionId, questionContent, transcript, audioUrl);
         }
         askNextQuestion(session);
     }
@@ -137,6 +143,10 @@ public class ExaminerService {
     public void stopPart2Speaking(ActiveExamSession session, String transcript, String audioUrl) throws IOException {
         session.setPart2Transcript(transcript != null ? transcript : "");
         session.setPart2AudioUrl(audioUrl != null ? audioUrl : "");
+        // Save Part 2 question content for AI evaluation
+        if (session.getPart2Question() != null) {
+            session.setPart2QuestionContent(session.getPart2Question().getContent());
+        }
         session.setState(ExamState.PART3_QUESTIONING);
 
         WebSocketSession ws = session.getWsSession();
