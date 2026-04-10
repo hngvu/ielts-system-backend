@@ -113,13 +113,13 @@ public class ActiveExamSession {
         List<String> urls = new ArrayList<>();
 
         for (TranscriptEntry e : part1Transcripts) {
-            if (e.audioUrl() != null && !e.audioUrl().isBlank()) urls.add(e.audioUrl());
+            urls.add((e.audioUrl() != null && !e.audioUrl().isBlank()) ? e.audioUrl() : null);
         }
 
-        if (part2AudioUrl != null && !part2AudioUrl.isBlank()) urls.add(part2AudioUrl);
+        urls.add((part2AudioUrl != null && !part2AudioUrl.isBlank()) ? part2AudioUrl : null);
 
         for (TranscriptEntry e : part3Transcripts) {
-            if (e.audioUrl() != null && !e.audioUrl().isBlank()) urls.add(e.audioUrl());
+            urls.add((e.audioUrl() != null && !e.audioUrl().isBlank()) ? e.audioUrl() : null);
         }
 
         return urls;
