@@ -5,6 +5,10 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import io.gsp26se16.moni.common.enumeration.PublishStatus;
+import io.gsp26se16.moni.common.enumeration.TestMode;
+import io.gsp26se16.moni.content.entity.Test;
+import io.gsp26se16.moni.content.repository.TestRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,6 +58,7 @@ public class GoalServiceImpl implements GoalService {
     private final StimulusRepository stimulusRepository;
     private final TestStructureRepository testStructureRepository;
     private final PlacementResultRepository placementResultRepository;
+    private final TestRepository testRepository;
 
     @Override
     @Transactional
@@ -201,37 +206,31 @@ public class GoalServiceImpl implements GoalService {
         if ("DONE".equals(task.getStatus())) {
             Roadmap currentRoadmap = task.getRoadmap();
 
-            // Phase 02 Fix: Nếu là PRACTICE_STIMULUS DONE → kiểm tra unlock MINI_TEST
+            // Nếu là PRACTICE_STIMULUS DONE → kiểm tra unlock MINI_TEST
             if ("PRACTICE_STIMULUS".equals(task.getTaskType())) {
                 List<Task> practiceTasksInRoadmap =
                         taskRepository.findAllByRoadmapAndTaskType(currentRoadmap, "PRACTICE_STIMULUS");
                 boolean allPracticeDone = practiceTasksInRoadmap.stream().allMatch(t -> "DONE".equals(t.getStatus()));
 
                 if (allPracticeDone) {
-                    log.info(
-                            "Tất cả PRACTICE_STIMULUS đã DONE → Mở khóa MINI_TEST trong roadmap {}",
-                            currentRoadmap.getId());
+                    log.info("Tất cả PRACTICE_STIMULUS đã DONE → Khởi tạo đề và Mở khóa MINI_TEST trong roadmap {}", currentRoadmap.getId());
+
                     List<Task> lockedMiniTests =
                             taskRepository.findAllByRoadmapAndTaskType(currentRoadmap, "MINI_TEST");
+
                     lockedMiniTests.forEach(miniTest -> {
                         if ("LOCKED".equals(miniTest.getStatus())) {
-                            miniTest.setStatus("TODO");
-                            taskRepository.save(miniTest);
+                            // [MỚI] Gọi hàm sinh đề cá nhân hóa ngay tại đây (Just-In-Time)
+                            generateAndAssignPersonalizedMiniTest(miniTest, currentRoadmap, learner);
                         }
                     });
                 }
             }
 
-            // [IMPROVEMENT #3] Track learning velocity for each tag
-            // [IMPROVEMENT #4] Generate next roadmap predictively at 80%
-
             // Kịch bản tự động sinh roadmap mới khi hết tất cả bài
             long remainingTasks = taskRepository.countByRoadmapIdAndStatusNot(currentRoadmap.getId(), "DONE");
 
-            // [NEW] If 80% done → generate next roadmap (QUEUED status)
             if (remainingTasks > 0) {
-                double progressPercent =
-                        1.0 - ((double) remainingTasks / taskRepository.countByRoadmapId(currentRoadmap.getId()));
                 generateNextRoadmapWhenNearing100Percent(currentRoadmap);
             }
 
@@ -692,10 +691,7 @@ public class GoalServiceImpl implements GoalService {
             taskRepository.save(practiceTask);
         }
 
-        // [NEW] 3. Adaptive Mini-Test Difficulty (#6)
-        //    Instead of: all students get same band test
-        //    Now: create mini-test at appropriate band level
-        createAdaptiveMiniTest(roadmap, learner, order);
+        createLockedMiniTestPlaceholder(roadmap, order);
 
         log.info(
                 "[generateSmartTasks] roadmap={}, skill={}, tasks={}",
@@ -807,90 +803,37 @@ public class GoalServiceImpl implements GoalService {
     // IMPROVEMENT #4: Predictive Next Roadmap Generation
     // =========================================================================
     public void generateNextRoadmapWhenNearing100Percent(Roadmap currentRoadmap) {
-        // Calculate progress
-        List<Task> allTasks = taskRepository.findAllByRoadmap(currentRoadmap);
-        long doneTasks =
-                allTasks.stream().filter(t -> "DONE".equals(t.getStatus())).count();
+        // 1. NGĂN CHẶN LỖI ĐẺ NHIỀU ROADMAP RÁC
+        boolean hasQueuedRoadmap = roadmapRepository
+                .findByGoalAndStatus(currentRoadmap.getGoal(), "QUEUED")
+                .isPresent();
 
-        double progressPercent = (double) doneTasks / allTasks.size();
+        if (hasQueuedRoadmap) {
+            return; // Nếu đã chuẩn bị sẵn Roadmap v2 rồi thì dừng lại, không tạo thêm nữa.
+        }
 
-        // At 80% completion → prepare next roadmap (QUEUED status)
+        // 2. Tính toán tiến độ
+        long totalTasks = taskRepository.countByRoadmapId(currentRoadmap.getId());
+        if (totalTasks == 0) return;
+
+        long doneTasks = taskRepository.countByRoadmapIdAndStatus(currentRoadmap.getId(), "DONE");
+        double progressPercent = (double) doneTasks / totalTasks;
+
+        // 3. Nếu đạt 80% -> Sinh QUEUED roadmap
         if (progressPercent >= 0.8) {
             Roadmap nextRoadmap = new Roadmap();
             nextRoadmap.setGoal(currentRoadmap.getGoal());
             nextRoadmap.setVersion(currentRoadmap.getVersion() + 1);
-            nextRoadmap.setStatus("QUEUED"); // NEW STATUS
+            nextRoadmap.setStatus("QUEUED"); // Trạng thái chờ
             nextRoadmap.setCreatedAt(LocalDateTime.now());
             Roadmap savedNextRoadmap = roadmapRepository.save(nextRoadmap);
 
-            generateSmartTasksForRoadmap(
-                    savedNextRoadmap, currentRoadmap.getGoal().getUser());
+            // Sinh các task Practice (Cũng dùng BKT để tìm điểm yếu mới nhất)
+            generateSmartTasksForRoadmap(savedNextRoadmap, currentRoadmap.getGoal().getUser());
 
-            log.info(
-                    "[Predictive Roadmap] Roadmap v{} queued ({}% of v{} complete)",
-                    savedNextRoadmap.getVersion(), (int) (progressPercent * 100), currentRoadmap.getVersion());
+            log.info("[Predictive Roadmap] Đã chuẩn bị sẵn Roadmap v{} (Tiến độ v{} đạt {}%)",
+                    savedNextRoadmap.getVersion(), currentRoadmap.getVersion(), (int)(progressPercent * 100));
         }
-    }
-
-    // =========================================================================
-    // IMPROVEMENT #5: Multi-Source Skill Assessment
-    // =========================================================================
-    private Double calculateUnifiedMastery(Users user, Skill skill) {
-        // Source 1: Practice metrics (60% weight)
-        Double practiceMastery = learnerMetricRepository.findByUser(user).stream()
-                .mapToDouble(LearnerMetric::getMasteryLevel)
-                .average()
-                .orElse(0.5);
-
-        // Source 2: Speaking evaluation (20% weight)
-        // This would need aiEvaluationRepository with proper queries
-        // For now: placeholder
-        Double speakingMastery = 0.0;
-
-        // Source 3: Writing evaluation (20% weight)
-        Double writingMastery = 0.0;
-
-        // Weighted average
-        double unified = practiceMastery * 0.6;
-        if (speakingMastery > 0) unified += speakingMastery * 0.2;
-        if (writingMastery > 0) unified += writingMastery * 0.2;
-
-        log.debug(
-                "[Multi-Source Mastery] skill={}, practice={}, unified={}",
-                skill,
-                String.format("%.2f", practiceMastery),
-                String.format("%.2f", unified));
-
-        return unified;
-    }
-
-    // =========================================================================
-    // IMPROVEMENT #6: Adaptive Mini-Test Difficulty
-    // =========================================================================
-    private void createAdaptiveMiniTest(Roadmap roadmap, Users user, int order) {
-        Double avgMastery = calculateUnifiedMastery(user, roadmap.getGoal().getSkill());
-
-        // Select test band based on mastery level
-        String targetBand;
-        if (avgMastery < 0.4) {
-            targetBand = "BAND_5";
-        } else if (avgMastery < 0.6) {
-            targetBand = "BAND_6";
-        } else if (avgMastery < 0.8) {
-            targetBand = "BAND_7";
-        } else {
-            targetBand = "BAND_8";
-        }
-
-        Task miniTest = new Task();
-        miniTest.setRoadmap(roadmap);
-        miniTest.setOrder(order);
-        miniTest.setTaskType("MINI_TEST");
-        miniTest.setStatus("LOCKED");
-        // Note: Would set test entity here if fetched from DB
-
-        taskRepository.save(miniTest);
-        log.info("[Adaptive Mini-Test] band={} for mastery={}", targetBand, String.format("%.2f", avgMastery));
     }
 
     // =========================================================================
@@ -941,5 +884,81 @@ public class GoalServiceImpl implements GoalService {
                 .roadmapVersion(roadmap.getVersion())
                 .message(message)
                 .build();
+    }
+
+    private void generateAndAssignPersonalizedMiniTest(Task miniTestTask, Roadmap roadmap, Users learner) {
+        Skill skill = roadmap.getGoal().getSkill();
+
+        log.info("Bắt đầu sinh MINI_TEST cá nhân hóa cho User {}, Kỹ năng {}", learner.getId(), skill);
+
+        // 1. CHUẨN ĐOÁN (DIAGNOSTIC): Lấy 3 Tag yếu nhất dựa trên BKT Mastery & Confidence
+        List<Tag> weakTags = learnerMetricRepository.findByUser(learner).stream()
+                .sorted(Comparator.comparingDouble(this::calculateWeakAreaScore)) // Ưu tiên điểm yếu nhất
+                .map(LearnerMetric::getTag)
+                .limit(3)
+                .toList();
+
+        // 2. RÚT TRÍCH DỮ LIỆU: Tìm các Stimulus (Bài đọc/nghe) phù hợp với điểm yếu
+        List<Stimulus> selectedStimuli = new ArrayList<>();
+        if (!weakTags.isEmpty()) {
+            selectedStimuli = stimulusRepository.findSmartStimuli(skill, weakTags).stream()
+                    .limit(2) // Lấy 2 bài cho một Mini-test
+                    .toList();
+        }
+
+        // Fallback: Nếu kho dữ liệu chưa có bài khớp tag, lấy random theo kỹ năng
+        if (selectedStimuli.isEmpty()) {
+            List<Stimulus> fallbackStimuli = stimulusRepository.findBySkill(skill);
+            Collections.shuffle(fallbackStimuli);
+            selectedStimuli = fallbackStimuli.stream().limit(2).toList();
+        }
+
+        if (selectedStimuli.isEmpty()) {
+            log.warn("Không có Stimulus nào trong DB để tạo Mini Test cho skill {}", skill);
+            // Vẫn mở khóa task nhưng để trống bài test
+            miniTestTask.setStatus("TODO");
+            taskRepository.save(miniTestTask);
+            return;
+        }
+
+        // 3. TẠO ĐỀ THI ĐỘNG (ON-THE-FLY TEST)
+        Test dynamicTest = new Test();
+        dynamicTest.setTitle("Mini Test: Khắc phục điểm yếu - " + LocalDate.now());
+        dynamicTest.setDescription("Bài kiểm tra được AI tự động tổng hợp dựa trên lộ trình học tập của bạn.");
+        dynamicTest.setSkill(skill);
+        // Lưu ý: Đảm bảo enum TestMode của bạn có "PRACTICE" hoặc "MINI_TEST"
+        dynamicTest.setTestMode(TestMode.PRACTICE);
+        dynamicTest.setStatus(PublishStatus.PUBLISHED);
+        dynamicTest.setDuration(30); // 30 phút
+        Test savedTest = testRepository.save(dynamicTest);
+
+        // 4. GHÉP NỐI STIMULUS VÀO ĐỀ THI
+        int sectionOrder = 1;
+        for (Stimulus stimulus : selectedStimuli) {
+            TestStructure structure = new TestStructure();
+            structure.setTest(savedTest);
+            structure.setStimulus(stimulus);
+            structure.setSection(sectionOrder++);
+            testStructureRepository.save(structure);
+        }
+
+        // 5. GÁN ĐỀ THI VÀO TASK VÀ MỞ KHÓA
+        miniTestTask.setTest(savedTest);
+        miniTestTask.setStatus("TODO");
+        taskRepository.save(miniTestTask);
+
+        log.info("Sinh MINI_TEST thành công! Task ID: {}, Test ID mới: {}", miniTestTask.getId(), savedTest.getId());
+    }
+
+    private void createLockedMiniTestPlaceholder(Roadmap roadmap, int order) {
+        Task miniTest = new Task();
+        miniTest.setRoadmap(roadmap);
+        miniTest.setOrder(order);
+        miniTest.setTaskType("MINI_TEST");
+        miniTest.setStatus("LOCKED");
+        // Không set Test ở đây, đợi Just-In-Time mới set!
+
+        taskRepository.save(miniTest);
+        log.info("[Mini-Test Placeholder] Đã tạo task khóa chờ sẵn ở order {}", order);
     }
 }

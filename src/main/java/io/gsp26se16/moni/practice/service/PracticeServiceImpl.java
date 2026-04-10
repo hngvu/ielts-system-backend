@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.gsp26se16.moni.common.enumeration.Skill;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
@@ -141,45 +142,47 @@ public class PracticeServiceImpl implements PracticeService {
 
             if (questionTags != null && !questionTags.isEmpty()) {
                 for (Tag tag : questionTags) {
-                    // ============================================================
-                    // [BKT UPDATE] Bayesian Knowledge Tracing Algorithm
-                    // ============================================================
-                    // Bài toán Cold Start: Tìm metric cũ, nếu chưa có thì tạo mới
                     LearnerMetric metric = learnerMetricRepository
                             .findByUserAndTag(user, tag)
                             .orElseGet(() -> {
                                 LearnerMetric newMetric = new LearnerMetric();
                                 newMetric.setUser(user);
                                 newMetric.setTag(tag);
+
                                 // BKT initialization
                                 newMetric.setMasteryLevel(0.3); // P(L=1) prior
                                 newMetric.setConfidenceScore(0.0);
+                                newMetric.setAttemptCount(0);  
+
+                                // [MỚI] Cá nhân hóa tham số theo Kỹ năng của bài thi
+                                Skill skill = test.getSkill();
+                                if (skill == Skill.READING || skill == Skill.LISTENING) {
+                                    newMetric.setPGuess(0.25); // Trắc nghiệm 4 đáp án -> Dễ đoán lụi trúng
+                                    newMetric.setPSlip(0.10);  // Đọc/Nghe sót chữ
+                                } else { // WRITING, SPEAKING
+                                    newMetric.setPGuess(0.05); // Tự luận/Nói -> Cực khó đoán lụi trúng
+                                    newMetric.setPSlip(0.15);  // Dễ lỡ miệng, đánh máy nhầm (Typo)
+                                }
+
                                 newMetric.setPTransit(0.1); // Learning rate
-                                newMetric.setPGuess(0.25); // Guessing probability
-                                newMetric.setPSlip(0.1); // Mistake probability
+
                                 return newMetric;
                             });
 
                     // Extract BKT parameters
-                    double pL = metric.getMasteryLevel(); // Prior P(L=1)
-                    double pGuess = metric.getPGuess(); // P(correct | not learned)
-                    double pSlip = metric.getPSlip(); // P(incorrect | learned)
-                    double pTransit = metric.getPTransit(); // Learning rate
+                    double pL = metric.getMasteryLevel();
+                    double pGuess = metric.getPGuess();
+                    double pSlip = metric.getPSlip();
+                    double pTransit = metric.getPTransit();
 
                     // Bayesian update: calculate posterior P(L=1 | observation)
                     double pLnew;
                     if (isCorrect) {
-                        // Observation: correct answer
-                        // P(correct | learned) = 1 - pSlip
-                        // P(correct | not learned) = pGuess
                         double pCorrectGivenL = 1.0 - pSlip;
                         double pCorrectGivenNotL = pGuess;
                         double pCorrect = (pL * pCorrectGivenL) + ((1.0 - pL) * pCorrectGivenNotL);
                         pLnew = (pL * pCorrectGivenL) / pCorrect;
                     } else {
-                        // Observation: incorrect answer
-                        // P(incorrect | learned) = pSlip
-                        // P(incorrect | not learned) = 1 - pGuess
                         double pIncorrectGivenL = pSlip;
                         double pIncorrectGivenNotL = 1.0 - pGuess;
                         double pIncorrect = (pL * pIncorrectGivenL) + ((1.0 - pL) * pIncorrectGivenNotL);
@@ -187,18 +190,28 @@ public class PracticeServiceImpl implements PracticeService {
                     }
 
                     // Apply transition probability
-                    // Student may learn even if they got the answer wrong
                     double pLfinal = pLnew + ((1.0 - pLnew) * pTransit);
                     pLfinal = Math.max(0.0, Math.min(1.0, pLfinal));
 
-                    // Update metric
+                    // ============================================================
+                    // [MỚI] Cập nhật Metric với attemptCount và tính toán Confidence
+                    // ============================================================
                     metric.setMasteryLevel(pLfinal);
-                    metric.setConfidenceScore(Math.min(1.0, metric.getConfidenceScore() + 0.05));
+
+                    // Tăng số lần làm bài lên 1 (xử lý an toàn nếu null)
+                    metric.setAttemptCount(metric.getAttemptCount() == null ? 1 : metric.getAttemptCount() + 1);
+
+                    // Tính độ tự tin: 1 lần -> 50%, 4 lần -> 80%, 9 lần -> 90%
+                    double calculatedConfidence = 1.0 - (1.0 / (metric.getAttemptCount() + 1.0));
+                    metric.setConfidenceScore(calculatedConfidence);
+
+                    metric.setUpdatedAt(now); // Cập nhật thời gian thực
 
                     // Lưu lại ngay lập tức
                     learnerMetricRepository.save(metric);
                     log.debug(
-                            "[BKT] Tag={}, pL(prior)={}, pL(post)={}, pL(final)={}", tag.getName(), pL, pLnew, pLfinal);
+                            "[BKT] Tag={}, Attempt={}, pL(prior)={}, pL(post)={}, Conf={}",
+                            tag.getName(), metric.getAttemptCount(), pL, pLfinal, calculatedConfidence);
                 }
             }
 

@@ -16,7 +16,9 @@ public interface TaskRepository extends JpaRepository<Task, Integer> {
 
     List<Task> findAllByRoadmapAndTaskType(Roadmap roadmap, String taskType);
 
-    double countByRoadmapId(Integer id);
+    long countByRoadmapId(Integer id);
 
     List<Task> findAllByRoadmap(Roadmap currentRoadmap);
+
+    long countByRoadmapIdAndStatus(Integer id, String done);
 }

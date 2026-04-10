@@ -541,17 +541,19 @@ public class ConversationEngine {
      */
     private void updateMetricBKT(
             Users user, io.gsp26se16.moni.tag.entity.Tag tag, boolean isCorrect, double scoreNormalized) {
+
         LearnerMetric metric = learnerMetricRepository
                 .findByUserAndTag(user, tag)
                 .orElseGet(() -> {
                     LearnerMetric m = new LearnerMetric();
                     m.setUser(user);
                     m.setTag(tag);
-                    m.setMasteryLevel(0.3); // BKT prior
+                    m.setMasteryLevel(0.3);
                     m.setConfidenceScore(0.0);
+                    m.setAttemptCount(0);
+                    m.setPGuess(0.05);
+                    m.setPSlip(0.15);
                     m.setPTransit(0.1);
-                    m.setPGuess(0.25);
-                    m.setPSlip(0.1);
                     return m;
                 });
 
@@ -578,12 +580,23 @@ public class ConversationEngine {
         double pLfinal = pLnew + ((1.0 - pLnew) * pTransit);
         pLfinal = Math.max(0.0, Math.min(1.0, pLfinal));
 
+        // ============================================================
+        // [MỚI] Cập nhật Metric với attemptCount và tính toán Confidence
+        // ============================================================
         metric.setMasteryLevel(pLfinal);
-        metric.setConfidenceScore(Math.min(1.0, metric.getConfidenceScore() + 0.1));
+
+        // Tăng số lần luyện tập Speaking lên 1
+        metric.setAttemptCount(metric.getAttemptCount() == null ? 1 : metric.getAttemptCount() + 1);
+
+        // Tính độ tự tin theo đường cong (1 lần -> 50%, 4 lần -> 80%, ...)
+        double calculatedConfidence = 1.0 - (1.0 / (metric.getAttemptCount() + 1.0));
+        metric.setConfidenceScore(calculatedConfidence);
+
         metric.setUpdatedAt(LocalDateTime.now());
 
         learnerMetricRepository.save(metric);
-        log.debug("[Speaking-BKT] tag={}, pL(final)={}, score={}", tag.getName(), pLfinal, scoreNormalized);
+        log.debug("[Speaking-BKT] tag={}, Attempt={}, pL(final)={}, Conf={}",
+                tag.getName(), metric.getAttemptCount(), pLfinal, calculatedConfidence);
     }
 
     private double getBandFromCriterion(Map<String, Object> criteriaMap, String key) {

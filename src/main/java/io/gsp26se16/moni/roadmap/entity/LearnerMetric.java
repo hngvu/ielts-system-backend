@@ -45,4 +45,7 @@ public class LearnerMetric {
 
     @Column(name = "p_slip")
     private Double pSlip;
+
+    @Column(name = "attempt_count", columnDefinition = "integer default 0")
+    private Integer attemptCount;
 }
