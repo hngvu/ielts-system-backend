@@ -5,6 +5,9 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,7 +44,11 @@ public class ExaminerService {
 
     private final TestRepository testRepository;
     private final TestStructureRepository testStructureRepository;
+    private final ElevenLabsService elevenLabsService;
     private final ObjectMapper objectMapper;
+
+    /** Cached thread pool for TTS — threads die after 60s idle */
+    private final ExecutorService ttsExecutor = Executors.newCachedThreadPool();
 
     // ─────────────────────────────── Public API ──────────────────────────────
 
@@ -154,6 +161,10 @@ public class ExaminerService {
             session.setCurrentQuestion(q);
             loadFollowUps(session, q);
             sendQuestionEvent(ws, 3, q.getId(), q.getContent(), false);
+
+            // Gộp câu: "Now let's move on to Part 3. [Question 1]"
+            String combinedText = introText + " " + q.getContent();
+            ttsAsync(combinedText, ws);
         } else {
             endExam(session);
         }
@@ -170,6 +181,7 @@ public class ExaminerService {
                 Question q = session.getFollowUpQueue().poll();
                 session.setCurrentQuestion(q);
                 sendQuestionEvent(ws, 1, q.getId(), q.getContent(), true);
+                ttsAsync(q.getContent(), ws);
                 return;
             }
             // Còn MAIN question?
@@ -178,6 +190,7 @@ public class ExaminerService {
                 session.setCurrentQuestion(q);
                 loadFollowUps(session, q);
                 sendQuestionEvent(ws, 1, q.getId(), q.getContent(), false);
+                ttsAsync(q.getContent(), ws);
                 return;
             }
             // Hết Part 1 → chuyển Part 2
@@ -190,6 +203,7 @@ public class ExaminerService {
                 Question q = session.getFollowUpQueue().poll();
                 session.setCurrentQuestion(q);
                 sendQuestionEvent(ws, 3, q.getId(), q.getContent(), true);
+                ttsAsync(q.getContent(), ws);
                 return;
             }
             if (!session.getPart3Queue().isEmpty()) {
@@ -197,6 +211,7 @@ public class ExaminerService {
                 session.setCurrentQuestion(q);
                 loadFollowUps(session, q);
                 sendQuestionEvent(ws, 3, q.getId(), q.getContent(), false);
+                ttsAsync(q.getContent(), ws);
                 return;
             }
             // Hết Part 3 → kết thúc
@@ -286,5 +301,14 @@ public class ExaminerService {
                 "text", text,
                 "isFollowUp", isFollowUp));
         ws.sendMessage(new TextMessage(event));
+    }
+
+    /**
+     * Fix 2: Chạy TTS async để không block WS handler thread.
+     * Question JSON event đã được gửi trước đó (instant), TTS chỉ bổ sung audio.
+     * Nếu TTS lỗi → client vẫn có text, exam tiếp tục bình thường.
+     */
+    private void ttsAsync(String text, WebSocketSession ws) {
+        CompletableFuture.runAsync(() -> elevenLabsService.streamToClient(text, ws), ttsExecutor);
     }
 }
