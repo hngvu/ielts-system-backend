@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.gsp26se16.moni.common.enumeration.Skill;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
@@ -15,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import io.gsp26se16.moni.authentication.entity.UserCredentials;
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
+import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestSessionStatus;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
@@ -152,16 +152,16 @@ public class PracticeServiceImpl implements PracticeService {
                                 // BKT initialization
                                 newMetric.setMasteryLevel(0.3); // P(L=1) prior
                                 newMetric.setConfidenceScore(0.0);
-                                newMetric.setAttemptCount(0);  
+                                newMetric.setAttemptCount(0);
 
                                 // [MỚI] Cá nhân hóa tham số theo Kỹ năng của bài thi
                                 Skill skill = test.getSkill();
                                 if (skill == Skill.READING || skill == Skill.LISTENING) {
                                     newMetric.setPGuess(0.25); // Trắc nghiệm 4 đáp án -> Dễ đoán lụi trúng
-                                    newMetric.setPSlip(0.10);  // Đọc/Nghe sót chữ
+                                    newMetric.setPSlip(0.10); // Đọc/Nghe sót chữ
                                 } else { // WRITING, SPEAKING
                                     newMetric.setPGuess(0.05); // Tự luận/Nói -> Cực khó đoán lụi trúng
-                                    newMetric.setPSlip(0.15);  // Dễ lỡ miệng, đánh máy nhầm (Typo)
+                                    newMetric.setPSlip(0.15); // Dễ lỡ miệng, đánh máy nhầm (Typo)
                                 }
 
                                 newMetric.setPTransit(0.1); // Learning rate
@@ -211,7 +211,11 @@ public class PracticeServiceImpl implements PracticeService {
                     learnerMetricRepository.save(metric);
                     log.debug(
                             "[BKT] Tag={}, Attempt={}, pL(prior)={}, pL(post)={}, Conf={}",
-                            tag.getName(), metric.getAttemptCount(), pL, pLfinal, calculatedConfidence);
+                            tag.getName(),
+                            metric.getAttemptCount(),
+                            pL,
+                            pLfinal,
+                            calculatedConfidence);
                 }
             }
 

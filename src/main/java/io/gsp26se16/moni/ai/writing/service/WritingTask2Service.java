@@ -316,11 +316,11 @@ public class WritingTask2Service {
                     m.setTag(tag);
                     m.setMasteryLevel(0.3); // BKT prior
                     m.setConfidenceScore(0.0);
-                    m.setAttemptCount(0);   // [MỚI] Khởi tạo số lần làm bài
+                    m.setAttemptCount(0); // [MỚI] Khởi tạo số lần làm bài
 
                     // [MỚI] Thiết lập thông số cá nhân hóa cho SPEAKING
                     m.setPGuess(0.05); // Speaking: Rất khó "đoán lụi" trúng phát âm/ngữ pháp
-                    m.setPSlip(0.15);  // Speaking: Dễ lỡ miệng, nói vấp do áp lực thời gian
+                    m.setPSlip(0.15); // Speaking: Dễ lỡ miệng, nói vấp do áp lực thời gian
                     m.setPTransit(0.1);
                     return m;
                 });
@@ -363,8 +363,12 @@ public class WritingTask2Service {
         metric.setUpdatedAt(LocalDateTime.now());
 
         learnerMetricRepository.save(metric);
-        log.debug("[Speaking-BKT] tag={}, Attempt={}, pL(final)={}, Conf={}",
-                tag.getName(), metric.getAttemptCount(), pLfinal, calculatedConfidence);
+        log.debug(
+                "[Speaking-BKT] tag={}, Attempt={}, pL(final)={}, Conf={}",
+                tag.getName(),
+                metric.getAttemptCount(),
+                pLfinal,
+                calculatedConfidence);
     }
 
     // =========================================================================

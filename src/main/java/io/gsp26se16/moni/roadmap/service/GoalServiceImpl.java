@@ -5,10 +5,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import io.gsp26se16.moni.common.enumeration.PublishStatus;
-import io.gsp26se16.moni.common.enumeration.TestMode;
-import io.gsp26se16.moni.content.entity.Test;
-import io.gsp26se16.moni.content.repository.TestRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,12 +12,16 @@ import org.springframework.transaction.annotation.Transactional;
 import io.gsp26se16.moni.authentication.entity.UserCredentials;
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
+import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
+import io.gsp26se16.moni.common.enumeration.TestMode;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.entity.Stimulus;
+import io.gsp26se16.moni.content.entity.Test;
 import io.gsp26se16.moni.content.entity.TestStructure;
 import io.gsp26se16.moni.content.repository.StimulusRepository;
+import io.gsp26se16.moni.content.repository.TestRepository;
 import io.gsp26se16.moni.content.repository.TestStructureRepository;
 import io.gsp26se16.moni.placement.entity.PlacementResult;
 import io.gsp26se16.moni.placement.repository.PlacementResultRepository;
@@ -213,7 +213,9 @@ public class GoalServiceImpl implements GoalService {
                 boolean allPracticeDone = practiceTasksInRoadmap.stream().allMatch(t -> "DONE".equals(t.getStatus()));
 
                 if (allPracticeDone) {
-                    log.info("Tất cả PRACTICE_STIMULUS đã DONE → Khởi tạo đề và Mở khóa MINI_TEST trong roadmap {}", currentRoadmap.getId());
+                    log.info(
+                            "Tất cả PRACTICE_STIMULUS đã DONE → Khởi tạo đề và Mở khóa MINI_TEST trong roadmap {}",
+                            currentRoadmap.getId());
 
                     List<Task> lockedMiniTests =
                             taskRepository.findAllByRoadmapAndTaskType(currentRoadmap, "MINI_TEST");
@@ -782,10 +784,12 @@ public class GoalServiceImpl implements GoalService {
             Roadmap savedNextRoadmap = roadmapRepository.save(nextRoadmap);
 
             // Sinh các task Practice (Cũng dùng BKT để tìm điểm yếu mới nhất)
-            generateSmartTasksForRoadmap(savedNextRoadmap, currentRoadmap.getGoal().getUser());
+            generateSmartTasksForRoadmap(
+                    savedNextRoadmap, currentRoadmap.getGoal().getUser());
 
-            log.info("[Predictive Roadmap] Đã chuẩn bị sẵn Roadmap v{} (Tiến độ v{} đạt {}%)",
-                    savedNextRoadmap.getVersion(), currentRoadmap.getVersion(), (int)(progressPercent * 100));
+            log.info(
+                    "[Predictive Roadmap] Đã chuẩn bị sẵn Roadmap v{} (Tiến độ v{} đạt {}%)",
+                    savedNextRoadmap.getVersion(), currentRoadmap.getVersion(), (int) (progressPercent * 100));
         }
     }
 

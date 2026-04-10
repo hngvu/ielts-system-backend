@@ -595,8 +595,12 @@ public class ConversationEngine {
         metric.setUpdatedAt(LocalDateTime.now());
 
         learnerMetricRepository.save(metric);
-        log.debug("[Speaking-BKT] tag={}, Attempt={}, pL(final)={}, Conf={}",
-                tag.getName(), metric.getAttemptCount(), pLfinal, calculatedConfidence);
+        log.debug(
+                "[Speaking-BKT] tag={}, Attempt={}, pL(final)={}, Conf={}",
+                tag.getName(),
+                metric.getAttemptCount(),
+                pLfinal,
+                calculatedConfidence);
     }
 
     private double getBandFromCriterion(Map<String, Object> criteriaMap, String key) {
