@@ -69,7 +69,6 @@ public class GoalServiceImpl implements GoalService {
             throw new AppException(ErrorCode.INVALID_IELTS_BAND);
         }
 
-        // 1. LƯU TRỮ GOAL CŨ (Cùng kỹ năng)
         goalRepository
                 .findTopByUserAndSkillAndStatusOrderByIdDesc(learner, request.getSkill(), "ACTIVE")
                 .ifPresent(oldGoal -> {
@@ -77,7 +76,6 @@ public class GoalServiceImpl implements GoalService {
                     goalRepository.save(oldGoal);
                 });
 
-        // 2. TẠO GOAL MỚI
         Goal newGoal = new Goal();
         newGoal.setUser(learner);
         newGoal.setSkill(request.getSkill());
@@ -87,7 +85,7 @@ public class GoalServiceImpl implements GoalService {
         newGoal.setStatus("ACTIVE");
         Goal savedGoal = goalRepository.save(newGoal);
 
-        // 3. TỰ ĐỘNG SINH ROADMAP V1.0 CHO KỸ NĂNG NÀY
+
         Roadmap roadmap = new Roadmap();
         roadmap.setGoal(savedGoal);
         roadmap.setVersion(1);
@@ -96,7 +94,7 @@ public class GoalServiceImpl implements GoalService {
         roadmap.setCreatedAt(LocalDateTime.now());
         Roadmap savedRoadmap = roadmapRepository.save(roadmap);
 
-        // 4. SINH TASK ĐÁNH GIÁ NĂNG LỰC (Placement Task)
+
         Task placementTask = new Task();
         placementTask.setRoadmap(savedRoadmap);
         placementTask.setOrder(1);
@@ -104,7 +102,7 @@ public class GoalServiceImpl implements GoalService {
         placementTask.setStatus("TODO");
         taskRepository.save(placementTask);
 
-        // 5. SINH SMART TASKS (Practice + Mini-test)
+
         generateSmartTasksForRoadmap(savedRoadmap, learner);
 
         return GoalCreateResponse.builder()
@@ -206,7 +204,7 @@ public class GoalServiceImpl implements GoalService {
         if ("DONE".equals(task.getStatus())) {
             Roadmap currentRoadmap = task.getRoadmap();
 
-            // Nếu là PRACTICE_STIMULUS DONE → kiểm tra unlock MINI_TEST
+
             if ("PRACTICE_STIMULUS".equals(task.getTaskType())) {
                 List<Task> practiceTasksInRoadmap =
                         taskRepository.findAllByRoadmapAndTaskType(currentRoadmap, "PRACTICE_STIMULUS");
@@ -222,14 +220,14 @@ public class GoalServiceImpl implements GoalService {
 
                     lockedMiniTests.forEach(miniTest -> {
                         if ("LOCKED".equals(miniTest.getStatus())) {
-                            // [MỚI] Gọi hàm sinh đề cá nhân hóa ngay tại đây (Just-In-Time)
+
                             generateAndAssignPersonalizedMiniTest(miniTest, currentRoadmap, learner);
                         }
                     });
                 }
             }
 
-            // Kịch bản tự động sinh roadmap mới khi hết tất cả bài
+
             long remainingTasks = taskRepository.countByRoadmapIdAndStatusNot(currentRoadmap.getId(), "DONE");
 
             if (remainingTasks > 0) {
@@ -300,7 +298,6 @@ public class GoalServiceImpl implements GoalService {
                 targetBand = startingBand + 0.5;
             }
 
-            // Archive goal cũ cùng skill (nếu có)
             final Skill currentSkill = skill;
             goalRepository
                     .findTopByUserAndSkillAndStatusOrderByIdDesc(user, currentSkill, "ACTIVE")
@@ -310,10 +307,10 @@ public class GoalServiceImpl implements GoalService {
                         log.info("Archived old goal {} for skill {}", oldGoal.getId(), currentSkill);
                     });
 
-            // Tính deadline
+
             LocalDate deadline = (examDate != null) ? examDate : LocalDate.now().plusDays(90);
 
-            // Tạo Goal mới
+
             Goal newGoal = new Goal();
             newGoal.setUser(user);
             newGoal.setSkill(skill);
@@ -332,7 +329,6 @@ public class GoalServiceImpl implements GoalService {
             roadmap.setCreatedAt(LocalDateTime.now());
             Roadmap savedRoadmap = roadmapRepository.save(roadmap);
 
-            // Sinh smart tasks (không tạo PLACEMENT_TEST vì đã làm rồi)
             generateSmartTasksForRoadmap(savedRoadmap, user);
 
             log.info(
@@ -378,7 +374,6 @@ public class GoalServiceImpl implements GoalService {
                                     if (stimulus != null) {
                                         stimulusId = stimulus.getId();
                                         stimulusTitle = stimulus.getTitle();
-                                        // Count all questions across all question groups
                                         questionCount = stimulus.getQuestionGroups().stream()
                                                 .mapToInt(
                                                         qg -> qg.getQuestions().size())
@@ -388,7 +383,6 @@ public class GoalServiceImpl implements GoalService {
                                     Integer testId = task.getTest() != null
                                             ? task.getTest().getId()
                                             : null;
-                                    // Lookup testId from TestStructure if not set directly
                                     if (testId == null && stimulusId != null) {
                                         List<TestStructure> structures =
                                                 testStructureRepository.findByStimulusId(stimulusId);
@@ -569,16 +563,16 @@ public class GoalServiceImpl implements GoalService {
     }
 
     private double estimateOverallFromMetrics(double masteryIndex, double confidenceIndex) {
-        // conservative mapping: 0.5 mastery ~= 5.0-5.5 band
-        double masteryComponent = 3.5 + (safe01(masteryIndex, 0.5) * 4.0); // ~3.5..7.5
-        double confidenceBoost = (safe01(confidenceIndex, 0.0) - 0.5) * 0.5; // -0.25..+0.25
+
+        double masteryComponent = 3.5 + (safe01(masteryIndex, 0.5) * 4.0);
+        double confidenceBoost = (safe01(confidenceIndex, 0.0) - 0.5) * 0.5;
         return clampBand(masteryComponent + confidenceBoost);
     }
 
     private double computeAchievableOverallByExam(double currentOverall, Integer daysToExam) {
         if (daysToExam == null) return clampBand(currentOverall + 0.5);
         double weeks = daysToExam / 7.0;
-        double maxDelta = Math.min(2.0, weeks * 0.08); // conservative ceiling
+        double maxDelta = Math.min(2.0, weeks * 0.08);
         return clampBand(currentOverall + maxDelta);
     }
 
@@ -609,7 +603,6 @@ public class GoalServiceImpl implements GoalService {
         return value != null ? value : fallback;
     }
 
-    // --- Helper lấy User từ JWT Token ---
     private Users getCurrentUser() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -639,9 +632,6 @@ public class GoalServiceImpl implements GoalService {
         Skill currentSkill = roadmap.getGoal().getSkill();
         List<Stimulus> selectedStimuli = new ArrayList<>();
 
-        // [NEW] 1. Query weak metrics using Confidence-Weighted Selection (#2)
-        //    Instead of: top 3 weak tags
-        //    Now use: confidence-weighted priority scoring
         List<LearnerMetric> weakMetrics = learnerMetricRepository.findByUser(learner).stream()
                 .sorted(Comparator.comparingDouble(this::calculateWeakAreaScore))
                 .limit(5)
@@ -651,9 +641,6 @@ public class GoalServiceImpl implements GoalService {
             List<Tag> weakTags = weakMetrics.stream().map(LearnerMetric::getTag).toList();
             List<Stimulus> smartStimuli = stimulusRepository.findSmartStimuli(currentSkill, weakTags);
 
-            // [NEW] 2. Difficulty Alignment (#1)
-            //    Instead of: random selection
-            //    Now: score by difficulty matching
             double optimalDifficulty = calculateOptimalTaskDifficulty(weakMetrics);
             selectedStimuli = smartStimuli.stream()
                     .sorted(Comparator.comparingDouble(
@@ -754,36 +741,34 @@ public class GoalServiceImpl implements GoalService {
         return mastery + (uncertainty * 0.5);
     }
 
-    // =========================================================================
-    // IMPROVEMENT #4: Predictive Next Roadmap Generation
-    // =========================================================================
+
     public void generateNextRoadmapWhenNearing100Percent(Roadmap currentRoadmap) {
-        // 1. NGĂN CHẶN LỖI ĐẺ NHIỀU ROADMAP RÁC
+
         boolean hasQueuedRoadmap = roadmapRepository
                 .findByGoalAndStatus(currentRoadmap.getGoal(), "QUEUED")
                 .isPresent();
 
         if (hasQueuedRoadmap) {
-            return; // Nếu đã chuẩn bị sẵn Roadmap v2 rồi thì dừng lại, không tạo thêm nữa.
+            return;
         }
 
-        // 2. Tính toán tiến độ
+
         long totalTasks = taskRepository.countByRoadmapId(currentRoadmap.getId());
         if (totalTasks == 0) return;
 
         long doneTasks = taskRepository.countByRoadmapIdAndStatus(currentRoadmap.getId(), "DONE");
         double progressPercent = (double) doneTasks / totalTasks;
 
-        // 3. Nếu đạt 80% -> Sinh QUEUED roadmap
+
         if (progressPercent >= 0.8) {
             Roadmap nextRoadmap = new Roadmap();
             nextRoadmap.setGoal(currentRoadmap.getGoal());
             nextRoadmap.setVersion(currentRoadmap.getVersion() + 1);
-            nextRoadmap.setStatus("QUEUED"); // Trạng thái chờ
+            nextRoadmap.setStatus("QUEUED");
             nextRoadmap.setCreatedAt(LocalDateTime.now());
             Roadmap savedNextRoadmap = roadmapRepository.save(nextRoadmap);
 
-            // Sinh các task Practice (Cũng dùng BKT để tìm điểm yếu mới nhất)
+
             generateSmartTasksForRoadmap(
                     savedNextRoadmap, currentRoadmap.getGoal().getUser());
 
@@ -812,22 +797,22 @@ public class GoalServiceImpl implements GoalService {
 
         log.info("Bắt đầu sinh MINI_TEST cá nhân hóa cho User {}, Kỹ năng {}", learner.getId(), skill);
 
-        // 1. CHUẨN ĐOÁN (DIAGNOSTIC): Lấy 3 Tag yếu nhất dựa trên BKT Mastery & Confidence
+
         List<Tag> weakTags = learnerMetricRepository.findByUser(learner).stream()
-                .sorted(Comparator.comparingDouble(this::calculateWeakAreaScore)) // Ưu tiên điểm yếu nhất
+                .sorted(Comparator.comparingDouble(this::calculateWeakAreaScore))
                 .map(LearnerMetric::getTag)
                 .limit(3)
                 .toList();
 
-        // 2. RÚT TRÍCH DỮ LIỆU: Tìm các Stimulus (Bài đọc/nghe) phù hợp với điểm yếu
+
         List<Stimulus> selectedStimuli = new ArrayList<>();
         if (!weakTags.isEmpty()) {
             selectedStimuli = stimulusRepository.findSmartStimuli(skill, weakTags).stream()
-                    .limit(2) // Lấy 2 bài cho một Mini-test
+                    .limit(2)
                     .toList();
         }
 
-        // Fallback: Nếu kho dữ liệu chưa có bài khớp tag, lấy random theo kỹ năng
+
         if (selectedStimuli.isEmpty()) {
             List<Stimulus> fallbackStimuli = stimulusRepository.findBySkill(skill);
             Collections.shuffle(fallbackStimuli);
@@ -842,18 +827,15 @@ public class GoalServiceImpl implements GoalService {
             return;
         }
 
-        // 3. TẠO ĐỀ THI ĐỘNG (ON-THE-FLY TEST)
         Test dynamicTest = new Test();
         dynamicTest.setTitle("Mini Test: Khắc phục điểm yếu - " + LocalDate.now());
         dynamicTest.setDescription("Bài kiểm tra được AI tự động tổng hợp dựa trên lộ trình học tập của bạn.");
         dynamicTest.setSkill(skill);
-        // Lưu ý: Đảm bảo enum TestMode của bạn có "PRACTICE" hoặc "MINI_TEST"
         dynamicTest.setTestMode(TestMode.PRACTICE);
         dynamicTest.setStatus(PublishStatus.PUBLISHED);
-        dynamicTest.setDuration(30); // 30 phút
+        dynamicTest.setDuration(30);
         Test savedTest = testRepository.save(dynamicTest);
 
-        // 4. GHÉP NỐI STIMULUS VÀO ĐỀ THI
         int sectionOrder = 1;
         for (Stimulus stimulus : selectedStimuli) {
             TestStructure structure = new TestStructure();
@@ -863,7 +845,7 @@ public class GoalServiceImpl implements GoalService {
             testStructureRepository.save(structure);
         }
 
-        // 5. GÁN ĐỀ THI VÀO TASK VÀ MỞ KHÓA
+
         miniTestTask.setTest(savedTest);
         miniTestTask.setStatus("TODO");
         taskRepository.save(miniTestTask);
@@ -877,8 +859,6 @@ public class GoalServiceImpl implements GoalService {
         miniTest.setOrder(order);
         miniTest.setTaskType("MINI_TEST");
         miniTest.setStatus("LOCKED");
-        // Không set Test ở đây, đợi Just-In-Time mới set!
-
         taskRepository.save(miniTest);
         log.info("[Mini-Test Placeholder] Đã tạo task khóa chờ sẵn ở order {}", order);
     }
