@@ -73,7 +73,8 @@ public class ConversationEngine {
      * @param userId         ID của user
      * @param fullTranscript toàn bộ transcript 3 parts (từ ActiveExamSession.getFullTranscript())
      */
-    public Map<String, Object> evaluateFromExam(String examSessionId, String userId, String fullTranscript) {
+    public Map<String, Object> evaluateFromExam(
+            String examSessionId, String userId, String fullTranscript, java.util.List<String> audioUrls) {
         if (fullTranscript == null || fullTranscript.isBlank() || isNoResponseTranscript(fullTranscript)) {
             log.warn("Transcript rỗng cho exam session {}", examSessionId);
             return defaultResult();
@@ -81,7 +82,7 @@ public class ConversationEngine {
 
         log.info("Bắt đầu đánh giá exam session {} — {} chars", examSessionId, fullTranscript.length());
 
-        SpeakingSubmission submission = createSubmission(userId, fullTranscript);
+        SpeakingSubmission submission = createSubmission(userId, fullTranscript, audioUrls);
 
         try {
             ChatClient chatClient = chatClientBuilder.build();
@@ -190,7 +191,7 @@ public class ConversationEngine {
                 transcript.length());
 
         String formattedTranscript = "Question: " + question + "\nAnswer: " + transcript;
-        SpeakingSubmission submission = createSubmission(userId, formattedTranscript);
+        SpeakingSubmission submission = createSubmission(userId, formattedTranscript, null);
 
         try {
             ChatClient chatClient =
@@ -301,7 +302,8 @@ public class ConversationEngine {
 
     // ─────────────────────────────── Private ─────────────────────────────────
 
-    private SpeakingSubmission createSubmission(String credentialId, String transcript) {
+    private SpeakingSubmission createSubmission(
+            String credentialId, String transcript, java.util.List<String> audioUrls) {
         // userId from JWT is credential ID, need to resolve to Users entity
         Users user = null;
         if (credentialId != null) {
@@ -314,9 +316,19 @@ public class ConversationEngine {
             user = usersRepository.findById(credentialId).orElse(null);
         }
 
+        String audioUrlsJson = null;
+        try {
+            if (audioUrls != null && !audioUrls.isEmpty()) {
+                audioUrlsJson = objectMapper.writeValueAsString(audioUrls);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to serialize audioUrls", e);
+        }
+
         SpeakingSubmission submission = SpeakingSubmission.builder()
                 .user(user)
                 .audioTranscript(transcript)
+                .audioUrl(audioUrlsJson)
                 .evaluationStatus(EvaluationStatus.PROCESSING)
                 .build();
 

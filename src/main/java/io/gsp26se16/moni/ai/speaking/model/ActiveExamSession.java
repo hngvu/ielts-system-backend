@@ -1,5 +1,6 @@
 package io.gsp26se16.moni.ai.speaking.model;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +57,7 @@ public class ActiveExamSession {
     // ── Transcripts tích lũy theo part (thread-safe) ─────────────────────────
     private final List<TranscriptEntry> part1Transcripts = new CopyOnWriteArrayList<>();
     private volatile String part2Transcript = "";
+    private volatile String part2AudioUrl = "";
     private final List<TranscriptEntry> part3Transcripts = new CopyOnWriteArrayList<>();
 
     public ActiveExamSession(String sessionId, String userId, Integer testId, WebSocketSession wsSession) {
@@ -67,12 +69,12 @@ public class ActiveExamSession {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    public void addPart1Transcript(Integer questionId, String text) {
-        part1Transcripts.add(new TranscriptEntry(questionId, text));
+    public void addPart1Transcript(Integer questionId, String text, String audioUrl) {
+        part1Transcripts.add(new TranscriptEntry(questionId, text, audioUrl));
     }
 
-    public void addPart3Transcript(Integer questionId, String text) {
-        part3Transcripts.add(new TranscriptEntry(questionId, text));
+    public void addPart3Transcript(Integer questionId, String text, String audioUrl) {
+        part3Transcripts.add(new TranscriptEntry(questionId, text, audioUrl));
     }
 
     /** Gộp toàn bộ transcript 3 parts để chuyển cho ConversationEngine chấm */
@@ -94,9 +96,25 @@ public class ActiveExamSession {
         return sb.toString();
     }
 
+    public List<String> getAudioUrls() {
+        List<String> urls = new ArrayList<>();
+
+        for (TranscriptEntry e : part1Transcripts) {
+            if (e.audioUrl() != null && !e.audioUrl().isBlank()) urls.add(e.audioUrl());
+        }
+
+        if (part2AudioUrl != null && !part2AudioUrl.isBlank()) urls.add(part2AudioUrl);
+
+        for (TranscriptEntry e : part3Transcripts) {
+            if (e.audioUrl() != null && !e.audioUrl().isBlank()) urls.add(e.audioUrl());
+        }
+
+        return urls;
+    }
+
     public boolean isOpen() {
         return wsSession != null && wsSession.isOpen();
     }
 
-    public record TranscriptEntry(Integer questionId, String text) {}
+    public record TranscriptEntry(Integer questionId, String text, String audioUrl) {}
 }

@@ -115,11 +115,12 @@ public class ExaminerService {
      * Nhận transcript từ client, lưu và hỏi câu tiếp theo.
      * Dùng cho Part 1 và Part 3.
      */
-    public void handleTranscript(ActiveExamSession session, Integer questionId, String transcript) throws IOException {
+    public void handleTranscript(ActiveExamSession session, Integer questionId, String transcript, String audioUrl)
+            throws IOException {
         if (session.getState() == ExamState.PART1_QUESTIONING) {
-            session.addPart1Transcript(questionId, transcript);
+            session.addPart1Transcript(questionId, transcript, audioUrl);
         } else if (session.getState() == ExamState.PART3_QUESTIONING) {
-            session.addPart3Transcript(questionId, transcript);
+            session.addPart3Transcript(questionId, transcript, audioUrl);
         }
         askNextQuestion(session);
     }
@@ -133,8 +134,9 @@ public class ExaminerService {
     /**
      * Client báo xong Part 2 (hết 120s hoặc im lặng).
      */
-    public void stopPart2Speaking(ActiveExamSession session, String transcript) throws IOException {
+    public void stopPart2Speaking(ActiveExamSession session, String transcript, String audioUrl) throws IOException {
         session.setPart2Transcript(transcript != null ? transcript : "");
+        session.setPart2AudioUrl(audioUrl != null ? audioUrl : "");
         session.setState(ExamState.PART3_QUESTIONING);
 
         WebSocketSession ws = session.getWsSession();

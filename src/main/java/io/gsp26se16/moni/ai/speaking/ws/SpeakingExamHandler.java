@@ -117,8 +117,9 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
         Integer questionId = (Integer) payload.get("questionId");
         String text = (String) payload.getOrDefault("text", "[no response]");
         if (text.isBlank()) text = "[no response]";
+        String audioUrl = (String) payload.getOrDefault("audioUrl", "");
 
-        examinerService.handleTranscript(session, questionId, text);
+        examinerService.handleTranscript(session, questionId, text, audioUrl);
     }
 
     private void handleStartPart2(WebSocketSession ws) {
@@ -142,7 +143,8 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
         }
 
         String transcript = (String) payload.getOrDefault("text", "");
-        examinerService.stopPart2Speaking(session, transcript);
+        String audioUrl = (String) payload.getOrDefault("audioUrl", "");
+        examinerService.stopPart2Speaking(session, transcript, audioUrl);
     }
 
     private void handleEndExam(WebSocketSession ws) {
@@ -167,7 +169,10 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
                     try {
                         session.setState(ExamState.EVALUATING);
                         Map<String, Object> result = conversationEngine.evaluateFromExam(
-                                session.getSessionId(), session.getUserId(), session.getFullTranscript());
+                                session.getSessionId(),
+                                session.getUserId(),
+                                session.getFullTranscript(),
+                                session.getAudioUrls());
 
                         if (session.isOpen()) {
                             session.getWsSession()
