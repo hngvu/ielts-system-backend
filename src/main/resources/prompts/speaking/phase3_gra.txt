@@ -21,7 +21,7 @@ CANDIDATE'S TRANSCRIPT:
 ==================================================
 EVALUATION SCOPE
 
-- CRITICAL RULE: If the transcript contains mostly disconnected nonsense, random words strung together (e.g., "call me something what you want"), or excessively sparse answers like multiple "[no response]", this is a severe failure to construct basic, meaningful sentences. YOU MUST ACTIVATE "pervasive_grammar_errors" to `true`, and assign a `band` of 0.0 or 1.0. Do NOT generously award a Band 5 or 6.
+- CRITICAL RULE: If the transcript contains mostly disconnected nonsense, random words, or excessively sparse answers (e.g., total length under 15 words per part, or multiple "[no response]"), this is a severe failure to construct basic, meaningful sentences. YOU MUST ACTIVATE "pervasive_grammar_errors" to `true`, and assign a `band` of 2.0, 3.0, or 4.0. Do NOT generously award a Band 5 or higher.
 
 Assess ONLY:
 - Range of grammatical structures used (simple and complex)
@@ -50,6 +50,20 @@ Band 6:
 Band 5:
 - Produces basic sentence forms with reasonable accuracy.
 - Uses a limited range of more complex structures, but these usually contain errors and may cause some comprehension problems.
+
+Band 4:
+- Produces basic sentence forms and some correct simple sentences but subordinate structures are rare.
+- Errors are frequent and may lead to misunderstanding.
+
+Band 3:
+- Attempts basic sentence forms but with limited success, or relies on apparently memorized utterances.
+- Makes numerous errors except in memorized expressions.
+
+Band 2:
+- Cannot produce basic sentence forms.
+
+Band 1:
+- No meaningful communication possible. No rateable language.
 
 ==================================================
 VIOLATION KEYS (USE ONLY THESE)

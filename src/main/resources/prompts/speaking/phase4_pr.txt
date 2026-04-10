@@ -20,7 +20,7 @@ CANDIDATE'S TRANSCRIPT:
 ==================================================
 EVALUATION SCOPE
 
-- CRITICAL RULE: If the transcript contains mostly disconnected nonsense, random words strung together (e.g., "call me something what you want"), or excessively sparse answers like multiple "[no response]", this suggests speech so unintelligible the STT failed completely. YOU MUST ACTIVATE "unintelligible_pronunciation" to `true`, and assign a `band` of 0.0 or 1.0. Do NOT generously award a higher Band.
+- CRITICAL RULE: If the transcript contains mostly disconnected nonsense, random words, or excessively sparse answers (e.g., total length under 15 words per part, or multiple "[no response]"), this suggests speech so unintelligible the STT failed completely. YOU MUST ACTIVATE "unintelligible_pronunciation" to `true`, and assign a `band` of 2.0, 3.0, or 4.0. Do NOT generously award a higher Band.
 
 Assess ONLY:
 - Clear word formations and consonant/vowel clarity (inferred from STT accuracy)
@@ -48,6 +48,21 @@ Band 6:
 
 Band 5:
 - Shows all the positive features of Band 4 and some, but not all, of the positive features of Band 6.
+
+Band 4:
+- Uses a limited range of pronunciation features.
+- Attempts to control features but lapses are frequent.
+- Mispronunciations are frequent and cause some difficulty for the listener.
+
+Band 3:
+- Shows some awareness of pronunciation features but control is poor.
+- Mispronunciations are frequent and cause difficulty for the listener.
+
+Band 2:
+- Speech is often unintelligible.
+
+Band 1:
+- No meaningful communication possible. No rateable language.
 
 ==================================================
 VIOLATION KEYS (USE ONLY THESE)
