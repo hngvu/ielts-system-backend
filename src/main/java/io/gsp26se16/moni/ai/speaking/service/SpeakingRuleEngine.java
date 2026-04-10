@@ -33,27 +33,27 @@ public class SpeakingRuleEngine {
 
     // ─────────────────────────────── Hard caps ───────────────────────────────
 
-    /**
-     * Hard caps for speaking violations.
-     * Key → criterion cap, optional overall cap.
-     */
     private static final Map<String, SpeakingHardRule> SPEAKING_HARD_RULES = Map.of(
 
-            // FC: constant long pauses that severely disrupt communication
-            "long_pauses_throughout", new SpeakingHardRule(Map.of("FC", 0.0, "LR", 0.0, "GRA", 0.0, "PR", 0.0), 0.0),
+            // FC only
+            "incoherent_speech",
+            new SpeakingHardRule(Map.of("FC", 2.0), 2.0),
 
-            // FC: completely incoherent speech — cannot be understood
-            "incoherent_speech", new SpeakingHardRule(Map.of("FC", 0.0, "LR", 0.0, "GRA", 0.0, "PR", 0.0), 0.0),
+            // LR only
+            "insufficient_vocabulary",
+            new SpeakingHardRule(Map.of("LR", 3.0), 3.0),
 
-            // LR: vocabulary so limited it prevents effective communication
-            "insufficient_vocabulary", new SpeakingHardRule(Map.of("FC", 0.0, "LR", 0.0, "GRA", 0.0, "PR", 0.0), 0.0),
+            // GRA only
+            "pervasive_grammar_errors",
+            new SpeakingHardRule(Map.of("GRA", 3.0), 3.0),
 
-            // GRA: pervasive basic errors impede comprehension
-            "pervasive_grammar_errors", new SpeakingHardRule(Map.of("FC", 0.0, "LR", 0.0, "GRA", 0.0, "PR", 0.0), 0.0),
-
-            // PR: pronunciation so unclear it causes persistent misunderstanding
+            // PR only
             "unintelligible_pronunciation",
-                    new SpeakingHardRule(Map.of("FC", 0.0, "LR", 0.0, "GRA", 0.0, "PR", 0.0), 0.0));
+            new SpeakingHardRule(Map.of("PR", 2.0), 2.0),
+
+            // Extreme FC breakdown (optional stricter rule)
+            "long_pauses_throughout",
+            new SpeakingHardRule(Map.of("FC", 2.5), null));
 
     // ─────────────────────────────── Soft penalties ──────────────────────────
 
