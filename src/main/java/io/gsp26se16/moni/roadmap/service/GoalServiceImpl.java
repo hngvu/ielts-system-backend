@@ -633,12 +633,6 @@ public class GoalServiceImpl implements GoalService {
         return credentials.getUser();
     }
 
-    // =========================================================================
-    // [IMPROVEMENT #1] Difficulty Alignment + [IMPROVEMENT #2] Confidence-Weighted
-    // [IMPROVEMENT #5] Multi-Source Mastery + [IMPROVEMENT #6] Adaptive Mini-Test
-    // [IMPROVEMENT #7] Cross-Skill Correlation
-    // =========================================================================
-
     private void generateSmartTasksForRoadmap(Roadmap roadmap, Users learner) {
         Skill currentSkill = roadmap.getGoal().getSkill();
         List<Stimulus> selectedStimuli = new ArrayList<>();
@@ -759,51 +753,6 @@ public class GoalServiceImpl implements GoalService {
     }
 
     // =========================================================================
-    // IMPROVEMENT #3: Learning Velocity Tracking
-    // =========================================================================
-    private Double calculateLearningVelocity(Tag tag, Users user, int daysWindow) {
-        LocalDateTime startDate = LocalDateTime.now().minusDays(daysWindow);
-
-        // Query historical metrics
-        List<LearnerMetric> history = learnerMetricRepository.findByUser(user).stream()
-                .filter(m -> m.getTag().equals(tag)
-                        && m.getUpdatedAt() != null
-                        && m.getUpdatedAt().isAfter(startDate))
-                .collect(Collectors.toList());
-
-        if (history.size() < 2) {
-            return null; // Not enough data
-        }
-
-        double initialMastery = history.get(0).getMasteryLevel();
-        double finalMastery = history.get(history.size() - 1).getMasteryLevel();
-
-        double velocityPerDay = (finalMastery - initialMastery) / daysWindow;
-        log.debug(
-                "[Learning Velocity] tag={}, window={} days, velocity={}/day",
-                tag.getName(),
-                daysWindow,
-                String.format("%.4f", velocityPerDay));
-
-        return velocityPerDay;
-    }
-
-    private Long predictOptimalNextAttemptTime(Tag tag, Users user) {
-        Double velocity = calculateLearningVelocity(tag, user, 7);
-
-        if (velocity == null || velocity <= 0.01) {
-            // Learning stalled - needs different approach
-            return java.time.Duration.ofDays(2).toMillis();
-        } else if (velocity >= 0.05) {
-            // Fast learner - push harder
-            return java.time.Duration.ofHours(12).toMillis();
-        } else {
-            // Normal pace
-            return java.time.Duration.ofDays(1).toMillis();
-        }
-    }
-
-    // =========================================================================
     // IMPROVEMENT #4: Predictive Next Roadmap Generation
     // =========================================================================
     public void generateNextRoadmapWhenNearing100Percent(Roadmap currentRoadmap) {
@@ -838,42 +787,6 @@ public class GoalServiceImpl implements GoalService {
             log.info("[Predictive Roadmap] Đã chuẩn bị sẵn Roadmap v{} (Tiến độ v{} đạt {}%)",
                     savedNextRoadmap.getVersion(), currentRoadmap.getVersion(), (int)(progressPercent * 100));
         }
-    }
-
-    // =========================================================================
-    // IMPROVEMENT #7: Cross-Skill Correlation Analysis
-    // =========================================================================
-    private Set<Skill> findCrossSkillWeaknesses(Users user) {
-        // Map which tags correlate to which skills
-        Map<String, Set<Skill>> correlations = new java.util.HashMap<>();
-        correlations.put("GRAMMAR", new java.util.HashSet<>(java.util.Arrays.asList(Skill.WRITING, Skill.SPEAKING)));
-        correlations.put(
-                "VOCABULARY",
-                new java.util.HashSet<>(java.util.Arrays.asList(Skill.READING, Skill.LISTENING, Skill.SPEAKING)));
-        correlations.put("FLUENCY", new java.util.HashSet<>(java.util.Arrays.asList(Skill.SPEAKING)));
-        correlations.put(
-                "PRONUNCIATION", new java.util.HashSet<>(java.util.Arrays.asList(Skill.SPEAKING, Skill.LISTENING)));
-
-        Set<Skill> relatedSkills = new java.util.HashSet<>();
-
-        for (Map.Entry<String, Set<Skill>> entry : correlations.entrySet()) {
-            String tagName = entry.getKey();
-            Set<Skill> related = entry.getValue();
-
-            // Find metric for this tag
-            LearnerMetric metric = learnerMetricRepository.findByUser(user).stream()
-                    .filter(m -> m.getTag().getName().contains(tagName))
-                    .findFirst()
-                    .orElse(null);
-
-            // If tag is weak → mark related skills as priority
-            if (metric != null && metric.getMasteryLevel() < 0.5) {
-                relatedSkills.addAll(related);
-                log.debug("[Cross-Skill] Weak {}  → priority skills: {}", tagName, related);
-            }
-        }
-
-        return relatedSkills;
     }
 
     private GoalCreateResponse buildResponse(Goal goal, Roadmap roadmap, String message) {
