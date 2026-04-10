@@ -19,7 +19,7 @@ CANDIDATE'S TRANSCRIPT:
 ==================================================
 EVALUATION SCOPE
 
-- CRITICAL RULE: If the transcript contains mostly disconnected nonsense, random words, or excessively sparse answers (e.g., total length under 15 words per part, or multiple "[no response]"), this represents an inability to communicate. YOU MUST ACTIVATE "insufficient_vocabulary" to `true`, and assign a `band` of 2.0, 3.0, or 4.0. Do NOT invent meaning to award higher bands.
+- CRITICAL RULE: If the transcript contains mostly disconnected nonsense, random words, or is excessively sparse due to multiple "[no response]", this represents an inability to communicate. YOU MUST ACTIVATE "insufficient_vocabulary" to `true`, and assign a `band` of 0.0 or 1.0. Do NOT invent meaning to award higher bands.
 
 Assess ONLY:
 - Range of vocabulary
@@ -51,20 +51,6 @@ Band 6:
 Band 5:
 - Manages to talk about familiar and unfamiliar topics but uses vocabulary with limited flexibility.
 - Attempts to use paraphrasing but with mixed success.
-
-Band 4:
-- Is able to talk about familiar topics but can only convey basic meaning on unfamiliar topics and makes frequent errors in word choice.
-- Rarely attempts paraphrase.
-
-Band 3:
-- Uses simple vocabulary to convey personal information.
-- Has insufficient vocabulary for less familiar topics.
-
-Band 2:
-- Only produces isolated words or memorized utterances.
-
-Band 1:
-- No meaningful communication possible. No rateable language.
 
 ==================================================
 VIOLATION KEYS (USE ONLY THESE)
