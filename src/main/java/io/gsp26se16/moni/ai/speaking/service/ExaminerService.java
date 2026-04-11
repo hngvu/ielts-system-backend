@@ -224,9 +224,12 @@ public class ExaminerService {
                     "topic",
                     part2Q.getContent()));
             ws.sendMessage(new TextMessage(event));
+            session.setState(ExamState.PART2_PREPARATION);
+        } else {
+            // Không có Part 2 (ví dụ bài thi Practice chỉ định), nhảy thẳng sang Part 3
+            session.setState(ExamState.PART3_QUESTIONING);
+            askNextQuestion(session);
         }
-
-        session.setState(ExamState.PART2_PREPARATION);
     }
 
     private void endExam(ActiveExamSession session) throws IOException {
