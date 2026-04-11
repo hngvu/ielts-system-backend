@@ -637,28 +637,31 @@ public class GoalServiceImpl implements GoalService {
                 .limit(5)
                 .collect(Collectors.toList());
 
+        int dynamicTaskCount = calculateOptimalTaskCount(learner, roadmap.getGoal());
+
         if (!weakMetrics.isEmpty()) {
             List<Tag> weakTags = weakMetrics.stream().map(LearnerMetric::getTag).toList();
             List<Stimulus> smartStimuli = stimulusRepository.findSmartStimuli(currentSkill, weakTags);
 
+            // [NEW] 2. Difficulty Alignment (#1)
             double optimalDifficulty = calculateOptimalTaskDifficulty(weakMetrics);
             selectedStimuli = smartStimuli.stream()
                     .sorted(Comparator.comparingDouble(
                             s -> Math.abs(estimateStimulusDifficulty(s) - optimalDifficulty)))
-                    .limit(2)
+                    .limit(dynamicTaskCount)
                     .collect(Collectors.toList());
 
             log.debug(
-                    "[Difficulty Alignment] optimal={}, selected={} stimuli",
+                    "[Difficulty Alignment] optimal={}, selected={} stimuli, expected count={}",
                     optimalDifficulty,
-                    selectedStimuli.size());
+                    selectedStimuli.size(),
+                    dynamicTaskCount);
         }
 
-        // FALLBACK: Cold Start hoặc DB không có bài khớp Tag
         if (selectedStimuli.isEmpty()) {
             List<Stimulus> fallbackStimuli = stimulusRepository.findBySkill(currentSkill);
             Collections.shuffle(fallbackStimuli);
-            selectedStimuli = fallbackStimuli.stream().limit(2).toList();
+            selectedStimuli = fallbackStimuli.stream().limit(dynamicTaskCount).toList();
 
             if (selectedStimuli.isEmpty()) {
                 log.warn("Không có bài tập cho kỹ năng {} — bỏ qua sinh task", currentSkill);
@@ -861,5 +864,28 @@ public class GoalServiceImpl implements GoalService {
         miniTest.setStatus("LOCKED");
         taskRepository.save(miniTest);
         log.info("[Mini-Test Placeholder] Đã tạo task khóa chờ sẵn ở order {}", order);
+    }
+
+    private int calculateOptimalTaskCount(Users learner, Goal goal) {
+        int baseCount = 2;
+
+        LocalDate examDate = learner.getExamDate();
+        if (examDate != null) {
+            long daysToExam = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), examDate);
+            if (daysToExam > 0 && daysToExam <= 30) {
+                baseCount += 1;
+                log.debug("User {} sắp thi ({} ngày), tăng số lượng task lên {}", learner.getId(), daysToExam, baseCount);
+            }
+        }
+
+        if (goal.getTargetBand() != null && goal.getStartingBand() != null) {
+            double bandGap = goal.getTargetBand() - goal.getStartingBand();
+            if (bandGap >= 1.5) {
+                baseCount += 1;
+                log.debug("Khoảng cách band điểm lớn ({}), tăng số lượng task lên {}", bandGap, baseCount);
+            }
+        }
+
+        return Math.min(Math.max(baseCount, 2), 4);
     }
 }
