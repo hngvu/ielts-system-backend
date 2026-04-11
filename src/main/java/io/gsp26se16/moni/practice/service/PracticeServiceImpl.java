@@ -57,6 +57,7 @@ public class PracticeServiceImpl implements PracticeService {
     private final QuestionOptionRepository questionOptionRepository;
     private final UserCredentialsRepository userCredentialsRepository;
     private final LearnerMetricRepository learnerMetricRepository;
+    private final io.gsp26se16.moni.roadmap.service.WeeklyPlanService weeklyPlanService;
 
     @Override
     public SubmitAttemptResponse submitAttempt(SubmitAttemptRequest request) {
@@ -224,6 +225,17 @@ public class PracticeServiceImpl implements PracticeService {
 
         attempt.setScore(correctCount);
         attemptRepository.save(attempt);
+
+        // Auto-complete weekly plan slot if matches
+        try {
+            weeklyPlanService.autoCompleteSlot(
+                    user,
+                    request.getStimulusId(),
+                    correctCount,
+                    request.getAnswers().size());
+        } catch (Exception e) {
+            log.warn("Failed to auto-complete weekly slot: {}", e.getMessage());
+        }
 
         return SubmitAttemptResponse.builder()
                 .attemptId(attempt.getId())

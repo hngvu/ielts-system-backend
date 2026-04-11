@@ -59,6 +59,7 @@ public class GoalServiceImpl implements GoalService {
     private final TestStructureRepository testStructureRepository;
     private final PlacementResultRepository placementResultRepository;
     private final TestRepository testRepository;
+    private final WeeklyPlanService weeklyPlanService;
 
     @Override
     @Transactional
@@ -330,6 +331,14 @@ public class GoalServiceImpl implements GoalService {
                     startingBand,
                     targetBand,
                     deadline);
+        }
+
+        // Generate the first weekly plan for this user
+        try {
+            weeklyPlanService.generateWeeklyPlan(user);
+            log.info("Generated first weekly plan for user {}", user.getId());
+        } catch (Exception e) {
+            log.warn("Failed to generate weekly plan for user {}: {}", user.getId(), e.getMessage());
         }
     }
 

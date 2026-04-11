@@ -1,0 +1,618 @@
+package io.gsp26se16.moni.roadmap.service;
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.TemporalAdjusters;
+import java.util.*;
+
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import io.gsp26se16.moni.authentication.entity.UserCredentials;
+import io.gsp26se16.moni.authentication.entity.Users;
+import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
+import io.gsp26se16.moni.common.enumeration.Skill;
+import io.gsp26se16.moni.common.exception.AppException;
+import io.gsp26se16.moni.common.exception.ErrorCode;
+import io.gsp26se16.moni.content.entity.Stimulus;
+import io.gsp26se16.moni.content.entity.TestStructure;
+import io.gsp26se16.moni.content.repository.StimulusRepository;
+import io.gsp26se16.moni.content.repository.TestStructureRepository;
+import io.gsp26se16.moni.placement.entity.PlacementResult;
+import io.gsp26se16.moni.placement.repository.PlacementResultRepository;
+import io.gsp26se16.moni.roadmap.dto.response.*;
+import io.gsp26se16.moni.roadmap.entity.*;
+import io.gsp26se16.moni.roadmap.repository.*;
+import io.gsp26se16.moni.tag.entity.Tag;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class WeeklyPlanServiceImpl implements WeeklyPlanService {
+
+    private final WeeklyPlanRepository weeklyPlanRepository;
+    private final DailySlotRepository dailySlotRepository;
+    private final MonthlyAssessmentRepository monthlyAssessmentRepository;
+    private final LearnerMetricRepository learnerMetricRepository;
+    private final StimulusRepository stimulusRepository;
+    private final TestStructureRepository testStructureRepository;
+    private final PlacementResultRepository placementResultRepository;
+    private final UserCredentialsRepository userCredentialsRepository;
+
+    // Skills for odd days (1, 3, 5): Monday, Wednesday, Friday
+    private static final Skill[] ODD_DAY_SKILLS = {Skill.READING, Skill.SPEAKING};
+    // Skills for even days (2, 4, 6): Tuesday, Thursday, Saturday
+    private static final Skill[] EVEN_DAY_SKILLS = {Skill.LISTENING, Skill.WRITING};
+
+    // =====================================================================
+    // PUBLIC API
+    // =====================================================================
+
+    @Override
+    @Transactional
+    public void generateWeeklyPlan(Users user) {
+        // Find previous plan (if any)
+        Optional<WeeklyPlan> previousOpt = weeklyPlanRepository.findTopByUserOrderByWeekNumberDesc(user);
+        WeeklyPlan previous = previousOpt.orElse(null);
+
+        // Calculate week metadata
+        int weekNumber = previous != null ? previous.getWeekNumber() + 1 : 1;
+        int weekInMonth = previous != null ? (previous.getWeekInMonth() % 4) + 1 : 1;
+        int monthCycle = previous != null ? previous.getMonthCycle() : 1;
+        if (weekInMonth == 1 && weekNumber > 1) {
+            monthCycle = previous.getMonthCycle() + 1;
+        }
+
+        // Calculate difficulty
+        double difficulty = calculateDifficulty(user, previous);
+
+        // Calculate week dates (next Monday → Sunday)
+        LocalDate weekStart = calculateNextMonday();
+        LocalDate weekEnd = weekStart.plusDays(6);
+
+        // Create weekly plan
+        WeeklyPlan plan = WeeklyPlan.builder()
+                .user(user)
+                .weekNumber(weekNumber)
+                .monthCycle(monthCycle)
+                .weekInMonth(weekInMonth)
+                .weekStartDate(weekStart)
+                .weekEndDate(weekEnd)
+                .status("ACTIVE")
+                .difficultyLevel(difficulty)
+                .createdAt(LocalDateTime.now())
+                .build();
+        plan = weeklyPlanRepository.save(plan);
+
+        // Get stimulus IDs user has already completed (to avoid repeats)
+        Set<Integer> doneStimulusIds = new HashSet<>(dailySlotRepository.findDoneStimulusIdsByUser(user));
+
+        // Generate practice slots for days 1-6
+        for (int day = 1; day <= 6; day++) {
+            Skill[] skills = (day % 2 != 0) ? ODD_DAY_SKILLS : EVEN_DAY_SKILLS;
+            LocalDate slotDate = weekStart.plusDays(day - 1);
+
+            for (Skill skill : skills) {
+                Stimulus stimulus = selectStimulus(skill, user, difficulty, doneStimulusIds);
+
+                DailySlot slot = DailySlot.builder()
+                        .weeklyPlan(plan)
+                        .dayOfWeek(day)
+                        .slotDate(slotDate)
+                        .skill(skill)
+                        .taskType("PRACTICE")
+                        .stimulus(stimulus)
+                        .test(findTestForStimulus(stimulus))
+                        .status("TODO")
+                        .build();
+                dailySlotRepository.save(slot);
+
+                // Track to avoid giving the same stimulus twice in same plan
+                if (stimulus != null) {
+                    doneStimulusIds.add(stimulus.getId());
+                }
+            }
+        }
+
+        // Generate assessment slots for day 7 (Sunday) — one per skill
+        LocalDate day7Date = weekStart.plusDays(6);
+        for (Skill skill : Skill.values()) {
+            Stimulus assessmentStimulus = selectAssessmentStimulus(skill, user, doneStimulusIds);
+
+            DailySlot assessmentSlot = DailySlot.builder()
+                    .weeklyPlan(plan)
+                    .dayOfWeek(7)
+                    .slotDate(day7Date)
+                    .skill(skill)
+                    .taskType("ASSESSMENT")
+                    .stimulus(assessmentStimulus)
+                    .test(findTestForStimulus(assessmentStimulus))
+                    .status("TODO")
+                    .build();
+            dailySlotRepository.save(assessmentSlot);
+        }
+
+        log.info(
+                "[WeeklyPlan] Generated week {} (month {}, weekInMonth {}) for user {}. Difficulty: {}",
+                weekNumber,
+                monthCycle,
+                weekInMonth,
+                user.getId(),
+                difficulty);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public WeeklyPlanDetailResponse getCurrentPlan() {
+        Users user = getCurrentUser();
+        WeeklyPlan plan =
+                weeklyPlanRepository.findByUserAndStatus(user, "ACTIVE").orElse(null);
+
+        if (plan == null) {
+            return null;
+        }
+
+        return buildDetailResponse(plan, user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public WeeklyPlanDetailResponse getTodaySlots() {
+        Users user = getCurrentUser();
+        WeeklyPlan plan =
+                weeklyPlanRepository.findByUserAndStatus(user, "ACTIVE").orElse(null);
+
+        if (plan == null) {
+            return null;
+        }
+
+        return buildDetailResponse(plan, user);
+    }
+
+    @Override
+    @Transactional
+    public void completeSlot(Integer slotId, Integer score, Integer totalQuestions) {
+        Users user = getCurrentUser();
+
+        DailySlot slot =
+                dailySlotRepository.findById(slotId).orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
+
+        if (!slot.getWeeklyPlan().getUser().getId().equals(user.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        slot.setStatus("DONE");
+        slot.setScore(score);
+        slot.setTotalQuestions(totalQuestions);
+        slot.setCompletedAt(LocalDateTime.now());
+        dailySlotRepository.save(slot);
+
+        log.info(
+                "[WeeklyPlan] Slot {} completed. Skill: {}, Score: {}/{}",
+                slotId,
+                slot.getSkill(),
+                score,
+                totalQuestions);
+    }
+
+    @Override
+    @Transactional
+    public void autoCompleteSlot(Users user, Integer stimulusId, Integer score, Integer totalQuestions) {
+        LocalDate today = LocalDate.now();
+        List<DailySlot> matchingSlots = dailySlotRepository.findMatchingSlots(user, stimulusId, today);
+
+        if (!matchingSlots.isEmpty()) {
+            DailySlot slot = matchingSlots.get(0);
+            slot.setStatus("DONE");
+            slot.setScore(score);
+            slot.setTotalQuestions(totalQuestions);
+            slot.setCompletedAt(LocalDateTime.now());
+            dailySlotRepository.save(slot);
+
+            log.info(
+                    "[WeeklyPlan Auto] Completed slot {} for user {} (stimulus {})",
+                    slot.getId(),
+                    user.getId(),
+                    stimulusId);
+        }
+    }
+
+    @Override
+    @Transactional
+    public WeeklyPlanDetailResponse evaluateWeekAndGenerateNext() {
+        Users user = getCurrentUser();
+        WeeklyPlan currentPlan = weeklyPlanRepository
+                .findByUserAndStatus(user, "ACTIVE")
+                .orElseThrow(() -> new AppException(ErrorCode.ACTIVE_ROADMAP_NOT_FOUND));
+
+        // Calculate metrics
+        List<DailySlot> allSlots = dailySlotRepository.findByWeeklyPlanOrderByDayOfWeekAscIdAsc(currentPlan);
+        long totalSlots = allSlots.size();
+        long doneSlots =
+                allSlots.stream().filter(s -> "DONE".equals(s.getStatus())).count();
+
+        double completionRate = totalSlots > 0 ? (double) doneSlots / totalSlots : 0.0;
+
+        // Calculate accuracy only for DONE slots
+        double weeklyAccuracy = allSlots.stream()
+                .filter(s -> "DONE".equals(s.getStatus()) && s.getScore() != null && s.getTotalQuestions() != null)
+                .mapToDouble(s -> {
+                    // For Writing/Speaking, score is band (out of 9)
+                    if (s.getSkill() == Skill.WRITING || s.getSkill() == Skill.SPEAKING) {
+                        return s.getScore() / 9.0;
+                    }
+                    // For Reading/Listening, score is correct answers
+                    return s.getTotalQuestions() > 0 ? (double) s.getScore() / s.getTotalQuestions() : 0.0;
+                })
+                .average()
+                .orElse(0.0);
+
+        // Determine verdict by comparing with previous week
+        String verdict = determineVerdict(user, weeklyAccuracy, completionRate);
+
+        currentPlan.setWeeklyAccuracy(weeklyAccuracy);
+        currentPlan.setCompletionRate(completionRate);
+        currentPlan.setPerformanceVerdict(verdict);
+        currentPlan.setStatus("COMPLETED");
+        weeklyPlanRepository.save(currentPlan);
+
+        log.info(
+                "[WeeklyPlan] Week {} evaluated. Accuracy: {}, Completion: {}, Verdict: {}",
+                currentPlan.getWeekNumber(),
+                weeklyAccuracy,
+                completionRate,
+                verdict);
+
+        // Check if monthly assessment is needed (every 4 weeks)
+        if (currentPlan.getWeekInMonth() == 4) {
+            triggerMonthlyAssessment(user, currentPlan.getMonthCycle());
+        }
+
+        // Generate next week
+        generateWeeklyPlan(user);
+
+        // Return the new plan
+        WeeklyPlan newPlan =
+                weeklyPlanRepository.findByUserAndStatus(user, "ACTIVE").orElse(null);
+        return newPlan != null ? buildDetailResponse(newPlan, user) : null;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<WeeklyPlanSummaryResponse> getHistory() {
+        Users user = getCurrentUser();
+        List<WeeklyPlan> plans = weeklyPlanRepository.findByUserOrderByWeekNumberDesc(user);
+
+        return plans.stream()
+                .filter(p -> "COMPLETED".equals(p.getStatus()))
+                .map(p -> WeeklyPlanSummaryResponse.builder()
+                        .weekNumber(p.getWeekNumber())
+                        .monthCycle(p.getMonthCycle())
+                        .weekInMonth(p.getWeekInMonth())
+                        .weekStartDate(p.getWeekStartDate().toString())
+                        .weekEndDate(p.getWeekEndDate().toString())
+                        .weeklyAccuracy(p.getWeeklyAccuracy())
+                        .completionRate(p.getCompletionRate())
+                        .performanceVerdict(p.getPerformanceVerdict())
+                        .build())
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MonthlyAssessmentResponse getPendingMonthlyAssessment() {
+        Users user = getCurrentUser();
+        return monthlyAssessmentRepository
+                .findByUserAndStatus(user, "PENDING")
+                .map(ma -> MonthlyAssessmentResponse.builder()
+                        .id(ma.getId())
+                        .monthCycle(ma.getMonthCycle())
+                        .fullTestId(ma.getFullTest() != null ? ma.getFullTest().getId() : null)
+                        .status(ma.getStatus())
+                        .readingBand(ma.getReadingBand())
+                        .listeningBand(ma.getListeningBand())
+                        .writingBand(ma.getWritingBand())
+                        .speakingBand(ma.getSpeakingBand())
+                        .overallBand(ma.getOverallBand())
+                        .build())
+                .orElse(null);
+    }
+
+    // =====================================================================
+    // PRIVATE HELPERS — Stimulus Selection
+    // =====================================================================
+
+    /**
+     * Select the best stimulus for a practice slot based on weak tags and difficulty alignment.
+     */
+    private Stimulus selectStimulus(Skill skill, Users user, double targetDifficulty, Set<Integer> excludeIds) {
+        // 1. Get weak tags for this user
+        List<LearnerMetric> metrics = learnerMetricRepository.findByUser(user);
+        List<Tag> weakTags = metrics.stream()
+                .sorted(Comparator.comparingDouble(this::weakAreaScore))
+                .map(LearnerMetric::getTag)
+                .limit(5)
+                .toList();
+
+        // 2. Find smart stimuli matching skill + weak tags
+        List<Stimulus> candidates;
+        if (!weakTags.isEmpty()) {
+            candidates = stimulusRepository.findSmartStimuli(skill, weakTags);
+        } else {
+            candidates = stimulusRepository.findBySkill(skill);
+        }
+
+        if (candidates.isEmpty()) {
+            // Ultimate fallback
+            candidates = stimulusRepository.findBySkill(skill);
+        }
+
+        if (candidates.isEmpty()) {
+            log.warn("[WeeklyPlan] No stimuli found for skill {}", skill);
+            return null;
+        }
+
+        // 3. Prefer stimuli not yet done (exclude IDs)
+        List<Stimulus> unseen =
+                candidates.stream().filter(s -> !excludeIds.contains(s.getId())).toList();
+
+        List<Stimulus> pool = unseen.isEmpty() ? candidates : unseen;
+
+        // 4. Sort by difficulty alignment
+        return pool.stream()
+                .min(Comparator.comparingDouble(s -> Math.abs(estimateDifficulty(s) - targetDifficulty)))
+                .orElse(pool.get(0));
+    }
+
+    /**
+     * Select a stimulus for the weekly assessment — targets the weakest tag for the given skill.
+     */
+    private Stimulus selectAssessmentStimulus(Skill skill, Users user, Set<Integer> excludeIds) {
+        List<LearnerMetric> metrics = learnerMetricRepository.findByUser(user);
+
+        // Find weakest tag for this skill by looking at tag associations
+        List<Tag> weakTags = metrics.stream()
+                .sorted(Comparator.comparingDouble(this::weakAreaScore))
+                .map(LearnerMetric::getTag)
+                .limit(3)
+                .toList();
+
+        List<Stimulus> candidates;
+        if (!weakTags.isEmpty()) {
+            candidates = stimulusRepository.findSmartStimuli(skill, weakTags);
+        } else {
+            candidates = stimulusRepository.findBySkill(skill);
+        }
+
+        if (candidates.isEmpty()) {
+            candidates = stimulusRepository.findBySkill(skill);
+        }
+
+        if (candidates.isEmpty()) {
+            return null;
+        }
+
+        // Prefer unseen
+        List<Stimulus> unseen =
+                candidates.stream().filter(s -> !excludeIds.contains(s.getId())).toList();
+
+        List<Stimulus> pool = unseen.isEmpty() ? candidates : unseen;
+        Collections.shuffle(pool);
+        return pool.get(0);
+    }
+
+    // =====================================================================
+    // PRIVATE HELPERS — Difficulty & Evaluation
+    // =====================================================================
+
+    private double calculateDifficulty(Users user, WeeklyPlan previous) {
+        if (previous == null) {
+            // First week: estimate from placement
+            PlacementResult placement = placementResultRepository
+                    .findFirstByUserOrderByCompletedAtDesc(user)
+                    .orElse(null);
+            if (placement != null && placement.getOverallBand() != null) {
+                return Math.max(0.1, Math.min(0.95, placement.getOverallBand() / 9.0));
+            }
+            return 0.5; // Default
+        }
+
+        double prevDifficulty = previous.getDifficultyLevel() != null ? previous.getDifficultyLevel() : 0.5;
+        String verdict = previous.getPerformanceVerdict();
+
+        if ("IMPROVED".equals(verdict)) {
+            return Math.min(0.95, prevDifficulty + 0.05);
+        } else if ("DECLINED".equals(verdict)) {
+            return Math.max(0.1, prevDifficulty - 0.05);
+        }
+        return prevDifficulty; // STABLE
+    }
+
+    private String determineVerdict(Users user, double currentAccuracy, double completionRate) {
+        // Find previous completed plan
+        List<WeeklyPlan> recentPlans = weeklyPlanRepository.findTop4ByUserOrderByWeekNumberDesc(user);
+        WeeklyPlan previousCompleted = recentPlans.stream()
+                .filter(p -> "COMPLETED".equals(p.getStatus()))
+                .skip(0) // Current plan is still ACTIVE at query time, so first COMPLETED is actual previous
+                .findFirst()
+                .orElse(null);
+
+        // Factor in incomplete tasks: if completion < 50%, bias toward DECLINED
+        if (completionRate < 0.5) {
+            return "DECLINED";
+        }
+
+        if (previousCompleted == null || previousCompleted.getWeeklyAccuracy() == null) {
+            // No baseline to compare — use absolute threshold
+            return currentAccuracy >= 0.7 ? "IMPROVED" : "STABLE";
+        }
+
+        double diff = currentAccuracy - previousCompleted.getWeeklyAccuracy();
+
+        if (diff >= 0.05) return "IMPROVED";
+        if (diff <= -0.05) return "DECLINED";
+        return "STABLE";
+    }
+
+    private void triggerMonthlyAssessment(Users user, int monthCycle) {
+        // Check if already exists
+        Optional<MonthlyAssessment> existing = monthlyAssessmentRepository.findByUserAndStatus(user, "PENDING");
+        if (existing.isPresent()) {
+            log.info("[MonthlyAssessment] Already pending for user {}", user.getId());
+            return;
+        }
+
+        // For now, create assessment without full test (test will be assigned later via admin or auto-generation)
+        MonthlyAssessment assessment = MonthlyAssessment.builder()
+                .user(user)
+                .monthCycle(monthCycle)
+                .status("PENDING")
+                .createdAt(LocalDateTime.now())
+                .build();
+        monthlyAssessmentRepository.save(assessment);
+
+        log.info("[MonthlyAssessment] Created monthly assessment for user {}, cycle {}", user.getId(), monthCycle);
+    }
+
+    // =====================================================================
+    // PRIVATE HELPERS — Utilities
+    // =====================================================================
+
+    private double weakAreaScore(LearnerMetric metric) {
+        double mastery = metric.getMasteryLevel() != null ? metric.getMasteryLevel() : 0.5;
+        double confidence = metric.getConfidenceScore() != null ? metric.getConfidenceScore() : 0.0;
+        return mastery + ((1.0 - confidence) * 0.5);
+    }
+
+    private double estimateDifficulty(Stimulus stimulus) {
+        if (stimulus.getQuestionGroups() == null || stimulus.getQuestionGroups().isEmpty()) {
+            return 0.5;
+        }
+        return stimulus.getQuestionGroups().stream()
+                .flatMap(qg -> qg.getQuestions().stream())
+                .mapToDouble(q -> {
+                    if (q.getTags() == null || q.getTags().isEmpty()) return 0.5;
+                    return q.getTags().stream()
+                            .mapToDouble(tag -> {
+                                String name = tag.getName().toUpperCase();
+                                if (name.contains("8") || name.contains("BAND_8")) return 0.8;
+                                if (name.contains("7") || name.contains("BAND_7")) return 0.7;
+                                if (name.contains("6") || name.contains("BAND_6")) return 0.6;
+                                if (name.contains("5") || name.contains("BAND_5")) return 0.5;
+                                return 0.5;
+                            })
+                            .average()
+                            .orElse(0.5);
+                })
+                .average()
+                .orElse(0.5);
+    }
+
+    private io.gsp26se16.moni.content.entity.Test findTestForStimulus(Stimulus stimulus) {
+        if (stimulus == null) return null;
+        List<TestStructure> structures = testStructureRepository.findByStimulusId(stimulus.getId());
+        if (!structures.isEmpty()) {
+            return structures.get(0).getTest();
+        }
+        return null;
+    }
+
+    private LocalDate calculateNextMonday() {
+        LocalDate today = LocalDate.now();
+        // If today is Monday and it's early, use today as start
+        if (today.getDayOfWeek() == DayOfWeek.MONDAY) {
+            return today;
+        }
+        return today.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+    }
+
+    private WeeklyPlanDetailResponse buildDetailResponse(WeeklyPlan plan, Users user) {
+        List<DailySlot> allSlots = dailySlotRepository.findByWeeklyPlanOrderByDayOfWeekAscIdAsc(plan);
+
+        LocalDate today = LocalDate.now();
+        List<DailySlot> todaySlots =
+                allSlots.stream().filter(s -> s.getSlotDate().equals(today)).toList();
+
+        boolean todayCompleted =
+                !todaySlots.isEmpty() && todaySlots.stream().allMatch(s -> "DONE".equals(s.getStatus()));
+        boolean suggestVocabulary = todayCompleted;
+
+        // Check for pending monthly assessment
+        boolean monthlyPending =
+                monthlyAssessmentRepository.findByUserAndStatus(user, "PENDING").isPresent();
+
+        // Get previous verdict
+        String previousVerdict = null;
+        List<WeeklyPlan> recent = weeklyPlanRepository.findTop4ByUserOrderByWeekNumberDesc(user);
+        for (WeeklyPlan p : recent) {
+            if ("COMPLETED".equals(p.getStatus()) && p.getPerformanceVerdict() != null) {
+                previousVerdict = p.getPerformanceVerdict();
+                break;
+            }
+        }
+
+        List<DailySlotResponse> slotResponses = allSlots.stream()
+                .map(s -> DailySlotResponse.builder()
+                        .id(s.getId())
+                        .dayOfWeek(s.getDayOfWeek())
+                        .slotDate(s.getSlotDate().toString())
+                        .skill(s.getSkill().name())
+                        .taskType(s.getTaskType())
+                        .stimulusId(s.getStimulus() != null ? s.getStimulus().getId() : null)
+                        .stimulusTitle(s.getStimulus() != null ? s.getStimulus().getTitle() : null)
+                        .testId(s.getTest() != null ? s.getTest().getId() : null)
+                        .status(s.getStatus())
+                        .score(s.getScore())
+                        .totalQuestions(s.getTotalQuestions())
+                        .build())
+                .toList();
+
+        return WeeklyPlanDetailResponse.builder()
+                .id(plan.getId())
+                .weekNumber(plan.getWeekNumber())
+                .monthCycle(plan.getMonthCycle())
+                .weekInMonth(plan.getWeekInMonth())
+                .weekStartDate(plan.getWeekStartDate().toString())
+                .weekEndDate(plan.getWeekEndDate().toString())
+                .status(plan.getStatus())
+                .difficultyLevel(plan.getDifficultyLevel())
+                .weeklyAccuracy(plan.getWeeklyAccuracy())
+                .completionRate(plan.getCompletionRate())
+                .performanceVerdict(plan.getPerformanceVerdict())
+                .previousVerdict(previousVerdict)
+                .slots(slotResponses)
+                .todayCompleted(todayCompleted)
+                .suggestVocabulary(suggestVocabulary)
+                .monthlyAssessmentPending(monthlyPending)
+                .build();
+    }
+
+    private Users getCurrentUser() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        String credentialId = null;
+        if (authentication.getPrincipal() instanceof org.springframework.security.oauth2.jwt.Jwt jwt) {
+            credentialId = jwt.getClaimAsString("userId");
+        }
+
+        if (credentialId == null) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        UserCredentials credentials = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        if (credentials.getUser() == null) {
+            throw new AppException(ErrorCode.USER_NOT_EXISTED);
+        }
+        return credentials.getUser();
+    }
+}
