@@ -14,8 +14,6 @@ import io.gsp26se16.moni.tag.entity.Tag;
 public interface LearnerMetricRepository extends JpaRepository<LearnerMetric, Integer> {
     Optional<LearnerMetric> findByUserAndTag(Users user, Tag tag);
 
-    List<LearnerMetric> findTop3ByUserOrderByMasteryLevelAsc(Users user);
-
     List<LearnerMetric> findTop8ByUserOrderByMasteryLevelAsc(Users user);
 
     List<LearnerMetric> findTop5ByUserOrderByMasteryLevelDesc(Users user);
