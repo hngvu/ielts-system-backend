@@ -86,7 +86,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                             .avatar_url(userInfo.getPicture())
                             .credit(0.0)
                             .build();
-                    usersRepository.save(newProfile);
 
                     var newCred = UserCredentials.builder()
                             .email(userInfo.getEmail())
