@@ -294,6 +294,18 @@ public class ExamSessionServiceImpl implements ExamSessionService {
         if (session.getStatus() != TestSessionStatus.IN_PROGRESS) {
             return; // Already finalized
         }
+
+        Attempt attempt = attemptRepository.findByTestSession(session).orElse(null);
+        if (attempt == null) {
+            log.warn(
+                    "Expiring TestSession {} but no Attempt was found. Marking as EXPIRED to avoid loop.",
+                    session.getId());
+            session.setStatus(TestSessionStatus.EXPIRED);
+            session.setEndedAt(LocalDateTime.now());
+            testSessionRepository.save(session);
+            return;
+        }
+
         gradeAndFinalize(session, TestSessionStatus.EXPIRED);
         log.info(
                 "Expired exam session {} for test {}",
