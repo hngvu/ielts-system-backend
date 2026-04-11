@@ -4,10 +4,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
-import io.gsp26se16.moni.common.enumeration.Skill;
-import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
-import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
-import io.gsp26se16.moni.tag.entity.Tag;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -17,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import io.gsp26se16.moni.authentication.entity.UserCredentials;
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
+import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.entity.Question;
@@ -33,7 +30,10 @@ import io.gsp26se16.moni.placement.entity.PlacementResult;
 import io.gsp26se16.moni.placement.repository.PlacementResultRepository;
 import io.gsp26se16.moni.placement.util.BandScoreUtil;
 import io.gsp26se16.moni.practice.dto.request.AnswerRequest;
+import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
+import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
 import io.gsp26se16.moni.roadmap.service.GoalService;
+import io.gsp26se16.moni.tag.entity.Tag;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -225,8 +225,12 @@ public class PlacementServiceImpl implements PlacementService {
                     isCorrect = true;
                 }
             } else if (ans.getAnswerText() != null && correctOption != null) {
-                if (ans.getAnswerText().trim().equalsIgnoreCase(
-                        correctOption.getContent() != null ? correctOption.getContent().trim() : "")) {
+                if (ans.getAnswerText()
+                        .trim()
+                        .equalsIgnoreCase(
+                                correctOption.getContent() != null
+                                        ? correctOption.getContent().trim()
+                                        : "")) {
                     isCorrect = true;
                 }
             }

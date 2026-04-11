@@ -85,7 +85,6 @@ public class GoalServiceImpl implements GoalService {
         newGoal.setStatus("ACTIVE");
         Goal savedGoal = goalRepository.save(newGoal);
 
-
         Roadmap roadmap = new Roadmap();
         roadmap.setGoal(savedGoal);
         roadmap.setVersion(1);
@@ -94,14 +93,12 @@ public class GoalServiceImpl implements GoalService {
         roadmap.setCreatedAt(LocalDateTime.now());
         Roadmap savedRoadmap = roadmapRepository.save(roadmap);
 
-
         Task placementTask = new Task();
         placementTask.setRoadmap(savedRoadmap);
         placementTask.setOrder(1);
         placementTask.setTaskType("PLACEMENT_TEST");
         placementTask.setStatus("TODO");
         taskRepository.save(placementTask);
-
 
         generateSmartTasksForRoadmap(savedRoadmap, learner);
 
@@ -204,7 +201,6 @@ public class GoalServiceImpl implements GoalService {
         if ("DONE".equals(task.getStatus())) {
             Roadmap currentRoadmap = task.getRoadmap();
 
-
             if ("PRACTICE_STIMULUS".equals(task.getTaskType())) {
                 List<Task> practiceTasksInRoadmap =
                         taskRepository.findAllByRoadmapAndTaskType(currentRoadmap, "PRACTICE_STIMULUS");
@@ -226,7 +222,6 @@ public class GoalServiceImpl implements GoalService {
                     });
                 }
             }
-
 
             long remainingTasks = taskRepository.countByRoadmapIdAndStatusNot(currentRoadmap.getId(), "DONE");
 
@@ -307,9 +302,7 @@ public class GoalServiceImpl implements GoalService {
                         log.info("Archived old goal {} for skill {}", oldGoal.getId(), currentSkill);
                     });
 
-
             LocalDate deadline = (examDate != null) ? examDate : LocalDate.now().plusDays(90);
-
 
             Goal newGoal = new Goal();
             newGoal.setUser(user);
@@ -452,7 +445,8 @@ public class GoalServiceImpl implements GoalService {
         // ============================================================
         // [NEW] LOGIC TÍNH TOÁN THỜI GIAN VÀ CẢNH BÁO AI
         // ============================================================
-        Integer dailyStudyTime = calculateRecommendedDailyStudyMinutes(calibration.calibratedOverall, targetOverall, daysToExam);
+        Integer dailyStudyTime =
+                calculateRecommendedDailyStudyMinutes(calibration.calibratedOverall, targetOverall, daysToExam);
 
         // 1. Kiểm tra quá sức về mặt ĐIỂM SỐ (Logic cũ)
         boolean isScoreOverAmbitious = targetOverall != null
@@ -462,7 +456,9 @@ public class GoalServiceImpl implements GoalService {
 
         // 2. Kiểm tra quá sức về mặt THỜI GIAN (Logic mới)
         boolean isTimeOverAmbitious = false;
-        if (targetOverall != null && calibration.calibratedOverall > 0 && targetOverall > calibration.calibratedOverall) {
+        if (targetOverall != null
+                && calibration.calibratedOverall > 0
+                && targetOverall > calibration.calibratedOverall) {
             double gap = targetOverall - calibration.calibratedOverall;
             int effectiveDaysForMath = (daysToExam != null && daysToExam > 0) ? daysToExam : 90;
             int rawDailyMinutes = (int) Math.ceil((gap * 150.0 * 60.0) / effectiveDaysForMath);
@@ -478,9 +474,11 @@ public class GoalServiceImpl implements GoalService {
         String targetWarning = null;
 
         if (isTimeOverAmbitious) {
-            targetWarning = "Mục tiêu của bạn đòi hỏi học hơn 4 tiếng mỗi ngày. Điều này rất dễ gây quá tải (Burnout). Hệ thống khuyên bạn nên dời ngày thi lại, hoặc tạm thời hạ mục tiêu xuống 0.5 Band.";
+            targetWarning =
+                    "Mục tiêu của bạn đòi hỏi học hơn 4 tiếng mỗi ngày. Điều này rất dễ gây quá tải (Burnout). Hệ thống khuyên bạn nên dời ngày thi lại, hoặc tạm thời hạ mục tiêu xuống 0.5 Band.";
         } else if (isScoreOverAmbitious) {
-            targetWarning = "Mục tiêu hiện tại có thể hơi quá tầm so với thời gian còn lại. Hãy tăng cường tần suất luyện tập hoặc điều chỉnh lại kỳ vọng.";
+            targetWarning =
+                    "Mục tiêu hiện tại có thể hơi quá tầm so với thời gian còn lại. Hãy tăng cường tần suất luyện tập hoặc điều chỉnh lại kỳ vọng.";
         }
         // ============================================================
 
@@ -757,7 +755,6 @@ public class GoalServiceImpl implements GoalService {
         return mastery + (uncertainty * 0.5);
     }
 
-
     public void generateNextRoadmapWhenNearing100Percent(Roadmap currentRoadmap) {
 
         boolean hasQueuedRoadmap = roadmapRepository
@@ -768,13 +765,11 @@ public class GoalServiceImpl implements GoalService {
             return;
         }
 
-
         long totalTasks = taskRepository.countByRoadmapId(currentRoadmap.getId());
         if (totalTasks == 0) return;
 
         long doneTasks = taskRepository.countByRoadmapIdAndStatus(currentRoadmap.getId(), "DONE");
         double progressPercent = (double) doneTasks / totalTasks;
-
 
         if (progressPercent >= 0.8) {
             Roadmap nextRoadmap = new Roadmap();
@@ -783,7 +778,6 @@ public class GoalServiceImpl implements GoalService {
             nextRoadmap.setStatus("QUEUED");
             nextRoadmap.setCreatedAt(LocalDateTime.now());
             Roadmap savedNextRoadmap = roadmapRepository.save(nextRoadmap);
-
 
             generateSmartTasksForRoadmap(
                     savedNextRoadmap, currentRoadmap.getGoal().getUser());
@@ -813,13 +807,11 @@ public class GoalServiceImpl implements GoalService {
 
         log.info("Bắt đầu sinh MINI_TEST cá nhân hóa cho User {}, Kỹ năng {}", learner.getId(), skill);
 
-
         List<Tag> weakTags = learnerMetricRepository.findByUser(learner).stream()
                 .sorted(Comparator.comparingDouble(this::calculateWeakAreaScore))
                 .map(LearnerMetric::getTag)
                 .limit(3)
                 .toList();
-
 
         List<Stimulus> selectedStimuli = new ArrayList<>();
         if (!weakTags.isEmpty()) {
@@ -827,7 +819,6 @@ public class GoalServiceImpl implements GoalService {
                     .limit(2)
                     .toList();
         }
-
 
         if (selectedStimuli.isEmpty()) {
             List<Stimulus> fallbackStimuli = stimulusRepository.findBySkill(skill);
@@ -861,7 +852,6 @@ public class GoalServiceImpl implements GoalService {
             testStructureRepository.save(structure);
         }
 
-
         miniTestTask.setTest(savedTest);
         miniTestTask.setStatus("TODO");
         taskRepository.save(miniTestTask);
@@ -887,7 +877,8 @@ public class GoalServiceImpl implements GoalService {
             long daysToExam = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), examDate);
             if (daysToExam > 0 && daysToExam <= 30) {
                 baseCount += 1;
-                log.debug("User {} sắp thi ({} ngày), tăng số lượng task lên {}", learner.getId(), daysToExam, baseCount);
+                log.debug(
+                        "User {} sắp thi ({} ngày), tăng số lượng task lên {}", learner.getId(), daysToExam, baseCount);
             }
         }
 
