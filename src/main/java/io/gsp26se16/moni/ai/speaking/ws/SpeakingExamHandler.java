@@ -150,9 +150,14 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
         } else if (session.getPart2Question() != null) {
             currentPart = 2;
             currentQuestionObj = Map.of(
-                    "type", "show_cue_card",
-                    "questionId", session.getPart2Question().getId(),
-                    "topic", session.getPart2Question().getContent());
+                    "type",
+                    "show_cue_card",
+                    "duration",
+                    60,
+                    "questionId",
+                    session.getPart2Question().getId(),
+                    "topic",
+                    session.getPart2Question().getContent());
         }
 
         Map<String, Object> resumePayload = Map.of(
@@ -170,9 +175,14 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
             case PART2_PREPARATION:
                 // If it was in part 2 prep, resend the cue card
                 Map<String, Object> cueCardPayload = Map.of(
-                        "type", "show_cue_card",
-                        "questionId", session.getPart2Question().getId(),
-                        "content", session.getPart2Question().getContent());
+                        "type",
+                        "show_cue_card",
+                        "duration",
+                        60,
+                        "questionId",
+                        session.getPart2Question().getId(),
+                        "topic",
+                        session.getPart2Question().getContent());
                 session.getWsSession().sendMessage(new TextMessage(objectMapper.writeValueAsString(cueCardPayload)));
                 break;
             case EVALUATING:
