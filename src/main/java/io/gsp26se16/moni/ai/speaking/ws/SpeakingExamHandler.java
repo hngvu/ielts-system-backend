@@ -99,13 +99,21 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
 
         // Check for existing session to resume
         ActiveExamSession existingSession = sessionManager.getByUserId(userId);
-        if (existingSession != null
-                && existingSession.getState() != ExamState.COMPLETED
-                && existingSession.getTestId().equals(testId)) {
-            log.info("Resuming existing exam session for userId={}, testId={}", userId, testId);
-            existingSession.setWsSession(ws);
-            resumeExam(existingSession);
-            return;
+        if (existingSession != null) {
+            if (existingSession.getState() != ExamState.COMPLETED
+                    && existingSession.getTestId().equals(testId)) {
+                log.info("Resuming existing exam session for userId={}, testId={}", userId, testId);
+                existingSession.setWsSession(ws);
+                resumeExam(existingSession);
+                return;
+            }
+            // Old session exists but different test or already completed — clean it up
+            log.info(
+                    "Removing stale session for userId={}, oldTestId={}, newTestId={}",
+                    userId,
+                    existingSession.getTestId(),
+                    testId);
+            sessionManager.removeByUserId(userId);
         }
 
         // Check and deduct credit before starting a NEW exam
@@ -270,11 +278,13 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
                         }
 
                         session.setState(ExamState.COMPLETED);
-                        sessionManager.removeByUserId(session.getUserId());
 
                     } catch (Exception e) {
                         log.error("Evaluation failed for session {}: {}", session.getSessionId(), e.getMessage(), e);
                         sendError(session.getWsSession(), "Evaluation failed: " + e.getMessage());
+                    } finally {
+                        // Always clean up session, whether evaluation succeeded or failed
+                        sessionManager.removeByUserId(session.getUserId());
                     }
                 },
                 evalExecutor);
