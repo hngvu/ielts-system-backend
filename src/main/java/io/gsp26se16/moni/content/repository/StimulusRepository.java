@@ -27,4 +27,7 @@ public interface StimulusRepository extends JpaRepository<Stimulus, Integer> {
     List<Stimulus> findBySkill(Skill skill);
 
     boolean existsByTagsId(Integer tagId);
+
+    @Query("SELECT count(q) FROM Question q WHERE q.questionGroup.stimulus.id = :stimulusId")
+    int countQuestionsByStimulusId(@Param("stimulusId") Integer stimulusId);
 }

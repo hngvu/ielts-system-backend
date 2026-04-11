@@ -50,6 +50,7 @@ public class FullTestServiceImpl implements FullTestService {
     private final TestStructureRepository testStructureRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<FullTestResponse> listFullTests() {
         List<Test> tests = testRepository.findByTestModeOrderByIdDesc(TestMode.FULL_TEST);
         return tests.stream().map(this::toFullTestResponse).collect(Collectors.toList());
@@ -202,6 +203,7 @@ public class FullTestServiceImpl implements FullTestService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public FullTestResponse getFullTestById(Integer id) {
         Test test = testRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_FOUND));
         if (test.getTestMode() != null && test.getTestMode() != TestMode.FULL_TEST) {
@@ -392,9 +394,7 @@ public class FullTestServiceImpl implements FullTestService {
     }
 
     private int countQuestions(Stimulus stimulus) {
-        return stimulus.getQuestionGroups().stream()
-                .mapToInt(group -> group.getQuestions().size())
-                .sum();
+        return stimulusRepository.countQuestionsByStimulusId(stimulus.getId());
     }
 
     private void validateReadingQuestionTotal(Skill skill, List<Stimulus> stimuli) {
