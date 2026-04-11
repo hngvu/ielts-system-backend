@@ -34,6 +34,18 @@ public interface CreditTransactionRepository
             @Param("startDate") java.time.LocalDateTime startDate,
             @Param("endDate") java.time.LocalDateTime endDate);
 
+    @Query("SELECT COUNT(ct) FROM CreditTransaction ct "
+            + "WHERE ct.paymentType = :paymentType "
+            + "AND ct.user.id = :userId "
+            + "AND ct.servicePricing.serviceCode = :serviceCode "
+            + "AND ct.createdAt >= :startDate AND ct.createdAt <= :endDate")
+    long countByUserIdAndServiceCodeAndPaymentTypeAndCreatedAtBetween(
+            @Param("userId") String userId,
+            @Param("paymentType") PaymentType paymentType,
+            @Param("serviceCode") String serviceCode,
+            @Param("startDate") java.time.LocalDateTime startDate,
+            @Param("endDate") java.time.LocalDateTime endDate);
+
     @Query("SELECT DATE(ct.createdAt) as date, COUNT(ct) as count FROM CreditTransaction ct "
             + "WHERE ct.paymentType = :paymentType "
             + "AND ct.servicePricing.serviceCode = :serviceCode "

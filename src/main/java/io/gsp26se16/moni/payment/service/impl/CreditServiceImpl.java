@@ -1,5 +1,6 @@
 package io.gsp26se16.moni.payment.service.impl;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.springframework.stereotype.Service;
@@ -44,6 +45,17 @@ public class CreditServiceImpl implements CreditService {
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_KEY));
 
         int creditCost = pricing.getCreditCost();
+
+        if ("AI_SPEAKING_SCORE".equals(serviceCode) || "AI_WRITING_SCORE".equals(serviceCode)) {
+            LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+            LocalDateTime endOfDay = startOfDay.plusDays(1).minusNanos(1);
+            long usedToday = creditTransactionRepository.countByUserIdAndServiceCodeAndPaymentTypeAndCreatedAtBetween(
+                    user.getId(), PaymentType.CONSUME, serviceCode, startOfDay, endOfDay);
+            if (usedToday == 0) {
+                creditCost = 0; // Free turn
+            }
+        }
+
         int balanceBefore = user.getCredit() != null ? user.getCredit().intValue() : 0;
 
         if (balanceBefore < creditCost) {

@@ -1,15 +1,23 @@
 package io.gsp26se16.moni.payment.service.impl;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
+import io.gsp26se16.moni.authentication.entity.UserCredentials;
+import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.payment.dto.request.ServicePricingCreateRequest;
 import io.gsp26se16.moni.payment.dto.request.ServicePricingUpdateRequest;
 import io.gsp26se16.moni.payment.dto.response.ServicePricingResponse;
 import io.gsp26se16.moni.payment.entity.ServicePricing;
+import io.gsp26se16.moni.payment.enumeration.PaymentType;
+import io.gsp26se16.moni.payment.repository.CreditTransactionRepository;
 import io.gsp26se16.moni.payment.repository.ServicePricingRepository;
 import io.gsp26se16.moni.payment.service.ServicePricingService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 public class ServicePricingImpl implements ServicePricingService {
 
     private final ServicePricingRepository servicePricingRepository;
+    private final UserCredentialsRepository userCredentialsRepository;
+    private final CreditTransactionRepository creditTransactionRepository;
 
     @Override
     public List<ServicePricingResponse> searchServicePricings(
@@ -41,6 +51,7 @@ public class ServicePricingImpl implements ServicePricingService {
 
         List<ServicePricingResponse> pricings = servicePricingRepository.findAll().stream()
                 .map(this::convertToResponse)
+                .map(this::applyFreeDailyQuotaCheck)
                 .toList();
 
         // Apply filters
@@ -171,5 +182,41 @@ public class ServicePricingImpl implements ServicePricingService {
                 servicePricing.getName(),
                 servicePricing.getDescription(),
                 servicePricing.getCreditCost());
+    }
+
+    private ServicePricingResponse applyFreeDailyQuotaCheck(ServicePricingResponse response) {
+        if (!"AI_SPEAKING_SCORE".equals(response.serviceCode()) && !"AI_WRITING_SCORE".equals(response.serviceCode())) {
+            return response;
+        }
+
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
+            return response;
+        }
+
+        String credentialId = jwt.getClaim("userId");
+        if (credentialId == null) {
+            return response;
+        }
+
+        UserCredentials credentials =
+                userCredentialsRepository.findById(credentialId).orElse(null);
+        if (credentials == null || credentials.getUser() == null) {
+            return response;
+        }
+
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        LocalDateTime endOfDay = startOfDay.plusDays(1).minusNanos(1);
+        long usedToday = creditTransactionRepository.countByUserIdAndServiceCodeAndPaymentTypeAndCreatedAtBetween(
+                credentials.getUser().getId(), PaymentType.CONSUME, response.serviceCode(), startOfDay, endOfDay);
+
+        if (usedToday == 0) {
+            // Give 1 free turn per day!
+            return new ServicePricingResponse(
+                    response.id(), response.serviceCode(), response.name(), response.description(), 0 // Free!
+                    );
+        }
+
+        return response;
     }
 }
