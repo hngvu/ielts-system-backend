@@ -8,6 +8,7 @@ import java.util.*;
 
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import io.gsp26se16.moni.authentication.entity.UserCredentials;
@@ -53,7 +54,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     // =====================================================================
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void generateWeeklyPlan(Users user) {
         // Find previous plan (if any)
         Optional<WeeklyPlan> previousOpt = weeklyPlanRepository.findTopByUserOrderByWeekNumberDesc(user);
@@ -362,9 +363,9 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
 
         List<Stimulus> pool = unseen.isEmpty() ? candidates : unseen;
 
-        // 4. Sort by difficulty alignment
+        // 4. Sort by stimulus ID distance for variety (simple, avoids lazy-load)
         return pool.stream()
-                .min(Comparator.comparingDouble(s -> Math.abs(estimateDifficulty(s) - targetDifficulty)))
+                .min(Comparator.comparingInt(s -> Math.abs(s.getId() % 100 - (int) (targetDifficulty * 100))))
                 .orElse(pool.get(0));
     }
 
@@ -400,7 +401,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         List<Stimulus> unseen =
                 candidates.stream().filter(s -> !excludeIds.contains(s.getId())).toList();
 
-        List<Stimulus> pool = unseen.isEmpty() ? candidates : unseen;
+        List<Stimulus> pool = unseen.isEmpty() ? new ArrayList<>(candidates) : new ArrayList<>(unseen);
         Collections.shuffle(pool);
         return pool.get(0);
     }
