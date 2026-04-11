@@ -1,9 +1,7 @@
 package io.gsp26se16.moni.roadmap.service;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -72,7 +70,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         double difficulty = calculateDifficulty(user, previous);
 
         // Calculate week dates (next Monday → Sunday)
-        LocalDate weekStart = calculateNextMonday();
+        LocalDate weekStart = calculateWeekStart();
         LocalDate weekEnd = weekStart.plusDays(6);
 
         // Create weekly plan
@@ -522,13 +520,9 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         return null;
     }
 
-    private LocalDate calculateNextMonday() {
-        LocalDate today = LocalDate.now();
-        // If today is Monday and it's early, use today as start
-        if (today.getDayOfWeek() == DayOfWeek.MONDAY) {
-            return today;
-        }
-        return today.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+    private LocalDate calculateWeekStart() {
+        // Plan bắt đầu ngay từ hôm nay, không cần đợi đến thứ Hai
+        return LocalDate.now();
     }
 
     private WeeklyPlanDetailResponse buildDetailResponse(WeeklyPlan plan, Users user) {
