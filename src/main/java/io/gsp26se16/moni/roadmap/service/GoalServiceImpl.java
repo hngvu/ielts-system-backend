@@ -643,7 +643,6 @@ public class GoalServiceImpl implements GoalService {
             List<Tag> weakTags = weakMetrics.stream().map(LearnerMetric::getTag).toList();
             List<Stimulus> smartStimuli = stimulusRepository.findSmartStimuli(currentSkill, weakTags);
 
-            // [NEW] 2. Difficulty Alignment (#1)
             double optimalDifficulty = calculateOptimalTaskDifficulty(weakMetrics);
             selectedStimuli = smartStimuli.stream()
                     .sorted(Comparator.comparingDouble(
@@ -669,7 +668,6 @@ public class GoalServiceImpl implements GoalService {
             }
         }
 
-        // Create PRACTICE_STIMULUS tasks
         int order = 1;
         for (Stimulus stimulus : selectedStimuli) {
             Task practiceTask = new Task();
@@ -690,11 +688,7 @@ public class GoalServiceImpl implements GoalService {
                 selectedStimuli.size() + 1);
     }
 
-    // =========================================================================
-    // IMPROVEMENT #1: Difficulty Alignment
-    // =========================================================================
     private Double calculateOptimalTaskDifficulty(List<LearnerMetric> weakMetrics) {
-        // Vygotsky's ZPD: optimal difficulty = current + 15% challenge
         double avgMastery = weakMetrics.stream()
                 .mapToDouble(LearnerMetric::getMasteryLevel)
                 .average()
@@ -705,7 +699,6 @@ public class GoalServiceImpl implements GoalService {
     }
 
     private double estimateStimulusDifficulty(Stimulus stimulus) {
-        // Estimate difficulty from question tags (heuristic)
         if (stimulus.getQuestionGroups() == null || stimulus.getQuestionGroups().isEmpty()) {
             return 0.5;
         }
@@ -731,12 +724,7 @@ public class GoalServiceImpl implements GoalService {
                 .orElse(0.5);
     }
 
-    // =========================================================================
-    // IMPROVEMENT #2: Confidence-Weighted Metric Selection
-    // =========================================================================
     private Double calculateWeakAreaScore(LearnerMetric metric) {
-        // Priority = mastery + (uncertainty × 0.5)
-        // Low confidence (uncertain) knowledge gets higher priority
         double mastery = metric.getMasteryLevel();
         double confidence = metric.getConfidenceScore();
         double uncertainty = 1.0 - confidence;
