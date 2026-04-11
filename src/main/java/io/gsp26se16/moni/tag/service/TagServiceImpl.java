@@ -92,7 +92,15 @@ public class TagServiceImpl implements TagService {
         if (!tagRepository.existsById(id)) {
             throw new AppException(ErrorCode.TAG_NOT_FOUND);
         }
-        // TODO: Về sau cần check xem Tag có đang được dùng trong Bài thi không trước khi xóa
+
+        boolean isUsedInTest = testRepository.existsByTagsId(id);
+        boolean isUsedInStimulus = stimulusRepository.existsByTagsId(id);
+        boolean isUsedInQuestion = questionRepository.existsByTagsId(id);
+
+        if (isUsedInTest || isUsedInStimulus || isUsedInQuestion) {
+            throw new AppException(ErrorCode.TAG_IN_USE);
+        }
+
         tagRepository.deleteById(id);
     }
 

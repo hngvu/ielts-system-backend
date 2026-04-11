@@ -68,4 +68,6 @@ public interface TestRepository extends JpaRepository<Test, Integer> {
 
     @Query("SELECT COUNT(t) FROM Test t WHERE t.testMode = :testMode AND t.skill = :skill")
     long countByTestModeAndSkill(@Param("testMode") TestMode testMode, @Param("skill") Skill skill);
+
+    boolean existsByTagsId(Integer tagId);
 }

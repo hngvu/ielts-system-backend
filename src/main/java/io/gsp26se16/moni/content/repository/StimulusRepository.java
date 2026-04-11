@@ -25,4 +25,6 @@ public interface StimulusRepository extends JpaRepository<Stimulus, Integer> {
     List<Stimulus> findSmartStimuli(@Param("skill") Skill skill, @Param("weakTags") List<Tag> weakTags);
 
     List<Stimulus> findBySkill(Skill skill);
+
+    boolean existsByTagsId(Integer tagId);
 }
