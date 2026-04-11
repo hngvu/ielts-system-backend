@@ -118,9 +118,18 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
 
         // Check and deduct credit before starting a NEW exam
         try {
+            int balanceBefore = creditService.getBalance(userId);
+            log.info("Credit check for userId={}: balance BEFORE = {}", userId, balanceBefore);
             creditService.checkAndDeduct(userId, "AI_SPEAKING_SCORE");
+            int balanceAfter = creditService.getBalance(userId);
+            log.info("Credit deducted for userId={}: balance AFTER = {}", userId, balanceAfter);
         } catch (AppException e) {
+            log.warn("Credit deduction failed (AppException) for userId={}: {}", userId, e.getMessage());
             sendError(ws, "Không đủ credit để bắt đầu thi Speaking");
+            return;
+        } catch (Exception e) {
+            log.error("Credit deduction failed (unexpected) for userId={}: {}", userId, e.getMessage(), e);
+            sendError(ws, "Lỗi trừ credit: " + e.getMessage());
             return;
         }
 
