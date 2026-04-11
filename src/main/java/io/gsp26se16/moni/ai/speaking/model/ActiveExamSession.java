@@ -78,6 +78,14 @@ public class ActiveExamSession {
         part3Transcripts.add(new TranscriptEntry(questionId, questionContent, text, audioUrl));
     }
 
+    public List<TranscriptEntry> getPart1Transcripts() {
+        return part1Transcripts;
+    }
+
+    public List<TranscriptEntry> getPart3Transcripts() {
+        return part3Transcripts;
+    }
+
     /** Gộp toàn bộ transcript 3 parts kèm câu hỏi để AI chấm chính xác */
     public String getFullTranscriptWithQuestions() {
         StringBuilder sb = new StringBuilder();

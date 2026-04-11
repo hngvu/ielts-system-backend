@@ -160,15 +160,19 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
                     session.getPart2Question().getContent());
         }
 
+        int questionIndex = 0;
+        if (session.getState() == ExamState.PART1_QUESTIONING) {
+            questionIndex = session.getPart1Transcripts().size();
+        } else if (session.getState() == ExamState.PART3_QUESTIONING) {
+            questionIndex = session.getPart3Transcripts().size();
+        }
+
         Map<String, Object> resumePayload = Map.of(
-                "type",
-                "resume_exam",
-                "state",
-                session.getState().toString(),
-                "part",
-                currentPart,
-                "currentQuestion",
-                currentQuestionObj);
+                "type", "resume_exam",
+                "state", session.getState().toString(),
+                "part", currentPart,
+                "currentQuestion", currentQuestionObj,
+                "questionIndex", questionIndex);
         session.getWsSession().sendMessage(new TextMessage(objectMapper.writeValueAsString(resumePayload)));
 
         switch (session.getState()) {
