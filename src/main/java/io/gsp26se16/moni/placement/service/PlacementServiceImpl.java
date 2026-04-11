@@ -1,7 +1,13 @@
 package io.gsp26se16.moni.placement.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
+import io.gsp26se16.moni.common.enumeration.Skill;
+import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
+import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
+import io.gsp26se16.moni.tag.entity.Tag;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -41,6 +47,7 @@ public class PlacementServiceImpl implements PlacementService {
     private final QuestionRepository questionRepository;
     private final UserCredentialsRepository userCredentialsRepository;
     private final GoalService goalService;
+    private final LearnerMetricRepository learnerMetricRepository;
 
     public PlacementServiceImpl(
             PlacementResultRepository placementResultRepository,
@@ -48,13 +55,15 @@ public class PlacementServiceImpl implements PlacementService {
             TestService testService,
             QuestionRepository questionRepository,
             UserCredentialsRepository userCredentialsRepository,
-            @Lazy GoalService goalService) {
+            @Lazy GoalService goalService,
+            LearnerMetricRepository learnerMetricRepository) {
         this.placementResultRepository = placementResultRepository;
         this.testRepository = testRepository;
         this.testService = testService;
         this.questionRepository = questionRepository;
         this.userCredentialsRepository = userCredentialsRepository;
         this.goalService = goalService;
+        this.learnerMetricRepository = learnerMetricRepository;
     }
 
     @Override
@@ -86,8 +95,8 @@ public class PlacementServiceImpl implements PlacementService {
         int readingTotal = request.getReadingAnswers().size();
         int listeningTotal = request.getListeningAnswers().size();
 
-        int readingCorrect = gradeAnswers(request.getReadingAnswers());
-        int listeningCorrect = gradeAnswers(request.getListeningAnswers());
+        int readingCorrect = gradeAnswers(user, Skill.READING, request.getReadingAnswers());
+        int listeningCorrect = gradeAnswers(user, Skill.LISTENING, request.getListeningAnswers());
 
         double readingBand = BandScoreUtil.readingBand(readingCorrect, readingTotal);
         double listeningBand = BandScoreUtil.listeningBand(listeningCorrect, listeningTotal);
@@ -195,14 +204,17 @@ public class PlacementServiceImpl implements PlacementService {
 
     // --- Helpers ---
 
-    private int gradeAnswers(List<AnswerRequest> answers) {
-        int correct = 0;
+    private int gradeAnswers(Users user, Skill skill, List<AnswerRequest> answers) {
+        int correctCount = 0;
+        LocalDateTime now = LocalDateTime.now();
+
         for (AnswerRequest ans : answers) {
             Question question = questionRepository
                     .findById(ans.getQuestionId())
                     .orElseThrow(() -> new AppException(ErrorCode.QUESTION_NOT_FOUND));
 
             QuestionOption correctOption = findCorrectOption(question);
+            boolean isCorrect = false;
 
             if (ans.getSelectedOptionId() != null) {
                 var selectedOpt = question.getOptions().stream()
@@ -210,20 +222,72 @@ public class PlacementServiceImpl implements PlacementService {
                         .findFirst()
                         .orElse(null);
                 if (selectedOpt != null && selectedOpt.isCorrect()) {
-                    correct++;
+                    isCorrect = true;
                 }
             } else if (ans.getAnswerText() != null && correctOption != null) {
-                if (ans.getAnswerText()
-                        .trim()
-                        .equalsIgnoreCase(
-                                correctOption.getContent() != null
-                                        ? correctOption.getContent().trim()
-                                        : "")) {
-                    correct++;
+                if (ans.getAnswerText().trim().equalsIgnoreCase(
+                        correctOption.getContent() != null ? correctOption.getContent().trim() : "")) {
+                    isCorrect = true;
+                }
+            }
+
+            if (isCorrect) correctCount++;
+
+            // ============================================================
+            // [AI ENGINE] Cập nhật LearnerMetric ngay từ bài Placement Test
+            // ============================================================
+            Set<Tag> questionTags = question.getTags();
+            if (questionTags != null && !questionTags.isEmpty()) {
+                for (Tag tag : questionTags) {
+                    LearnerMetric metric = learnerMetricRepository
+                            .findByUserAndTag(user, tag)
+                            .orElseGet(() -> {
+                                LearnerMetric newMetric = new LearnerMetric();
+                                newMetric.setUser(user);
+                                newMetric.setTag(tag);
+                                newMetric.setMasteryLevel(0.3); // Prior
+                                newMetric.setConfidenceScore(0.0);
+                                newMetric.setAttemptCount(0);
+
+                                // Placement Test chỉ có Reading và Listening
+                                newMetric.setPGuess(0.25);
+                                newMetric.setPSlip(0.10);
+                                newMetric.setPTransit(0.1);
+                                return newMetric;
+                            });
+
+                    double pL = metric.getMasteryLevel();
+                    double pGuess = metric.getPGuess();
+                    double pSlip = metric.getPSlip();
+                    double pTransit = metric.getPTransit();
+
+                    // Toán học Bayes
+                    double pLnew;
+                    if (isCorrect) {
+                        double pCorrectGivenL = 1.0 - pSlip;
+                        double pCorrectGivenNotL = pGuess;
+                        double pCorrect = (pL * pCorrectGivenL) + ((1.0 - pL) * pCorrectGivenNotL);
+                        pLnew = (pL * pCorrectGivenL) / pCorrect;
+                    } else {
+                        double pIncorrectGivenL = pSlip;
+                        double pIncorrectGivenNotL = 1.0 - pGuess;
+                        double pIncorrect = (pL * pIncorrectGivenL) + ((1.0 - pL) * pIncorrectGivenNotL);
+                        pLnew = (pL * pIncorrectGivenL) / pIncorrect;
+                    }
+
+                    double pLfinal = pLnew + ((1.0 - pLnew) * pTransit);
+                    pLfinal = Math.max(0.0, Math.min(1.0, pLfinal));
+
+                    metric.setMasteryLevel(pLfinal);
+                    metric.setAttemptCount(metric.getAttemptCount() == null ? 1 : metric.getAttemptCount() + 1);
+                    metric.setConfidenceScore(1.0 - (1.0 / (metric.getAttemptCount() + 1.0)));
+                    metric.setUpdatedAt(now);
+
+                    learnerMetricRepository.save(metric);
                 }
             }
         }
-        return correct;
+        return correctCount;
     }
 
     private QuestionOption findCorrectOption(Question question) {
