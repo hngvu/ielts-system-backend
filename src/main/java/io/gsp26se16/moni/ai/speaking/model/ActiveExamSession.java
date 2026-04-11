@@ -29,7 +29,7 @@ public class ActiveExamSession {
     private final String sessionId;
     private final String userId;
     private final Integer testId;
-    private final WebSocketSession wsSession;
+    private WebSocketSession wsSession;
 
     /** ID của SpeakingSession entity đã persist trong DB */
     private String speakingSessionId;

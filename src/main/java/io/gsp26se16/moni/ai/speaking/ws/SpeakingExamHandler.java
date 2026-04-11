@@ -52,8 +52,13 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        sessionManager.remove(session.getId());
-        log.info("SpeakingExam WS closed: sessionId={}, status={}", session.getId(), status);
+        String userId = (String) session.getAttributes().get("userId");
+        log.info(
+                "SpeakingExam WS closed: sessionId={}, userId={}, status={}. Session is kept in memory for resume.",
+                session.getId(),
+                userId,
+                status);
+        // Do NOT remove session here. Let the user resume it or timeout.
     }
 
     // ─────────────────────────────── Messages ────────────────────────────────
@@ -92,7 +97,18 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
             return;
         }
 
-        // Check and deduct credit before starting exam
+        // Check for existing session to resume
+        ActiveExamSession existingSession = sessionManager.getByUserId(userId);
+        if (existingSession != null
+                && existingSession.getState() != ExamState.COMPLETED
+                && existingSession.getTestId().equals(testId)) {
+            log.info("Resuming existing exam session for userId={}, testId={}", userId, testId);
+            existingSession.setWsSession(ws);
+            resumeExam(existingSession);
+            return;
+        }
+
+        // Check and deduct credit before starting a NEW exam
         try {
             creditService.checkAndDeduct(userId, "AI_SPEAKING_SCORE");
         } catch (AppException e) {
@@ -107,8 +123,69 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
         log.info("Exam started: sessionId={}, testId={}, userId={}", session.getSessionId(), testId, userId);
     }
 
+    private void resumeExam(ActiveExamSession session) throws IOException {
+        // Send a custom resume message to the client
+        Object currentQuestionObj = "";
+        int currentPart = 1;
+        if (session.getState() == ExamState.PART3_QUESTIONING) {
+            currentPart = 3;
+        } else if (session.getState() == ExamState.PART2_PREPARATION
+                || session.getState() == ExamState.PART2_SPEAKING
+                || session.getState() == ExamState.TRANSITIONING_TO_PART2) {
+            currentPart = 2;
+        }
+
+        if (session.getCurrentQuestion() != null) {
+            currentQuestionObj = Map.of(
+                    "type",
+                    "question",
+                    "partNumber",
+                    currentPart,
+                    "questionId",
+                    session.getCurrentQuestion().getId(),
+                    "text",
+                    session.getCurrentQuestion().getContent(),
+                    "isFollowUp",
+                    false);
+        } else if (session.getPart2Question() != null) {
+            currentPart = 2;
+            currentQuestionObj = Map.of(
+                    "type", "show_cue_card",
+                    "questionId", session.getPart2Question().getId(),
+                    "topic", session.getPart2Question().getContent());
+        }
+
+        Map<String, Object> resumePayload = Map.of(
+                "type",
+                "resume_exam",
+                "state",
+                session.getState().toString(),
+                "part",
+                currentPart,
+                "currentQuestion",
+                currentQuestionObj);
+        session.getWsSession().sendMessage(new TextMessage(objectMapper.writeValueAsString(resumePayload)));
+
+        switch (session.getState()) {
+            case PART2_PREPARATION:
+                // If it was in part 2 prep, resend the cue card
+                Map<String, Object> cueCardPayload = Map.of(
+                        "type", "show_cue_card",
+                        "questionId", session.getPart2Question().getId(),
+                        "content", session.getPart2Question().getContent());
+                session.getWsSession().sendMessage(new TextMessage(objectMapper.writeValueAsString(cueCardPayload)));
+                break;
+            case EVALUATING:
+                runEvaluation(session);
+                break;
+            default:
+                break;
+        }
+    }
+
     private void handleTranscript(WebSocketSession ws, Map<String, Object> payload) throws IOException {
-        ActiveExamSession session = sessionManager.get(ws.getId());
+        String userId = (String) ws.getAttributes().get("userId");
+        ActiveExamSession session = sessionManager.getByUserId(userId);
         if (session == null) {
             sendError(ws, "No active exam session");
             return;
@@ -123,7 +200,8 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
     }
 
     private void handleStartPart2(WebSocketSession ws) {
-        ActiveExamSession session = sessionManager.get(ws.getId());
+        String userId = (String) ws.getAttributes().get("userId");
+        ActiveExamSession session = sessionManager.getByUserId(userId);
         if (session == null) {
             sendError(ws, "No active exam session");
             return;
@@ -136,7 +214,8 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
     }
 
     private void handleStopPart2(WebSocketSession ws, Map<String, Object> payload) throws IOException {
-        ActiveExamSession session = sessionManager.get(ws.getId());
+        String userId = (String) ws.getAttributes().get("userId");
+        ActiveExamSession session = sessionManager.getByUserId(userId);
         if (session == null) {
             sendError(ws, "No active exam session");
             return;
@@ -148,7 +227,8 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
     }
 
     private void handleEndExam(WebSocketSession ws) {
-        ActiveExamSession session = sessionManager.get(ws.getId());
+        String userId = (String) ws.getAttributes().get("userId");
+        ActiveExamSession session = sessionManager.getByUserId(userId);
         if (session == null) {
             sendError(ws, "No active exam session");
             return;
@@ -176,7 +256,7 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
                         }
 
                         session.setState(ExamState.COMPLETED);
-                        sessionManager.remove(session.getSessionId());
+                        sessionManager.removeByUserId(session.getUserId());
 
                     } catch (Exception e) {
                         log.error("Evaluation failed for session {}: {}", session.getSessionId(), e.getMessage(), e);

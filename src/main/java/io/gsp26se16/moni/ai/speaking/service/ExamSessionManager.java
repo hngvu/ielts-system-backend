@@ -61,16 +61,16 @@ public class ExamSessionManager {
             log.error("Failed to persist SpeakingSession: {}", e.getMessage());
         }
 
-        sessions.put(wsSession.getId(), session);
+        sessions.put(userId, session);
         return session;
     }
 
-    public ActiveExamSession get(String sessionId) {
-        return sessions.get(sessionId);
+    public ActiveExamSession getByUserId(String userId) {
+        return sessions.get(userId);
     }
 
-    public void remove(String sessionId) {
-        sessions.remove(sessionId);
+    public void removeByUserId(String userId) {
+        sessions.remove(userId);
     }
 
     public Iterable<ActiveExamSession> getAllSessions() {
