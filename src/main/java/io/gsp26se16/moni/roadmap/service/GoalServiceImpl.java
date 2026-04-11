@@ -449,16 +449,40 @@ public class GoalServiceImpl implements GoalService {
         double achievableOverallByExam = computeAchievableOverallByExam(calibration.calibratedOverall, daysToExam);
 
         Double targetOverall = learner.getTargetBand();
-        boolean targetOverAmbitious = targetOverall != null
+        // ============================================================
+        // [NEW] LOGIC TÍNH TOÁN THỜI GIAN VÀ CẢNH BÁO AI
+        // ============================================================
+        Integer dailyStudyTime = calculateRecommendedDailyStudyMinutes(calibration.calibratedOverall, targetOverall, daysToExam);
+
+        // 1. Kiểm tra quá sức về mặt ĐIỂM SỐ (Logic cũ)
+        boolean isScoreOverAmbitious = targetOverall != null
                 && targetOverall > 0
                 && daysToExam != null
                 && targetOverall > (achievableOverallByExam + 0.25);
 
-        String targetWarning = null;
-        if (targetOverAmbitious) {
-            targetWarning =
-                    "Mục tiêu hiện tại có thể hơi quá tầm so với thời gian còn lại. Hãy cân nhắc giảm mục tiêu hoặc tăng cường tần suất luyện tập.";
+        // 2. Kiểm tra quá sức về mặt THỜI GIAN (Logic mới)
+        boolean isTimeOverAmbitious = false;
+        if (targetOverall != null && calibration.calibratedOverall > 0 && targetOverall > calibration.calibratedOverall) {
+            double gap = targetOverall - calibration.calibratedOverall;
+            int effectiveDaysForMath = (daysToExam != null && daysToExam > 0) ? daysToExam : 90;
+            int rawDailyMinutes = (int) Math.ceil((gap * 150.0 * 60.0) / effectiveDaysForMath);
+
+            // Nếu thực tế phải cày hơn 4 tiếng/ngày -> Báo động
+            if (rawDailyMinutes > 240) {
+                isTimeOverAmbitious = true;
+            }
         }
+
+        // Cập nhật trạng thái OverAmbitious tổng hợp
+        boolean targetOverAmbitious = isScoreOverAmbitious || isTimeOverAmbitious;
+        String targetWarning = null;
+
+        if (isTimeOverAmbitious) {
+            targetWarning = "Mục tiêu của bạn đòi hỏi học hơn 4 tiếng mỗi ngày. Điều này rất dễ gây quá tải (Burnout). Hệ thống khuyên bạn nên dời ngày thi lại, hoặc tạm thời hạ mục tiêu xuống 0.5 Band.";
+        } else if (isScoreOverAmbitious) {
+            targetWarning = "Mục tiêu hiện tại có thể hơi quá tầm so với thời gian còn lại. Hãy tăng cường tần suất luyện tập hoặc điều chỉnh lại kỳ vọng.";
+        }
+        // ============================================================
 
         List<LearnerRoadmapInsightsResponse.TagMetricResponse> weakest =
                 learnerMetricRepository.findTop8ByUserOrderByMasteryLevelAsc(learner).stream()
@@ -473,6 +497,7 @@ public class GoalServiceImpl implements GoalService {
         return LearnerRoadmapInsightsResponse.builder()
                 .examDate(examDate)
                 .daysToExam(daysToExam)
+                .recommendedDailyStudyMinutes(dailyStudyTime)
                 .targetOverall(learner.getTargetBand())
                 .targetReading(learner.getTargetReading())
                 .targetListening(learner.getTargetListening())
@@ -875,5 +900,25 @@ public class GoalServiceImpl implements GoalService {
         }
 
         return Math.min(Math.max(baseCount, 2), 4);
+    }
+
+    private Integer calculateRecommendedDailyStudyMinutes(Double currentBand, Double targetBand, Integer daysToExam) {
+        if (currentBand == null || targetBand == null || currentBand >= targetBand) {
+            return 0; // Đã đạt mục tiêu hoặc không có target
+        }
+
+        double bandGap = targetBand - currentBand;
+
+        // Chuẩn Cambridge: 150 giờ học cho mỗi 1.0 Band
+        double totalRequiredHours = bandGap * 150.0;
+        double totalRequiredMinutes = totalRequiredHours * 60.0;
+
+        // Nếu user không nhập ngày thi, giả định là 90 ngày (3 tháng) để chia trung bình
+        int effectiveDays = (daysToExam != null && daysToExam > 0) ? daysToExam : 90;
+
+        int dailyMinutes = (int) Math.ceil(totalRequiredMinutes / effectiveDays);
+
+        // Chốt chặn an toàn: Tối thiểu 15 phút, Tối đa 240 phút (4 tiếng) để tránh Burnout
+        return Math.min(Math.max(dailyMinutes, 15), 240);
     }
 }

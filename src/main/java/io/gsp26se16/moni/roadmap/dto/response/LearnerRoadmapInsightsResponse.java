@@ -19,6 +19,7 @@ import lombok.experimental.FieldDefaults;
 public class LearnerRoadmapInsightsResponse {
     LocalDate examDate;
     Integer daysToExam;
+    Integer recommendedDailyStudyMinutes;
 
     // From user's profile targets (may be null)
     Double targetOverall;
