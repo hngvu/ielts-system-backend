@@ -90,7 +90,7 @@ jobs:
             chmod 600 .env
       
             # Thay vì build trong compose, ta dùng image đã build từ Dockerfile nếu cần
-            docker compose down --remove-orphans
+            docker compose down -v --remove-orphans
             docker compose --env-file .env up -d --build
 
       # 5. VERIFY DEPLOYMENT
