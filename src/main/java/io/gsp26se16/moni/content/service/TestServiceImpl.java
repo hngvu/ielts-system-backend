@@ -236,6 +236,7 @@ public class TestServiceImpl implements TestService {
                 .id(test.getId())
                 .title(test.getTitle())
                 .description(test.getDescription())
+                .thumbnailUrl(test.getThumbnailUrl())
                 .skill(test.getSkill())
                 .testType(test.getTestType())
                 .duration(test.getDuration())
