@@ -26,6 +26,8 @@ public class ScoringSessionResponse {
     LocalDateTime startedAt;
     LocalDateTime endedAt;
     Integer testId;
+    String testTitle;
+    String stimulusTitle;
     Long writingSubmissionId;
     LocalDateTime submittedAt;
     String content; // Essay content for writing sessions

@@ -27,7 +27,9 @@ import io.gsp26se16.moni.common.enumeration.WritingTaskType;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.entity.Stimulus;
+import io.gsp26se16.moni.content.entity.Test;
 import io.gsp26se16.moni.content.repository.StimulusRepository;
+import io.gsp26se16.moni.content.repository.TestRepository;
 import io.gsp26se16.moni.expert.repository.ExpertEvaluationRepository;
 import io.gsp26se16.moni.expert.repository.ScoringSessionRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,6 +49,7 @@ public class WritingSubmissionController {
     private final WritingSubmissionRepository submissionRepository;
     private final UserCredentialsRepository userCredentialsRepository;
     private final StimulusRepository stimulusRepository;
+    private final TestRepository testRepository;
     private final ScoringSessionRepository scoringSessionRepository;
     private final ExpertEvaluationRepository expertEvaluationRepository;
     private final AiEvaluationRepository aiEvaluationRepository;
@@ -102,13 +105,35 @@ public class WritingSubmissionController {
 
         List<WritingSubmissionSummary> submissions =
                 submissionRepository.findByUserIdOrderBySubmittedAtDesc(user.getId()).stream()
-                        .map(s -> new WritingSubmissionSummary(
-                                s.getId(),
-                                s.getTestId(),
-                                s.getTaskType(),
-                                s.getWordCount(),
-                                s.getEvaluationStatus(),
-                                s.getSubmittedAt()))
+                        .map(s -> {
+                            String testTitle = null;
+                            String stimulusTitle = null;
+
+                            // Get test title if available
+                            if (s.getTestId() != null) {
+                                Test test =
+                                        testRepository.findById(s.getTestId()).orElse(null);
+                                if (test != null) {
+                                    testTitle = test.getTitle();
+                                }
+                            }
+
+                            // Get stimulus title if available
+                            if (s.getStimulus() != null) {
+                                stimulusTitle = s.getStimulus().getTitle();
+                            }
+
+                            return new WritingSubmissionSummary(
+                                    s.getId(),
+                                    s.getTestId(),
+                                    s.getStimulus() != null ? s.getStimulus().getId() : null,
+                                    testTitle,
+                                    stimulusTitle,
+                                    s.getTaskType(),
+                                    s.getWordCount(),
+                                    s.getEvaluationStatus(),
+                                    s.getSubmittedAt());
+                        })
                         .toList();
 
         return ResponseEntity.ok(ApiResponse.<List<WritingSubmissionSummary>>builder()
@@ -239,6 +264,9 @@ public class WritingSubmissionController {
     public record WritingSubmissionSummary(
             Long submissionId,
             Integer testId,
+            Integer stimulusId,
+            String testTitle,
+            String stimulusTitle,
             WritingTaskType taskType,
             Integer wordCount,
             EvaluationStatus evaluationStatus,

@@ -13,6 +13,8 @@ import io.gsp26se16.moni.ai.writing.repository.WritingSubmissionRepository;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
+import io.gsp26se16.moni.content.entity.Test;
+import io.gsp26se16.moni.content.repository.TestRepository;
 import io.gsp26se16.moni.expert.dto.ScoringSessionResponse;
 import io.gsp26se16.moni.expert.dto.SubmitEvaluationRequest;
 import io.gsp26se16.moni.expert.entity.ExpertEvaluation;
@@ -41,6 +43,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
     CreditService creditService;
     WritingSubmissionRepository writingSubmissionRepository;
     DailyCoService dailyCoService;
+    TestRepository testRepository;
 
     @Override
     @Transactional
@@ -467,6 +470,18 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                     .map(WritingSubmission::getSubmittedAt)
                     .orElse(null);
         }
+
+        String testTitle = null;
+        String stimulusTitle = null;
+
+        // Get test title if available
+        if (s.getTestId() != null) {
+            Test test = testRepository.findById(s.getTestId()).orElse(null);
+            if (test != null) {
+                testTitle = test.getTitle();
+            }
+        }
+
         return ScoringSessionResponse.builder()
                 .id(s.getId())
                 .expertId(s.getExpert() != null ? s.getExpert().getId() : null)
@@ -481,6 +496,8 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                 .startedAt(s.getStartedAt())
                 .endedAt(s.getEndedAt())
                 .testId(s.getTestId())
+                .testTitle(testTitle)
+                .stimulusTitle(stimulusTitle)
                 .writingSubmissionId(s.getWritingSubmissionId())
                 .submittedAt(submittedAt)
                 .content(s.getContent())
