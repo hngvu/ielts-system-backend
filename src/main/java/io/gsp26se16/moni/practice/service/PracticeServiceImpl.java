@@ -333,6 +333,7 @@ public class PracticeServiceImpl implements PracticeService {
                             .score(a.getScore())
                             .totalQuestions(a.getTotalQuestions())
                             .elapsedSeconds(elapsed)
+                            .startedAt(a.getStartedAt())
                             .submittedAt(a.getSubmittedAt())
                             .build();
                 })

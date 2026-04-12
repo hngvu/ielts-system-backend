@@ -21,5 +21,6 @@ public class AttemptHistoryResponse {
     int score;
     int totalQuestions;
     int elapsedSeconds;
+    LocalDateTime startedAt;
     LocalDateTime submittedAt;
 }
