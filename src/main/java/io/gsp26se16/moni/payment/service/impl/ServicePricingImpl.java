@@ -194,6 +194,13 @@ public class ServicePricingImpl implements ServicePricingService {
             return response;
         }
 
+        // Admins viewing the service catalog must see the actual DB credit cost,
+        // not the per-user free-daily-quota override.
+        boolean isAdmin = authentication.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        if (isAdmin) {
+            return response;
+        }
+
         String credentialId = jwt.getClaim("userId");
         if (credentialId == null) {
             return response;
