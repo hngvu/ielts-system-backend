@@ -2,6 +2,7 @@ package io.gsp26se16.moni.roadmap.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -20,6 +21,9 @@ public interface DailySlotRepository extends JpaRepository<DailySlot, Integer> {
     List<DailySlot> findByWeeklyPlanAndDayOfWeek(WeeklyPlan plan, Integer dayOfWeek);
 
     List<DailySlot> findByWeeklyPlanAndSlotDate(WeeklyPlan plan, LocalDate date);
+
+    Optional<DailySlot> findByWeeklyPlanAndDayOfWeekAndSkill(
+            WeeklyPlan plan, Integer dayOfWeek, io.gsp26se16.moni.common.enumeration.Skill skill);
 
     long countByWeeklyPlanAndStatus(WeeklyPlan plan, String status);
 

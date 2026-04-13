@@ -41,11 +41,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     private final TestStructureRepository testStructureRepository;
     private final PlacementResultRepository placementResultRepository;
     private final UserCredentialsRepository userCredentialsRepository;
-
-    // Skills for odd days (1, 3, 5): Monday, Wednesday, Friday
-    private static final Skill[] ODD_DAY_SKILLS = {Skill.READING, Skill.SPEAKING};
-    // Skills for even days (2, 4, 6): Tuesday, Thursday, Saturday
-    private static final Skill[] EVEN_DAY_SKILLS = {Skill.LISTENING, Skill.WRITING};
+    private final GoalRepository goalRepository;
 
     // =====================================================================
     // PUBLIC API
@@ -90,9 +86,13 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         // Get stimulus IDs user has already completed (to avoid repeats)
         Set<Integer> doneStimulusIds = new HashSet<>(dailySlotRepository.findDoneStimulusIdsByUser(user));
 
+        // Get task distribution for the week
+        List<Skill> weekTasks = calculateTaskDistribution(user, previous);
+        List<Skill[]> dailyDistribution = distributeTasksIntoDays(weekTasks);
+
         // Generate practice slots for days 1-6
         for (int day = 1; day <= 6; day++) {
-            Skill[] skills = (day % 2 != 0) ? ODD_DAY_SKILLS : EVEN_DAY_SKILLS;
+            Skill[] skills = dailyDistribution.get(day - 1);
             LocalDate slotDate = weekStart.plusDays(day - 1);
 
             for (Skill skill : skills) {
@@ -429,6 +429,180 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
             return Math.max(0.1, prevDifficulty - 0.05);
         }
         return prevDifficulty; // STABLE
+    }
+
+    // =====================================================================
+    // PRIVATE HELPERS — Task Distribution Logic
+    // =====================================================================
+
+    private List<Skill> calculateTaskDistribution(Users user, WeeklyPlan previousPlan) {
+        Map<Skill, Double> targetBands = new HashMap<>();
+        List<Goal> activeGoals = goalRepository.findAllByUserAndStatus(user, "ACTIVE");
+        for (Goal goal : activeGoals) {
+            targetBands.put(goal.getSkill(), goal.getTargetBand() != null ? goal.getTargetBand() : 0.0);
+        }
+
+        Map<Skill, Double> gaps = new HashMap<>();
+        double totalGap = 0.0;
+
+        for (Skill skill : Skill.values()) {
+            double target = targetBands.getOrDefault(skill, 0.0);
+            if (target == 0.0) {
+                // If no target set, use starting band + 1.0
+                Goal skillGoal = activeGoals.stream()
+                        .filter(g -> g.getSkill() == skill)
+                        .findFirst()
+                        .orElse(null);
+                target = (skillGoal != null && skillGoal.getStartingBand() != null)
+                        ? skillGoal.getStartingBand() + 1.0
+                        : 6.0;
+            }
+
+            double current = getCurrentBandForSkill(user, skill, previousPlan);
+            double gap = Math.max(0.0, target - current);
+            gaps.put(skill, gap);
+            totalGap += gap;
+        }
+
+        List<Skill> taskPool = new ArrayList<>();
+
+        if (totalGap == 0.0) {
+            // Default flat distribution: 3 tasks per skill
+            for (Skill skill : Skill.values()) {
+                for (int i = 0; i < 3; i++) taskPool.add(skill);
+            }
+            return taskPool;
+        }
+
+        // Largest Remainder Method
+        Map<Skill, Integer> assignedTasks = new HashMap<>();
+        Map<Skill, Double> remainders = new HashMap<>();
+        int totalAssigned = 0;
+
+        for (Skill skill : Skill.values()) {
+            double rawTasks = 12.0 * (gaps.get(skill) / totalGap);
+            int floorTasks = (int) Math.floor(rawTasks);
+            assignedTasks.put(skill, floorTasks);
+            totalAssigned += floorTasks;
+            remainders.put(skill, rawTasks - floorTasks);
+        }
+
+        int remainingSlots = 12 - totalAssigned;
+        List<Skill> sortedByRemainder = Arrays.stream(Skill.values())
+                .sorted((s1, s2) -> Double.compare(remainders.get(s2), remainders.get(s1)))
+                .toList();
+
+        for (int i = 0; i < remainingSlots; i++) {
+            Skill skill = sortedByRemainder.get(i);
+            assignedTasks.put(skill, assignedTasks.get(skill) + 1);
+        }
+
+        for (Skill skill : Skill.values()) {
+            int count = assignedTasks.get(skill);
+            for (int i = 0; i < count; i++) {
+                taskPool.add(skill);
+            }
+        }
+
+        return taskPool;
+    }
+
+    private double getCurrentBandForSkill(Users user, Skill skill, WeeklyPlan previousPlan) {
+        // Priority 1: If creating Week 1 of Month (WeekInMonth == 1 and WeekNumber > 1), use Monthly Assessment
+        if (previousPlan != null && previousPlan.getWeekInMonth() == 4) {
+            Optional<MonthlyAssessment> monthlyAss =
+                    monthlyAssessmentRepository.findTopByUserAndStatusOrderByIdDesc(user, "COMPLETED");
+            if (monthlyAss.isPresent()) {
+                Double band = getBandFromMonthlyAssessment(monthlyAss.get(), skill);
+                if (band != null) return band;
+            }
+        }
+
+        // Priority 2: Use Week Assessment from previous plan (Day 7)
+        if (previousPlan != null) {
+            Optional<DailySlot> weekAssessment =
+                    dailySlotRepository.findByWeeklyPlanAndDayOfWeekAndSkill(previousPlan, 7, skill);
+            if (weekAssessment.isPresent() && "DONE".equals(weekAssessment.get().getStatus())) {
+                return calculateBandFromSlot(weekAssessment.get());
+            }
+        }
+
+        // Priority 3: Placement Result
+        Optional<PlacementResult> placement = placementResultRepository.findFirstByUserOrderByCompletedAtDesc(user);
+        if (placement.isPresent()) {
+            Double band = getBandFromPlacementResult(placement.get(), skill);
+            if (band != null) return band;
+        }
+
+        // Priority 4: Goal starting band
+        Optional<Goal> goal = goalRepository.findTopByUserAndSkillAndStatusOrderByIdDesc(user, skill, "ACTIVE");
+        if (goal.isPresent() && goal.get().getStartingBand() != null) {
+            return goal.get().getStartingBand();
+        }
+
+        return 4.0; // Ultimate fallback
+    }
+
+    private Double getBandFromMonthlyAssessment(MonthlyAssessment asm, Skill skill) {
+        return switch (skill) {
+            case READING -> asm.getReadingBand();
+            case LISTENING -> asm.getListeningBand();
+            case WRITING -> asm.getWritingBand();
+            case SPEAKING -> asm.getSpeakingBand();
+        };
+    }
+
+    private Double getBandFromPlacementResult(PlacementResult pr, Skill skill) {
+        return switch (skill) {
+            case READING -> pr.getReadingBand();
+            case LISTENING -> pr.getListeningBand();
+            case WRITING -> pr.getWritingBand();
+            case SPEAKING -> pr.getSpeakingBand();
+        };
+    }
+
+    private double calculateBandFromSlot(DailySlot slot) {
+        if (slot.getSkill() == Skill.WRITING || slot.getSkill() == Skill.SPEAKING) {
+            return slot.getScore() != null ? slot.getScore() / 9.0 * 9.0 : 4.0; // Ensure logic handles raw band
+        } else {
+            if (slot.getTotalQuestions() == null || slot.getTotalQuestions() == 0) return 4.0;
+            double accuracy = (double) slot.getScore() / slot.getTotalQuestions();
+            return convertAccuracyToBand(accuracy);
+        }
+    }
+
+    private double convertAccuracyToBand(double accuracy) {
+        if (accuracy >= 0.875) return 8.0; // ~35/40
+        if (accuracy >= 0.75) return 7.0; // ~30/40
+        if (accuracy >= 0.625) return 6.0; // ~25/40
+        if (accuracy >= 0.40) return 5.0; // ~16/40
+        if (accuracy >= 0.25) return 4.0; // ~10/40
+        return 3.0;
+    }
+
+    private List<Skill[]> distributeTasksIntoDays(List<Skill> taskPool) {
+        // Distribute 12 tasks into 6 days, 2 tasks per day.
+        List<Skill> shuffled = new ArrayList<>(taskPool);
+        Collections.shuffle(shuffled);
+
+        // Simple attempt to prevent same skill twice on the same day if possible
+        for (int i = 0; i < 11; i += 2) {
+            if (shuffled.get(i) == shuffled.get(i + 1)) {
+                // Find a replacement
+                for (int j = i + 2; j < 12; j++) {
+                    if (shuffled.get(j) != shuffled.get(i)) {
+                        Collections.swap(shuffled, i + 1, j);
+                        break;
+                    }
+                }
+            }
+        }
+
+        List<Skill[]> days = new ArrayList<>();
+        for (int i = 0; i < 6; i++) {
+            days.add(new Skill[] {shuffled.get(i * 2), shuffled.get(i * 2 + 1)});
+        }
+        return days;
     }
 
     private String determineVerdict(Users user, double currentAccuracy, double completionRate) {
