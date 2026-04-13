@@ -92,8 +92,8 @@ public class PlacementServiceImpl implements PlacementService {
         validateBand(request.getSpeakingBand());
         validateBand(request.getTargetBand());
 
-        int readingTotal = request.getReadingAnswers().size();
-        int listeningTotal = request.getListeningAnswers().size();
+        int readingTotal = testRepository.countQuestionsByTestId(request.getReadingTestId());
+        int listeningTotal = testRepository.countQuestionsByTestId(request.getListeningTestId());
 
         int readingCorrect = gradeAnswers(user, Skill.READING, request.getReadingAnswers());
         int listeningCorrect = gradeAnswers(user, Skill.LISTENING, request.getListeningAnswers());
