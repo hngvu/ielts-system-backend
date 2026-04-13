@@ -4,5 +4,6 @@ public enum Skill {
     LISTENING,
     READING,
     SPEAKING,
-    WRITING
+    WRITING,
+    VOCABULARY
 }

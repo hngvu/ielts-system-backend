@@ -6,6 +6,8 @@ import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.roadmap.dto.response.MonthlyAssessmentResponse;
 import io.gsp26se16.moni.roadmap.dto.response.WeeklyPlanDetailResponse;
 import io.gsp26se16.moni.roadmap.dto.response.WeeklyPlanSummaryResponse;
+import io.gsp26se16.moni.vocab.dto.QuizResponse;
+import io.gsp26se16.moni.vocab.dto.VocabResponse;
 
 public interface WeeklyPlanService {
 
@@ -38,4 +40,10 @@ public interface WeeklyPlanService {
             io.gsp26se16.moni.authentication.entity.Users user,
             io.gsp26se16.moni.common.enumeration.Skill skill,
             io.gsp26se16.moni.roadmap.entity.WeeklyPlan previousPlan);
+
+    /** Initialize a vocabulary learning slot and fetch words */
+    List<VocabResponse> startVocabLearning(Integer slotId);
+
+    /** Generate a quiz for a vocabulary test slot */
+    QuizResponse getVocabQuiz(Integer slotId);
 }

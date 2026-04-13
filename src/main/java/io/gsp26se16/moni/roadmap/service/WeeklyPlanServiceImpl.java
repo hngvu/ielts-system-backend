@@ -25,6 +25,9 @@ import io.gsp26se16.moni.roadmap.dto.response.*;
 import io.gsp26se16.moni.roadmap.entity.*;
 import io.gsp26se16.moni.roadmap.repository.*;
 import io.gsp26se16.moni.tag.entity.Tag;
+import io.gsp26se16.moni.vocab.dto.QuizResponse;
+import io.gsp26se16.moni.vocab.dto.VocabResponse;
+import io.gsp26se16.moni.vocab.service.VocabLearningService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,6 +45,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     private final PlacementResultRepository placementResultRepository;
     private final UserCredentialsRepository userCredentialsRepository;
     private final GoalRepository goalRepository;
+    private final VocabLearningService vocabLearningService;
 
     // =====================================================================
     // PUBLIC API
@@ -121,6 +125,33 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                     doneStimulusIds.add(stimulus.getId());
                 }
             }
+
+            // [NEW] Generate Vocab tasks for practice days (Day 1 to 6)
+            // Alternate between VOCAB_LEARN and VOCAB_TEST
+            String vocabTaskType = (day % 2 != 0) ? "VOCAB_LEARN" : "VOCAB_TEST";
+
+            // Extract a topic from today's Reading or Listening stimulus if available to use as referenceMetadata
+            String topicHint = null;
+            for (DailySlot s : dailySlotRepository.findByWeeklyPlanOrderByDayOfWeekAscIdAsc(plan)) {
+                if (s.getDayOfWeek().equals(day)
+                        && (s.getSkill() == Skill.READING || s.getSkill() == Skill.LISTENING)) {
+                    if (s.getStimulus() != null && !s.getStimulus().getTags().isEmpty()) {
+                        topicHint = s.getStimulus().getTags().iterator().next().getName();
+                        break;
+                    }
+                }
+            }
+
+            DailySlot vocabSlot = DailySlot.builder()
+                    .weeklyPlan(plan)
+                    .dayOfWeek(day)
+                    .slotDate(slotDate)
+                    .skill(Skill.VOCABULARY)
+                    .taskType(vocabTaskType)
+                    .referenceMetadata(topicHint)
+                    .status("TODO")
+                    .build();
+            dailySlotRepository.save(vocabSlot);
         }
 
         // Generate assessment slots for day 7 (Sunday) — one per skill
@@ -224,6 +255,67 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                     user.getId(),
                     stimulusId);
         }
+    }
+
+    @Override
+    @Transactional
+    public List<VocabResponse> startVocabLearning(Integer slotId) {
+        Users user = getCurrentUser();
+        DailySlot slot =
+                dailySlotRepository.findById(slotId).orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
+
+        if (!slot.getWeeklyPlan().getUser().getId().equals(user.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        if (!"VOCAB_LEARN".equals(slot.getTaskType())) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION); // Provide proper logic error later
+        }
+
+        // Only generate new words if slot isn't already DONE (to avoid re-generating on accidental re-clicks)
+        if ("DONE".equals(slot.getStatus())) {
+            return List.of(); // Return empty if already complete. Or throw exception based on product rules.
+        }
+
+        double band = getCurrentBandForSkill(user, Skill.VOCABULARY, null);
+        String bandRange = formatBandRange(band);
+        String topic = slot.getReferenceMetadata();
+
+        List<VocabResponse> words = vocabLearningService.generateRoadmapVocabList(user, bandRange, topic, 15);
+
+        // Mark as done after spawning the words
+        slot.setStatus("DONE");
+        slot.setCompletedAt(LocalDateTime.now());
+        dailySlotRepository.save(slot);
+
+        return words;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public QuizResponse getVocabQuiz(Integer slotId) {
+        Users user = getCurrentUser();
+        DailySlot slot =
+                dailySlotRepository.findById(slotId).orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
+
+        if (!slot.getWeeklyPlan().getUser().getId().equals(user.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        if (!"VOCAB_TEST".equals(slot.getTaskType())) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+
+        return vocabLearningService.generateRoadmapQuiz(user);
+    }
+
+    private String formatBandRange(double band) {
+        if (band < 4.5) return "3-4";
+        if (band < 5.5) return "4-5";
+        if (band < 6.5) return "5.5-6.5";
+        if (band < 7.5) return "6.5-7.5";
+        if (band >= 8.5) return "8.5-9.0";
+        return "7-8";
     }
 
     @Override
@@ -565,6 +657,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                     case LISTENING -> user.getTargetListening();
                     case WRITING -> user.getTargetWriting();
                     case SPEAKING -> user.getTargetSpeaking();
+                    default -> 6.5; // VOCABULARY or others
                 };
         return target != null ? target : 0.0;
     }
@@ -575,6 +668,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
             case LISTENING -> asm.getListeningBand();
             case WRITING -> asm.getWritingBand();
             case SPEAKING -> asm.getSpeakingBand();
+            default -> null; // VOCABULARY has no distinct band in asm yet
         };
     }
 
@@ -584,6 +678,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
             case LISTENING -> pr.getListeningBand();
             case WRITING -> pr.getWritingBand();
             case SPEAKING -> pr.getSpeakingBand();
+            default -> null;
         };
     }
 

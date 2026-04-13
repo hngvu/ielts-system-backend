@@ -14,4 +14,6 @@ public interface VocabListRepository extends JpaRepository<VocabList, Integer> {
     Optional<VocabList> findByUserIdAndIsDefaultTrue(String userId);
 
     Optional<VocabList> findByIdAndUserId(Integer id, String userId);
+
+    long countByUserId(String userId);
 }

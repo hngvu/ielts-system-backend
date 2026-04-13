@@ -18,6 +18,7 @@ import io.gsp26se16.moni.vocab.entity.Vocab;
 import io.gsp26se16.moni.vocab.entity.VocabReview;
 import io.gsp26se16.moni.vocab.enumeration.VocabStatus;
 import io.gsp26se16.moni.vocab.repository.CuratedWordRepository;
+import io.gsp26se16.moni.vocab.repository.VocabListRepository;
 import io.gsp26se16.moni.vocab.repository.VocabRepository;
 import io.gsp26se16.moni.vocab.repository.VocabReviewRepository;
 import io.gsp26se16.moni.vocab.util.SM2Calculator;
@@ -30,6 +31,7 @@ public class VocabLearningService {
 
     private final VocabRepository vocabRepository;
     private final VocabReviewRepository vocabReviewRepository;
+    private final VocabListRepository vocabListRepository;
     private final CuratedWordRepository curatedWordRepository;
     private final VocabAuthHelper authHelper;
 
@@ -69,18 +71,113 @@ public class VocabLearningService {
     public ReviewStatsResponse getReviewStats(String credentialId) {
         Users user = authHelper.getUser(credentialId);
         String userId = user.getId();
-        int totalSaved = (int) vocabRepository.countByUserIdAndStatus(userId, VocabStatus.ACTIVE)
-                + (int) vocabRepository.countByUserIdAndStatus(userId, VocabStatus.MASTERED);
+
+        // Total saved: ACTIVE + MASTERED words, EXCLUDING ROADMAP_SYSTEM
+        int totalSaved = (int) vocabRepository.countByUserIdAndStatusAndSourceTypeNot(
+                        userId, VocabStatus.ACTIVE, io.gsp26se16.moni.vocab.enumeration.VocabSourceType.ROADMAP_SYSTEM)
+                + (int) vocabRepository.countByUserIdAndStatusAndSourceTypeNot(
+                        userId,
+                        VocabStatus.MASTERED,
+                        io.gsp26se16.moni.vocab.enumeration.VocabSourceType.ROADMAP_SYSTEM);
+
+        // Due today: All non-archived words that need review right now (including ROADMAP_SYSTEM)
         int dueToday = vocabRepository
                 .findByUserIdAndNextReviewAtBeforeAndStatusNot(userId, LocalDateTime.now(), VocabStatus.ARCHIVED)
                 .size();
+
+        // Learning: All non-archived words with ACTIVE status (including ROADMAP_SYSTEM)
+        int learningCount = (int) vocabRepository.countByUserIdAndStatus(userId, VocabStatus.ACTIVE);
+
+        // Mastered: All words with MASTERED status
         int masteredCount = (int) vocabRepository.countByUserIdAndStatus(userId, VocabStatus.MASTERED);
+
+        // Lists: Number of VocabLists owned by user
+        int listsCount = (int) vocabListRepository.countByUserId(userId);
+
         return ReviewStatsResponse.builder()
                 .totalSaved(totalSaved)
                 .dueToday(dueToday)
+                .learningCount(learningCount)
                 .masteredCount(masteredCount)
-                .reviewedToday(0)
+                .listsCount(listsCount)
                 .build();
+    }
+
+    @Transactional
+    public List<VocabResponse> generateRoadmapVocabList(Users user, String band, String topic, int count) {
+        // Query words matching band and topic
+        List<io.gsp26se16.moni.vocab.entity.CuratedWord> candidates;
+        if (topic != null) {
+            candidates = curatedWordRepository
+                    .findByFilters(band, topic, null, null, Pageable.ofSize(100))
+                    .getContent();
+            if (candidates.size() < count) {
+                // Fallback to purely band if topic is exhausted
+                candidates = curatedWordRepository
+                        .findByFilters(band, null, null, null, Pageable.ofSize(100))
+                        .getContent();
+            }
+        } else {
+            candidates = curatedWordRepository
+                    .findByFilters(band, null, null, null, Pageable.ofSize(100))
+                    .getContent();
+        }
+
+        // Filter out words user already has
+        List<io.gsp26se16.moni.vocab.entity.CuratedWord> newWords = new ArrayList<>();
+        for (var cw : candidates) {
+            if (!vocabRepository.existsByUserIdAndWord(user.getId(), cw.getWord())) {
+                newWords.add(cw);
+            }
+        }
+
+        Collections.shuffle(newWords);
+        List<io.gsp26se16.moni.vocab.entity.CuratedWord> selected =
+                newWords.subList(0, Math.min(count, newWords.size()));
+
+        List<Vocab> savedVocabs = new ArrayList<>();
+        for (var cw : selected) {
+            Vocab v = Vocab.builder()
+                    .word(cw.getWord())
+                    .phonetic(cw.getPhonetic())
+                    .pos(cw.getPos())
+                    .definition(cw.getDefinition())
+                    .example(cw.getExample())
+                    .audioUrl(cw.getAudioUrl())
+                    .meaning(cw.getMeaning())
+                    .sourceType(io.gsp26se16.moni.vocab.enumeration.VocabSourceType.ROADMAP_SYSTEM)
+                    .status(VocabStatus.ACTIVE)
+                    .user(user)
+                    .build();
+            savedVocabs.add(vocabRepository.save(v));
+        }
+
+        return savedVocabs.stream().map(this::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public QuizResponse generateRoadmapQuiz(Users user) {
+        // Fetch up to 20 words recently added by roadmap
+        var recentRoadmapWords = vocabRepository
+                .findByUserIdAndStatusNot(user.getId(), VocabStatus.ARCHIVED, Pageable.ofSize(200))
+                .getContent()
+                .stream()
+                .filter(v -> v.getSourceType() == io.gsp26se16.moni.vocab.enumeration.VocabSourceType.ROADMAP_SYSTEM)
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .limit(15)
+                .toList();
+
+        List<WordEntry> pool = recentRoadmapWords.stream()
+                .map(v -> new WordEntry(v.getWord(), v.getDefinition(), v.getMeaning(), v.getExample()))
+                .toList();
+
+        // Pass an empty pool if no vocab
+        if (pool.size() < 4) {
+            return QuizResponse.builder().questions(List.of()).source("roadmap").build();
+        }
+
+        // Use the same logic as standard Quiz builder but bypassing building pool
+        return generateQuizFromPool(pool, "roadmap", "random", 15);
     }
 
     public QuizResponse generateQuiz(
@@ -89,6 +186,10 @@ public class VocabLearningService {
         if (pool.size() < 4) {
             return QuizResponse.builder().questions(List.of()).source(source).build();
         }
+        return generateQuizFromPool(pool, source, type, count);
+    }
+
+    private QuizResponse generateQuizFromPool(List<WordEntry> pool, String source, String type, int count) {
 
         List<WordEntry> shuffled = new ArrayList<>(pool);
         Collections.shuffle(shuffled);

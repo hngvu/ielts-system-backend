@@ -9,5 +9,6 @@ public class ReviewStatsResponse {
     int totalSaved;
     int dueToday;
     int masteredCount;
-    int reviewedToday;
+    int listsCount;
+    int learningCount;
 }

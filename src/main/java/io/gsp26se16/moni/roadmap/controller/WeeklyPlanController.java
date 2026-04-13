@@ -11,6 +11,7 @@ import io.gsp26se16.moni.roadmap.dto.response.MonthlyAssessmentResponse;
 import io.gsp26se16.moni.roadmap.dto.response.WeeklyPlanDetailResponse;
 import io.gsp26se16.moni.roadmap.dto.response.WeeklyPlanSummaryResponse;
 import io.gsp26se16.moni.roadmap.service.WeeklyPlanService;
+import io.gsp26se16.moni.vocab.dto.VocabResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 
@@ -57,6 +58,34 @@ public class WeeklyPlanController {
                 .code(1000)
                 .message("Đã hoàn thành bài tập!")
                 .result(Map.of("slotId", slotId, "status", "DONE"))
+                .build());
+    }
+
+    @PostMapping("/slots/{slotId}/vocab-start")
+    @Operation(summary = "Kích hoạt slot học từ vựng và tự động thêm 15 từ vào sổ tay")
+    public ResponseEntity<ApiResponse<List<io.gsp26se16.moni.vocab.dto.VocabResponse>>> startVocabLearning(
+            @PathVariable Integer slotId) {
+
+        List<io.gsp26se16.moni.vocab.dto.VocabResponse> result = weeklyPlanService.startVocabLearning(slotId);
+
+        return ResponseEntity.ok(ApiResponse.<List<VocabResponse>>builder()
+                .code(1000)
+                .message("Đã nạp 15 từ vựng thành công")
+                .result(result)
+                .build());
+    }
+
+    @GetMapping("/slots/{slotId}/vocab-test")
+    @Operation(summary = "Lấy bài thi Quiz từ vựng cho slot kiểm tra")
+    public ResponseEntity<ApiResponse<io.gsp26se16.moni.vocab.dto.QuizResponse>> getVocabQuiz(
+            @PathVariable Integer slotId) {
+
+        io.gsp26se16.moni.vocab.dto.QuizResponse result = weeklyPlanService.getVocabQuiz(slotId);
+
+        return ResponseEntity.ok(ApiResponse.<io.gsp26se16.moni.vocab.dto.QuizResponse>builder()
+                .code(1000)
+                .message("Lấy bài kiểm tra từ vựng thành công")
+                .result(result)
                 .build());
     }
 

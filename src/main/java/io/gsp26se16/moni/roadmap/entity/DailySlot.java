@@ -57,6 +57,9 @@ public class DailySlot {
     @Column(name = "total_questions")
     private Integer totalQuestions;
 
+    @Column(name = "reference_metadata", length = 500)
+    private String referenceMetadata; // used for storing topic config for vocabulary tasks
+
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 }

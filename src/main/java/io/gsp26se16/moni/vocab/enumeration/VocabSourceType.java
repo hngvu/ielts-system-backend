@@ -7,4 +7,5 @@ public enum VocabSourceType {
     LISTENING_PASSAGE, // Saved from listening exercise
     WRITING_EXERCISE, // Saved from writing exercise
     SPEAKING_EXERCISE, // Saved from speaking exercise
+    ROADMAP_SYSTEM, // Automatically added by Roadmap System for Vocab Learning
 }

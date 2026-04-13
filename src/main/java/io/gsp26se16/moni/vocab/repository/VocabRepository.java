@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import io.gsp26se16.moni.vocab.entity.Vocab;
+import io.gsp26se16.moni.vocab.enumeration.VocabSourceType;
 import io.gsp26se16.moni.vocab.enumeration.VocabStatus;
 
 public interface VocabRepository extends JpaRepository<Vocab, Integer> {
@@ -46,6 +47,8 @@ public interface VocabRepository extends JpaRepository<Vocab, Integer> {
     Optional<Vocab> findByUserIdAndWord(String userId, String word);
 
     long countByUserIdAndStatus(String userId, VocabStatus status);
+
+    long countByUserIdAndStatusAndSourceTypeNot(String userId, VocabStatus status, VocabSourceType sourceType);
 
     long countByUserIdAndVocabListIdAndStatusNot(String userId, Integer listId, VocabStatus status);
 
