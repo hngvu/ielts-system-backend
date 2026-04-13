@@ -156,7 +156,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
 
         // Generate assessment slots for day 7 (Sunday) — one per skill
         LocalDate day7Date = weekStart.plusDays(6);
-        for (Skill skill : Skill.values()) {
+        for (Skill skill : Arrays.asList(Skill.READING, Skill.LISTENING, Skill.WRITING, Skill.SPEAKING)) {
             Stimulus assessmentStimulus = selectAssessmentStimulus(skill, user, doneStimulusIds);
 
             DailySlot assessmentSlot = DailySlot.builder()
@@ -543,7 +543,9 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         Map<Skill, Double> gaps = new HashMap<>();
         double totalGap = 0.0;
 
-        for (Skill skill : Skill.values()) {
+        List<Skill> coreSkills = Arrays.asList(Skill.READING, Skill.LISTENING, Skill.WRITING, Skill.SPEAKING);
+
+        for (Skill skill : coreSkills) {
             double target = targetBands.getOrDefault(skill, 0.0);
             if (target == 0.0) {
                 // If no active goal found, check if user has set a target on their profile
@@ -574,7 +576,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
 
         if (totalGap == 0.0) {
             // Default flat distribution: 3 tasks per skill
-            for (Skill skill : Skill.values()) {
+            for (Skill skill : coreSkills) {
                 for (int i = 0; i < 3; i++) taskPool.add(skill);
             }
             return taskPool;
@@ -585,7 +587,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         Map<Skill, Double> remainders = new HashMap<>();
         int totalAssigned = 0;
 
-        for (Skill skill : Skill.values()) {
+        for (Skill skill : coreSkills) {
             double rawTasks = 12.0 * (gaps.get(skill) / totalGap);
             int floorTasks = (int) Math.floor(rawTasks);
             assignedTasks.put(skill, floorTasks);
@@ -594,7 +596,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         }
 
         int remainingSlots = 12 - totalAssigned;
-        List<Skill> sortedByRemainder = Arrays.stream(Skill.values())
+        List<Skill> sortedByRemainder = coreSkills.stream()
                 .sorted((s1, s2) -> Double.compare(remainders.get(s2), remainders.get(s1)))
                 .toList();
 
@@ -603,7 +605,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
             assignedTasks.put(skill, assignedTasks.get(skill) + 1);
         }
 
-        for (Skill skill : Skill.values()) {
+        for (Skill skill : coreSkills) {
             int count = assignedTasks.get(skill);
             for (int i = 0; i < count; i++) {
                 taskPool.add(skill);
