@@ -18,6 +18,7 @@ import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.entity.Stimulus;
 import io.gsp26se16.moni.content.entity.TestStructure;
 import io.gsp26se16.moni.content.repository.StimulusRepository;
+import io.gsp26se16.moni.content.repository.TestRepository;
 import io.gsp26se16.moni.content.repository.TestStructureRepository;
 import io.gsp26se16.moni.placement.entity.PlacementResult;
 import io.gsp26se16.moni.placement.repository.PlacementResultRepository;
@@ -45,6 +46,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     private final PlacementResultRepository placementResultRepository;
     private final UserCredentialsRepository userCredentialsRepository;
     private final GoalRepository goalRepository;
+    private final TestRepository testRepository;
     private final VocabLearningService vocabLearningService;
 
     // =====================================================================
@@ -96,9 +98,27 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         // Get stimulus IDs user has already completed (to avoid repeats)
         Set<Integer> doneStimulusIds = new HashSet<>(dailySlotRepository.findDoneStimulusIdsByUser(user));
 
-        // Get task distribution for the week
-        List<Skill> weekTasks = calculateTaskDistribution(user, previous);
-        List<Skill[]> dailyDistribution = distributeTasksIntoDays(weekTasks);
+        // [EXAM ROADMAP LOGIC] Determine Phase based on daysLeft
+        LocalDate examDate = user.getExamDate();
+        int daysLeft =
+                examDate != null ? (int) java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), examDate) : -1;
+
+        int phase = 1; // Default: Foundation (> 60 days)
+        if (daysLeft != -1 && daysLeft <= 60 && daysLeft > 30) {
+            phase = 2; // Practice Focus
+        } else if (daysLeft != -1 && daysLeft <= 30) {
+            phase = 3; // Intensive Exam Prep
+        }
+
+        log.info("[WeeklyPlan] Generated plan for user {} phase {} with daysLeft {}", user.getId(), phase, daysLeft);
+
+        // Get task distribution for the week (pass phase to adjust volume and weights)
+        List<Skill> weekTasks = calculateTaskDistribution(user, previous, phase);
+
+        int totalSlots = weekTasks.size();
+        int slotsPerDay = totalSlots / 6; // usually 2, 3 or 1
+
+        List<Skill[]> dailyDistribution = distributeTasksIntoDays(weekTasks, slotsPerDay);
 
         // Generate practice slots for days 1-6
         for (int day = 1; day <= 6; day++) {
@@ -106,52 +126,78 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
             LocalDate slotDate = weekStart.plusDays(day - 1);
 
             for (Skill skill : skills) {
-                Stimulus stimulus = selectStimulus(skill, user, difficulty, doneStimulusIds);
+                if (phase == 3) {
+                    // [PHASE 3] Intensive mode: assign FULL TEST (mode=FULL_TEST) instead of single Stimulus
+                    io.gsp26se16.moni.content.entity.Test fullTest = selectFullTest(skill, user, doneStimulusIds);
 
-                DailySlot slot = DailySlot.builder()
-                        .weeklyPlan(plan)
-                        .dayOfWeek(day)
-                        .slotDate(slotDate)
-                        .skill(skill)
-                        .taskType("PRACTICE")
-                        .stimulus(stimulus)
-                        .test(findTestForStimulus(stimulus))
-                        .status("TODO")
-                        .build();
-                dailySlotRepository.save(slot);
+                    DailySlot slot = DailySlot.builder()
+                            .weeklyPlan(plan)
+                            .dayOfWeek(day)
+                            .slotDate(slotDate)
+                            .skill(skill)
+                            .taskType("FULL_TEST")
+                            .stimulus(null) // Full Test has no single stimulus
+                            .test(fullTest)
+                            .status("TODO")
+                            .build();
+                    dailySlotRepository.save(slot);
 
-                // Track to avoid giving the same stimulus twice in same plan
-                if (stimulus != null) {
-                    doneStimulusIds.add(stimulus.getId());
-                }
-            }
+                    if (fullTest != null) {
+                        // Keep track so we don't repeat the test; here we use test id + offset for exclusion if needed
+                        doneStimulusIds.add(-fullTest.getId());
+                    }
+                } else {
+                    // [PHASE 1 & 2] Practice mode: assign single Stimulus
+                    Stimulus stimulus = selectStimulus(skill, user, difficulty, doneStimulusIds);
 
-            // [NEW] Generate Vocab tasks for practice days (Day 1 to 6)
-            // Alternate between VOCAB_LEARN and VOCAB_TEST
-            String vocabTaskType = (day % 2 != 0) ? "VOCAB_LEARN" : "VOCAB_TEST";
+                    DailySlot slot = DailySlot.builder()
+                            .weeklyPlan(plan)
+                            .dayOfWeek(day)
+                            .slotDate(slotDate)
+                            .skill(skill)
+                            .taskType("PRACTICE")
+                            .stimulus(stimulus)
+                            .test(findTestForStimulus(stimulus))
+                            .status("TODO")
+                            .build();
+                    dailySlotRepository.save(slot);
 
-            // Extract a topic from today's Reading or Listening stimulus if available to use as referenceMetadata
-            String topicHint = null;
-            for (DailySlot s : dailySlotRepository.findByWeeklyPlanOrderByDayOfWeekAscIdAsc(plan)) {
-                if (s.getDayOfWeek().equals(day)
-                        && (s.getSkill() == Skill.READING || s.getSkill() == Skill.LISTENING)) {
-                    if (s.getStimulus() != null && !s.getStimulus().getTags().isEmpty()) {
-                        topicHint = s.getStimulus().getTags().iterator().next().getName();
-                        break;
+                    if (stimulus != null) {
+                        doneStimulusIds.add(stimulus.getId());
                     }
                 }
             }
 
-            DailySlot vocabSlot = DailySlot.builder()
-                    .weeklyPlan(plan)
-                    .dayOfWeek(day)
-                    .slotDate(slotDate)
-                    .skill(Skill.VOCABULARY)
-                    .taskType(vocabTaskType)
-                    .referenceMetadata(topicHint)
-                    .status("TODO")
-                    .build();
-            dailySlotRepository.save(vocabSlot);
+            // [NEW] Generate Vocab tasks for practice days (Day 1 to 6)
+            // OMIT Vocab in Phase 3
+            if (phase != 3) {
+                String vocabTaskType = (day % 2 != 0) ? "VOCAB_LEARN" : "VOCAB_TEST";
+
+                String topicHint = null;
+                for (DailySlot s : dailySlotRepository.findByWeeklyPlanOrderByDayOfWeekAscIdAsc(plan)) {
+                    if (s.getDayOfWeek().equals(day)
+                            && (s.getSkill() == Skill.READING || s.getSkill() == Skill.LISTENING)) {
+                        if (s.getStimulus() != null
+                                && s.getStimulus().getTags() != null
+                                && !s.getStimulus().getTags().isEmpty()) {
+                            topicHint =
+                                    s.getStimulus().getTags().iterator().next().getName();
+                            break;
+                        }
+                    }
+                }
+
+                DailySlot vocabSlot = DailySlot.builder()
+                        .weeklyPlan(plan)
+                        .dayOfWeek(day)
+                        .slotDate(slotDate)
+                        .skill(Skill.VOCABULARY)
+                        .taskType(vocabTaskType)
+                        .referenceMetadata(topicHint)
+                        .status("TODO")
+                        .build();
+                dailySlotRepository.save(vocabSlot);
+            }
         }
 
         // Generate assessment slots for day 7 (Sunday) — one per skill
@@ -553,7 +599,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     // PRIVATE HELPERS — Task Distribution Logic
     // =====================================================================
 
-    private List<Skill> calculateTaskDistribution(Users user, WeeklyPlan previousPlan) {
+    private List<Skill> calculateTaskDistribution(Users user, WeeklyPlan previousPlan, int phase) {
         Map<Skill, Double> targetBands = new HashMap<>();
         List<Goal> activeGoals = goalRepository.findAllByUserAndStatus(user, "ACTIVE");
         for (Goal goal : activeGoals) {
@@ -568,10 +614,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         for (Skill skill : coreSkills) {
             double target = targetBands.getOrDefault(skill, 0.0);
             if (target == 0.0) {
-                // If no active goal found, check if user has set a target on their profile
                 target = getTargetBandFromUser(user, skill);
-
-                // If still no target, use starting band + 1.0 or default to 6.0
                 if (target == 0.0) {
                     Goal skillGoal = activeGoals.stream()
                             .filter(g -> g.getSkill() == skill)
@@ -585,19 +628,36 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
 
             double current = getCurrentBandForSkill(user, skill, previousPlan);
             double gap = Math.max(0.0, target - current);
+
+            // [PHASE 2 LOGIC]: Priority multiplier for Reading & Listening
+            if (phase == 2 && (skill == Skill.READING || skill == Skill.LISTENING)) {
+                gap *= 1.5;
+            }
+            // Increase gap slightly so 0-gap skills still get some practice
+            gap += 0.5;
+
             gaps.put(skill, gap);
             totalGap += gap;
-            log.info("[WeeklyPlan] Skill: {}, Target: {}, Current: {}, Gap: {}", skill, target, current, gap);
+            log.info(
+                    "[WeeklyPlan] Skill: {}, Target: {}, Current: {}, Calculated Gap (with weight): {}",
+                    skill,
+                    target,
+                    current,
+                    gap);
         }
 
         log.info("[WeeklyPlan] Total Gap: {}, Distribution Logic starting...", totalGap);
 
         List<Skill> taskPool = new ArrayList<>();
+        int TARGET_TOTAL_SLOTS = (phase == 1) ? 12 : (phase == 2) ? 18 : 6;
 
         if (totalGap == 0.0) {
-            // Default flat distribution: 3 tasks per skill
+            // Default flat distribution
+            int perSkill = TARGET_TOTAL_SLOTS / 4;
+            int remainder = TARGET_TOTAL_SLOTS % 4;
             for (Skill skill : coreSkills) {
-                for (int i = 0; i < 3; i++) taskPool.add(skill);
+                int base = perSkill + (remainder-- > 0 ? 1 : 0);
+                for (int i = 0; i < base; i++) taskPool.add(skill);
             }
             return taskPool;
         }
@@ -608,14 +668,14 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         int totalAssigned = 0;
 
         for (Skill skill : coreSkills) {
-            double rawTasks = 12.0 * (gaps.get(skill) / totalGap);
+            double rawTasks = TARGET_TOTAL_SLOTS * (gaps.get(skill) / totalGap);
             int floorTasks = (int) Math.floor(rawTasks);
             assignedTasks.put(skill, floorTasks);
             totalAssigned += floorTasks;
             remainders.put(skill, rawTasks - floorTasks);
         }
 
-        int remainingSlots = 12 - totalAssigned;
+        int remainingSlots = TARGET_TOTAL_SLOTS - totalAssigned;
         List<Skill> sortedByRemainder = coreSkills.stream()
                 .sorted((s1, s2) -> Double.compare(remainders.get(s2), remainders.get(s1)))
                 .toList();
@@ -723,19 +783,19 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         return 3.0;
     }
 
-    private List<Skill[]> distributeTasksIntoDays(List<Skill> taskPool) {
-        // Distribute 12 tasks into 6 days, 2 tasks per day.
+    private List<Skill[]> distributeTasksIntoDays(List<Skill> taskPool, int slotsPerDay) {
         List<Skill> shuffled = new ArrayList<>(taskPool);
         Collections.shuffle(shuffled);
 
-        // Simple attempt to prevent same skill twice on the same day if possible
-        for (int i = 0; i < 11; i += 2) {
-            if (shuffled.get(i) == shuffled.get(i + 1)) {
-                // Find a replacement
-                for (int j = i + 2; j < 12; j++) {
-                    if (shuffled.get(j) != shuffled.get(i)) {
-                        Collections.swap(shuffled, i + 1, j);
-                        break;
+        if (slotsPerDay > 1) {
+            // Simple attempt to prevent same skill consecutively
+            for (int i = 0; i < shuffled.size() - 1; i++) {
+                if (shuffled.get(i) == shuffled.get(i + 1)) {
+                    for (int j = i + 2; j < shuffled.size(); j++) {
+                        if (shuffled.get(j) != shuffled.get(i)) {
+                            Collections.swap(shuffled, i + 1, j);
+                            break;
+                        }
                     }
                 }
             }
@@ -743,9 +803,25 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
 
         List<Skill[]> days = new ArrayList<>();
         for (int i = 0; i < 6; i++) {
-            days.add(new Skill[] {shuffled.get(i * 2), shuffled.get(i * 2 + 1)});
+            Skill[] daySkills = new Skill[slotsPerDay];
+            for (int j = 0; j < slotsPerDay; j++) {
+                int index = i * slotsPerDay + j;
+                if (index < shuffled.size()) {
+                    daySkills[j] = shuffled.get(index);
+                } else {
+                    daySkills[j] = Skill.READING; // fallback
+                }
+            }
+            days.add(daySkills);
         }
         return days;
+    }
+
+    private io.gsp26se16.moni.content.entity.Test selectFullTest(Skill skill, Users user, Set<Integer> excludeIds) {
+        // Here we ideally search for FULL_TEST with exclude filtering,
+        // but testRepository doesn't natively take excludeIds in the random query yet.
+        // We will just fetch random. If we had more time we would write a native query.
+        return testRepository.findRandomPublishedFullTest(skill.name()).orElse(null);
     }
 
     private String determineVerdict(Users user, double currentAccuracy, double completionRate) {
