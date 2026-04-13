@@ -521,7 +521,8 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         return taskPool;
     }
 
-    private double getCurrentBandForSkill(Users user, Skill skill, WeeklyPlan previousPlan) {
+    @Override
+    public double getCurrentBandForSkill(Users user, Skill skill, WeeklyPlan previousPlan) {
         // Priority 1: If creating Week 1 of Month (WeekInMonth == 1 and WeekNumber > 1), use Monthly Assessment
         if (previousPlan != null && previousPlan.getWeekInMonth() == 4) {
             Optional<MonthlyAssessment> monthlyAss =

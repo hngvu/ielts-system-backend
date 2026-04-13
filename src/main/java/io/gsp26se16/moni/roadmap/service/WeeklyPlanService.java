@@ -32,4 +32,10 @@ public interface WeeklyPlanService {
 
     /** Get any pending monthly assessment */
     MonthlyAssessmentResponse getPendingMonthlyAssessment();
+
+    /** Get the latest assessment-based band for a specific skill */
+    double getCurrentBandForSkill(
+            io.gsp26se16.moni.authentication.entity.Users user,
+            io.gsp26se16.moni.common.enumeration.Skill skill,
+            io.gsp26se16.moni.roadmap.entity.WeeklyPlan previousPlan);
 }

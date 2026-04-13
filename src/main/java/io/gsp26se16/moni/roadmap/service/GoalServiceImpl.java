@@ -37,10 +37,12 @@ import io.gsp26se16.moni.roadmap.entity.Goal;
 import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
 import io.gsp26se16.moni.roadmap.entity.Roadmap;
 import io.gsp26se16.moni.roadmap.entity.Task;
+import io.gsp26se16.moni.roadmap.entity.WeeklyPlan;
 import io.gsp26se16.moni.roadmap.repository.GoalRepository;
 import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
 import io.gsp26se16.moni.roadmap.repository.RoadmapRepository;
 import io.gsp26se16.moni.roadmap.repository.TaskRepository;
+import io.gsp26se16.moni.roadmap.repository.WeeklyPlanRepository;
 import io.gsp26se16.moni.tag.entity.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +62,7 @@ public class GoalServiceImpl implements GoalService {
     private final PlacementResultRepository placementResultRepository;
     private final TestRepository testRepository;
     private final WeeklyPlanService weeklyPlanService;
+    private final WeeklyPlanRepository weeklyPlanRepository;
 
     @Override
     @Transactional
@@ -447,7 +450,17 @@ public class GoalServiceImpl implements GoalService {
                 examDate != null ? (int) java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), examDate) : null;
         if (daysToExam != null && daysToExam < 0) daysToExam = 0;
 
-        Calibration calibration = calibrateBands(placement, masteryIndex, confidenceIndex);
+        // [NEW] Get current bands from WeeklyPlanService (priority: Monthly > Weekly > Placement > Goal)
+        WeeklyPlan activeWeeklyPlan =
+                weeklyPlanRepository.findByUserAndStatus(learner, "ACTIVE").orElse(null);
+
+        double curReading = weeklyPlanService.getCurrentBandForSkill(learner, Skill.READING, activeWeeklyPlan);
+        double curListening = weeklyPlanService.getCurrentBandForSkill(learner, Skill.LISTENING, activeWeeklyPlan);
+        double curWriting = weeklyPlanService.getCurrentBandForSkill(learner, Skill.WRITING, activeWeeklyPlan);
+        double curSpeaking = weeklyPlanService.getCurrentBandForSkill(learner, Skill.SPEAKING, activeWeeklyPlan);
+
+        Calibration calibration = calibrateBands(
+                placement, masteryIndex, confidenceIndex, curReading, curListening, curWriting, curSpeaking);
         double achievableOverallByExam = computeAchievableOverallByExam(calibration.calibratedOverall, daysToExam);
 
         Double targetOverall = learner.getTargetBand();
@@ -559,16 +572,38 @@ public class GoalServiceImpl implements GoalService {
             double calibratedSpeaking,
             String note) {}
 
-    private Calibration calibrateBands(PlacementResult placement, double masteryIndex, double confidenceIndex) {
+    private Calibration calibrateBands(
+            PlacementResult placement,
+            double masteryIndex,
+            double confidenceIndex,
+            double curReading,
+            double curListening,
+            double curWriting,
+            double curSpeaking) {
+
         double estimatedOverall = estimateOverallFromMetrics(masteryIndex, confidenceIndex);
 
+        // If we have firm assessment data (higher than fallback 4.0), we trust it more
+        boolean hasFirmAssessment = curReading > 4.0 || curListening > 4.0 || curWriting > 4.0 || curSpeaking > 4.0;
+
         if (placement == null || placement.getOverallBand() == null) {
+            double calibratedOverall = hasFirmAssessment
+                    ? clampBand((curReading + curListening + curWriting + curSpeaking) / 4.0)
+                    : estimatedOverall;
+
             return new Calibration(
-                    estimatedOverall, 0, 0, 0, 0, "Chưa có placement, band đang ước tính từ quá trình luyện tập.");
+                    calibratedOverall,
+                    curReading,
+                    curListening,
+                    curWriting,
+                    curSpeaking,
+                    hasFirmAssessment
+                            ? "Band hiện tại được tính dựa trên kết quả luyện tập và bài thi gần nhất."
+                            : "Chưa có placement, band đang ước tính từ quá trình luyện tập.");
         }
 
         boolean isSelfAssessed = Boolean.TRUE.equals(placement.getIsSelfAssessed());
-        if (!isSelfAssessed) {
+        if (!isSelfAssessed && !hasFirmAssessment) {
             return new Calibration(
                     clampBand(placement.getOverallBand()),
                     clampBand(placement.getReadingBand()),
@@ -578,20 +613,25 @@ public class GoalServiceImpl implements GoalService {
                     "Band được lấy từ kết quả placement gần nhất.");
         }
 
-        double placementOverall = clampBand(placement.getOverallBand());
-        double calibratedOverall = Math.min(placementOverall, clampBand(estimatedOverall + 0.5));
-        String note = calibratedOverall < placementOverall
-                ? "Bạn đã tự đánh giá. Hệ thống sẽ hiệu chỉnh dần theo kết quả luyện tập để phản ánh đúng thực lực."
-                : "Band tự đánh giá gần với dữ liệu luyện tập hiện tại.";
+        // Calibration logic: If self-assessed OR we have new assessment data, we blend it
+        double baseOverall = hasFirmAssessment
+                ? (curReading + curListening + curWriting + curSpeaking) / 4.0
+                : placement.getOverallBand();
 
-        return new Calibration(
-                calibratedOverall,
-                clampBand(Math.min(nonNullOr(placement.getReadingBand(), calibratedOverall), calibratedOverall + 1.0)),
-                clampBand(
-                        Math.min(nonNullOr(placement.getListeningBand(), calibratedOverall), calibratedOverall + 1.0)),
-                clampBand(Math.min(nonNullOr(placement.getWritingBand(), calibratedOverall), calibratedOverall + 1.0)),
-                clampBand(Math.min(nonNullOr(placement.getSpeakingBand(), calibratedOverall), calibratedOverall + 1.0)),
-                note);
+        double calibratedOverall = clampBand(baseOverall);
+
+        // If self-assessed, still do a sanity check against metrics
+        if (isSelfAssessed && !hasFirmAssessment) {
+            calibratedOverall = Math.min(calibratedOverall, clampBand(estimatedOverall + 0.5));
+        }
+
+        String note = hasFirmAssessment
+                ? "Band đã được cập nhật dựa trên kết quả thi tuần/tháng gần nhất."
+                : (calibratedOverall < placement.getOverallBand()
+                        ? "Bạn đã tự đánh giá. Hệ thống đã hiệu chỉnh lại dựa trên dữ liệu thực tế."
+                        : "Band tự đánh giá gần với dữ liệu luyện tập hiện tại.");
+
+        return new Calibration(calibratedOverall, curReading, curListening, curWriting, curSpeaking, note);
     }
 
     private double estimateOverallFromMetrics(double masteryIndex, double confidenceIndex) {
