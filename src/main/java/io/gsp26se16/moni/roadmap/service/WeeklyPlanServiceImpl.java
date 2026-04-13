@@ -48,7 +48,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     // =====================================================================
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRED)
     public void generateWeeklyPlan(Users user) {
         // Find previous plan (if any)
         Optional<WeeklyPlan> previousOpt = weeklyPlanRepository.findTopByUserOrderByWeekNumberDesc(user);
@@ -58,6 +58,12 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         int weekNumber = previous != null ? previous.getWeekNumber() + 1 : 1;
         int weekInMonth = previous != null ? (previous.getWeekInMonth() % 4) + 1 : 1;
         int monthCycle = previous != null ? previous.getMonthCycle() : 1;
+
+        log.info(
+                "[WeeklyPlan] Generating plan for user {}, week {}, month cycle {}",
+                user.getId(),
+                weekNumber,
+                monthCycle);
         if (weekInMonth == 1 && weekNumber > 1) {
             monthCycle = previous.getMonthCycle() + 1;
         }
@@ -448,21 +454,29 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         for (Skill skill : Skill.values()) {
             double target = targetBands.getOrDefault(skill, 0.0);
             if (target == 0.0) {
-                // If no target set, use starting band + 1.0
-                Goal skillGoal = activeGoals.stream()
-                        .filter(g -> g.getSkill() == skill)
-                        .findFirst()
-                        .orElse(null);
-                target = (skillGoal != null && skillGoal.getStartingBand() != null)
-                        ? skillGoal.getStartingBand() + 1.0
-                        : 6.0;
+                // If no active goal found, check if user has set a target on their profile
+                target = getTargetBandFromUser(user, skill);
+
+                // If still no target, use starting band + 1.0 or default to 6.0
+                if (target == 0.0) {
+                    Goal skillGoal = activeGoals.stream()
+                            .filter(g -> g.getSkill() == skill)
+                            .findFirst()
+                            .orElse(null);
+                    target = (skillGoal != null && skillGoal.getStartingBand() != null)
+                            ? skillGoal.getStartingBand() + 1.0
+                            : 6.0;
+                }
             }
 
             double current = getCurrentBandForSkill(user, skill, previousPlan);
             double gap = Math.max(0.0, target - current);
             gaps.put(skill, gap);
             totalGap += gap;
+            log.info("[WeeklyPlan] Skill: {}, Target: {}, Current: {}, Gap: {}", skill, target, current, gap);
         }
+
+        log.info("[WeeklyPlan] Total Gap: {}, Distribution Logic starting...", totalGap);
 
         List<Skill> taskPool = new ArrayList<>();
 
@@ -541,6 +555,17 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         }
 
         return 4.0; // Ultimate fallback
+    }
+
+    private double getTargetBandFromUser(Users user, Skill skill) {
+        Double target =
+                switch (skill) {
+                    case READING -> user.getTargetReading();
+                    case LISTENING -> user.getTargetListening();
+                    case WRITING -> user.getTargetWriting();
+                    case SPEAKING -> user.getTargetSpeaking();
+                };
+        return target != null ? target : 0.0;
     }
 
     private Double getBandFromMonthlyAssessment(MonthlyAssessment asm, Skill skill) {
