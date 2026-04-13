@@ -47,12 +47,17 @@ public class WeeklyPlanController {
     @PatchMapping("/slots/{slotId}/complete")
     @Operation(summary = "Hoàn thành 1 slot")
     public ResponseEntity<ApiResponse<Map<String, Object>>> completeSlot(
-            @PathVariable Integer slotId, @RequestBody Map<String, Integer> body) {
+            @PathVariable Integer slotId, @RequestBody Map<String, Object> body) {
 
-        Integer score = body.getOrDefault("score", 0);
-        Integer totalQuestions = body.getOrDefault("totalQuestions", 0);
+        Integer score = body.containsKey("score") ? (Integer) body.get("score") : 0;
+        Integer totalQuestions = body.containsKey("totalQuestions") ? (Integer) body.get("totalQuestions") : 0;
 
-        weeklyPlanService.completeSlot(slotId, score, totalQuestions);
+        List<String> correctWords = null;
+        if (body.containsKey("correctWords")) {
+            correctWords = (List<String>) body.get("correctWords");
+        }
+
+        weeklyPlanService.completeSlot(slotId, score, totalQuestions, correctWords);
 
         return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .code(1000)
@@ -62,7 +67,7 @@ public class WeeklyPlanController {
     }
 
     @PostMapping("/slots/{slotId}/vocab-start")
-    @Operation(summary = "Kích hoạt slot học từ vựng và tự động thêm 15 từ vào sổ tay")
+    @Operation(summary = "Lấy danh sách 15 từ vựng cho bài học (không tự động lưu)")
     public ResponseEntity<ApiResponse<List<io.gsp26se16.moni.vocab.dto.VocabResponse>>> startVocabLearning(
             @PathVariable Integer slotId) {
 
@@ -72,6 +77,23 @@ public class WeeklyPlanController {
                 .code(1000)
                 .message("Đã nạp 15 từ vựng thành công")
                 .result(result)
+                .build());
+    }
+
+    @PostMapping("/slots/{slotId}/vocab-submit-learn")
+    @Operation(summary = "Lưu kết quả học từ vựng (Chưa học / Đã học) và hoàn thành slot")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> submitVocabLearning(
+            @PathVariable Integer slotId, @RequestBody Map<String, List<Integer>> body) {
+
+        List<Integer> notLearnedIds = body.getOrDefault("notLearnedIds", List.of());
+        List<Integer> learnedIds = body.getOrDefault("learnedIds", List.of());
+
+        weeklyPlanService.submitVocabLearning(slotId, notLearnedIds, learnedIds);
+
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
+                .code(1000)
+                .message("Đã lưu từ vựng và hoàn thành bài tập!")
+                .result(Map.of("slotId", slotId, "status", "DONE"))
                 .build());
     }
 

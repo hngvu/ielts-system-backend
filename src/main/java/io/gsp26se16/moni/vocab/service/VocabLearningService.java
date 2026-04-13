@@ -16,6 +16,7 @@ import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.vocab.dto.*;
 import io.gsp26se16.moni.vocab.entity.Vocab;
 import io.gsp26se16.moni.vocab.entity.VocabReview;
+import io.gsp26se16.moni.vocab.enumeration.VocabSourceType;
 import io.gsp26se16.moni.vocab.enumeration.VocabStatus;
 import io.gsp26se16.moni.vocab.repository.CuratedWordRepository;
 import io.gsp26se16.moni.vocab.repository.VocabListRepository;
@@ -80,19 +81,29 @@ public class VocabLearningService {
                         VocabStatus.MASTERED,
                         io.gsp26se16.moni.vocab.enumeration.VocabSourceType.ROADMAP_SYSTEM);
 
-        // Due today: All non-archived words that need review right now (including ROADMAP_SYSTEM)
-        int dueToday = vocabRepository
-                .findByUserIdAndNextReviewAtBeforeAndStatusNot(userId, LocalDateTime.now(), VocabStatus.ARCHIVED)
-                .size();
+        // To-learn (Sổ từ biết tuốt): Words in DRAFT status
+        int toLearnCount = (int) vocabRepository.countByUserIdAndStatus(userId, VocabStatus.DRAFT);
 
-        // Learning: All non-archived words with ACTIVE status (including ROADMAP_SYSTEM)
+        // Due today: All non-archived ACTIVE words past their due date + DRAFT words
+        // (which have no due date but need
+        // learning)
+        int dueToday = toLearnCount
+                + vocabRepository
+                        .findByUserIdAndNextReviewAtBeforeAndStatusNot(
+                                userId, LocalDateTime.now(), VocabStatus.ARCHIVED)
+                        .size();
+
+        // Learning (Sổ tay nhắc lại): ACTIVE status
         int learningCount = (int) vocabRepository.countByUserIdAndStatus(userId, VocabStatus.ACTIVE);
 
-        // Mastered: All words with MASTERED status
+        // Mastered (Sổ tay master): MASTERED status
         int masteredCount = (int) vocabRepository.countByUserIdAndStatus(userId, VocabStatus.MASTERED);
 
-        // Lists: Number of VocabLists owned by user
-        int listsCount = (int) vocabListRepository.countByUserId(userId);
+        // Lists: Hardcode to 4 indicating the 4 core notebooks
+        int listsCount = 4;
+
+        // Manual words (Sổ từ của tôi): Words with sourceType = MANUAL
+        int manualCount = (int) vocabRepository.countByUserIdAndSourceType(userId, VocabSourceType.MANUAL);
 
         return ReviewStatsResponse.builder()
                 .totalSaved(totalSaved)
@@ -100,6 +111,10 @@ public class VocabLearningService {
                 .learningCount(learningCount)
                 .masteredCount(masteredCount)
                 .listsCount(listsCount)
+                .toLearn(toLearnCount)
+                .reviewing(learningCount)
+                .mastered(masteredCount)
+                .manual(manualCount)
                 .build();
     }
 
@@ -135,8 +150,35 @@ public class VocabLearningService {
         List<io.gsp26se16.moni.vocab.entity.CuratedWord> selected =
                 newWords.subList(0, Math.min(count, newWords.size()));
 
-        List<Vocab> savedVocabs = new ArrayList<>();
-        for (var cw : selected) {
+        // Do NOT save them to the DB yet. Return them as transient DTOs to the user for
+        // selection.
+        return selected.stream()
+                .map(cw -> VocabResponse.builder()
+                        .id(cw.getId()) // NOTE: Here ID is CuratedWord's ID temporarily
+                        .word(cw.getWord())
+                        .phonetic(cw.getPhonetic())
+                        .pos(cw.getPos())
+                        .definition(cw.getDefinition())
+                        .example(cw.getExample())
+                        .audioUrl(cw.getAudioUrl())
+                        .meaning(cw.getMeaning())
+                        .sourceType(io.gsp26se16.moni.vocab.enumeration.VocabSourceType.ROADMAP_SYSTEM)
+                        .status(VocabStatus.DRAFT)
+                        .build())
+                .toList();
+    }
+
+    @Transactional
+    public void submitRoadmapVocabList(Users user, List<Integer> notLearnedIds, List<Integer> learnedIds) {
+        // Find the curated words that the user marked
+        List<io.gsp26se16.moni.vocab.entity.CuratedWord> allCurated = curatedWordRepository.findAllById(
+                java.util.stream.Stream.concat(notLearnedIds.stream(), learnedIds.stream())
+                        .toList());
+
+        List<Vocab> toSave = new ArrayList<>();
+        for (var cw : allCurated) {
+            VocabStatus status = notLearnedIds.contains(cw.getId()) ? VocabStatus.DRAFT : VocabStatus.ARCHIVED;
+
             Vocab v = Vocab.builder()
                     .word(cw.getWord())
                     .phonetic(cw.getPhonetic())
@@ -145,14 +187,38 @@ public class VocabLearningService {
                     .example(cw.getExample())
                     .audioUrl(cw.getAudioUrl())
                     .meaning(cw.getMeaning())
-                    .sourceType(io.gsp26se16.moni.vocab.enumeration.VocabSourceType.ROADMAP_SYSTEM)
-                    .status(VocabStatus.ACTIVE)
+                    .sourceType(VocabSourceType.ROADMAP_SYSTEM)
+                    .status(status)
                     .user(user)
                     .build();
-            savedVocabs.add(vocabRepository.save(v));
+            toSave.add(v);
         }
 
-        return savedVocabs.stream().map(this::toResponse).toList();
+        if (!toSave.isEmpty()) {
+            vocabRepository.saveAll(toSave);
+        }
+    }
+
+    @Transactional
+    public void markWordsAsMastered(Users user, List<String> correctWords) {
+        if (correctWords == null || correctWords.isEmpty()) return;
+
+        List<Vocab> toUpdate =
+                vocabRepository
+                        .findByUserIdAndStatusNot(user.getId(), VocabStatus.ARCHIVED, Pageable.unpaged())
+                        .getContent()
+                        .stream()
+                        .filter(v -> correctWords.contains(v.getWord()))
+                        .filter(v -> v.getStatus() == VocabStatus.DRAFT || v.getStatus() == VocabStatus.ACTIVE)
+                        .toList();
+
+        for (Vocab v : toUpdate) {
+            v.setStatus(VocabStatus.MASTERED);
+        }
+
+        if (!toUpdate.isEmpty()) {
+            vocabRepository.saveAll(toUpdate);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -163,6 +229,7 @@ public class VocabLearningService {
                 .getContent()
                 .stream()
                 .filter(v -> v.getSourceType() == io.gsp26se16.moni.vocab.enumeration.VocabSourceType.ROADMAP_SYSTEM)
+                .filter(v -> v.getStatus() == VocabStatus.DRAFT || v.getStatus() == VocabStatus.ACTIVE)
                 .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
                 .limit(15)
                 .toList();

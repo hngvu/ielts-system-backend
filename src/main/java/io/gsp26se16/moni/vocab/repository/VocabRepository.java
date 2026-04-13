@@ -54,5 +54,7 @@ public interface VocabRepository extends JpaRepository<Vocab, Integer> {
 
     boolean existsByUserIdAndWord(String userId, String word);
 
+    long countByUserIdAndSourceType(String userId, VocabSourceType sourceType);
+
     List<Vocab> findByUserIdAndVocabListId(String userId, Integer listId);
 }

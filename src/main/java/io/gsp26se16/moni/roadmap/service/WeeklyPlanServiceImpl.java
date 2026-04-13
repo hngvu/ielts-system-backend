@@ -211,7 +211,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
 
     @Override
     @Transactional
-    public void completeSlot(Integer slotId, Integer score, Integer totalQuestions) {
+    public void completeSlot(Integer slotId, Integer score, Integer totalQuestions, List<String> correctWords) {
         Users user = getCurrentUser();
 
         DailySlot slot =
@@ -225,6 +225,11 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         slot.setScore(score);
         slot.setTotalQuestions(totalQuestions);
         slot.setCompletedAt(LocalDateTime.now());
+
+        if ("VOCAB_TEST".equals(slot.getTaskType()) && correctWords != null && !correctWords.isEmpty()) {
+            vocabLearningService.markWordsAsMastered(user, correctWords);
+        }
+
         dailySlotRepository.save(slot);
 
         log.info(
@@ -281,14 +286,29 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         String bandRange = formatBandRange(band);
         String topic = slot.getReferenceMetadata();
 
-        List<VocabResponse> words = vocabLearningService.generateRoadmapVocabList(user, bandRange, topic, 15);
+        return vocabLearningService.generateRoadmapVocabList(user, bandRange, topic, 15);
+    }
 
-        // Mark as done after spawning the words
+    @Override
+    @Transactional
+    public void submitVocabLearning(Integer slotId, List<Integer> notLearnedIds, List<Integer> learnedIds) {
+        Users user = getCurrentUser();
+        DailySlot slot =
+                dailySlotRepository.findById(slotId).orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
+
+        if (!slot.getWeeklyPlan().getUser().getId().equals(user.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        if (!"VOCAB_LEARN".equals(slot.getTaskType())) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+
+        vocabLearningService.submitRoadmapVocabList(user, notLearnedIds, learnedIds);
+
         slot.setStatus("DONE");
         slot.setCompletedAt(LocalDateTime.now());
         dailySlotRepository.save(slot);
-
-        return words;
     }
 
     @Override
