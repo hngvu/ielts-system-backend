@@ -765,7 +765,13 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                             .stimulusId(
                                     s.getStimulus() != null ? s.getStimulus().getId() : null)
                             .stimulusTitle(
-                                    s.getStimulus() != null ? s.getStimulus().getTitle() : null)
+                                    s.getTest() != null
+                                                    && s.getTest().getTitle() != null
+                                                    && !s.getTest().getTitle().isBlank()
+                                            ? s.getTest().getTitle()
+                                            : (s.getStimulus() != null
+                                                    ? s.getStimulus().getTitle()
+                                                    : null))
                             .testId(s.getTest() != null ? s.getTest().getId() : null)
                             .status(s.getStatus())
                             .score(s.getScore())
@@ -820,12 +826,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     }
 
     private Integer calculateStimulusQuestions(Stimulus stimulus) {
-        if (stimulus == null) return 0;
-        if (stimulus.getQuestionGroups() == null) return 0;
-
-        return stimulus.getQuestionGroups().stream()
-                .mapToInt(group ->
-                        group.getQuestions() != null ? group.getQuestions().size() : 0)
-                .sum();
+        if (stimulus == null || stimulus.getId() == null) return 0;
+        return stimulusRepository.countQuestionsByStimulusId(stimulus.getId());
     }
 }
