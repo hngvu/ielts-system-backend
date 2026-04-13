@@ -18,6 +18,10 @@ public interface VocabRepository extends JpaRepository<Vocab, Integer> {
 
     Page<Vocab> findByUserIdAndStatusNot(String userId, VocabStatus status, Pageable pageable);
 
+    Page<Vocab> findByUserIdAndStatus(String userId, VocabStatus status, Pageable pageable);
+
+    Page<Vocab> findByUserIdAndSourceType(String userId, VocabSourceType sourceType, Pageable pageable);
+
     Page<Vocab> findByUserIdAndVocabListId(String userId, Integer listId, Pageable pageable);
 
     Page<Vocab> findByUserIdAndVocabListIdAndStatusNot(
@@ -28,6 +32,22 @@ public interface VocabRepository extends JpaRepository<Vocab, Integer> {
     Page<Vocab> findByUserIdAndStatusNotAndWordContaining(
             @Param("userId") String userId,
             @Param("status") VocabStatus status,
+            @Param("search") String search,
+            Pageable pageable);
+
+    @Query(
+            "SELECT v FROM Vocab v WHERE v.user.id = :userId AND v.status = :status AND LOWER(v.word) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<Vocab> findByUserIdAndStatusAndWordContaining(
+            @Param("userId") String userId,
+            @Param("status") VocabStatus status,
+            @Param("search") String search,
+            Pageable pageable);
+
+    @Query(
+            "SELECT v FROM Vocab v WHERE v.user.id = :userId AND v.sourceType = :sourceType AND LOWER(v.word) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<Vocab> findByUserIdAndSourceTypeAndWordContaining(
+            @Param("userId") String userId,
+            @Param("sourceType") VocabSourceType sourceType,
             @Param("search") String search,
             Pageable pageable);
 

@@ -95,9 +95,10 @@ public class VocabController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) Integer listId,
-            @RequestParam(required = false) String search) {
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status) {
         String credentialId = getCredentialId();
-        Page<VocabResponse> result = vocabService.getMyWords(credentialId, page, size, listId, search);
+        Page<VocabResponse> result = vocabService.getMyWords(credentialId, page, size, listId, search, status);
         return ResponseEntity.ok(
                 ApiResponse.<Page<VocabResponse>>builder().result(result).build());
     }

@@ -45,14 +45,39 @@ public class VocabServiceImpl implements VocabService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<VocabResponse> getMyWords(String credentialId, int page, int size, Integer listId, String search) {
+    public Page<VocabResponse> getMyWords(
+            String credentialId, int page, int size, Integer listId, String search, String statusParam) {
         Users user = authHelper.getUser(credentialId);
         String userId = user.getId();
         var pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         boolean hasSearch = search != null && !search.isBlank();
 
         Page<Vocab> result;
-        if (listId != null && hasSearch) {
+        if (statusParam != null && !statusParam.isBlank()) {
+            boolean isManual = statusParam.equalsIgnoreCase("manual");
+            if (isManual) {
+                if (hasSearch) {
+                    result = vocabRepository.findByUserIdAndSourceTypeAndWordContaining(
+                            userId, VocabSourceType.MANUAL, search, pageable);
+                } else {
+                    result = vocabRepository.findByUserIdAndSourceType(userId, VocabSourceType.MANUAL, pageable);
+                }
+            } else {
+                VocabStatus vocabStatus;
+                try {
+                    vocabStatus = VocabStatus.valueOf(statusParam.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    vocabStatus = VocabStatus.ACTIVE;
+                }
+
+                if (hasSearch) {
+                    result = vocabRepository.findByUserIdAndStatusAndWordContaining(
+                            userId, vocabStatus, search, pageable);
+                } else {
+                    result = vocabRepository.findByUserIdAndStatus(userId, vocabStatus, pageable);
+                }
+            }
+        } else if (listId != null && hasSearch) {
             result = vocabRepository.findByUserIdAndVocabListIdAndStatusNotAndWordContaining(
                     userId, listId, VocabStatus.ARCHIVED, search, pageable);
         } else if (listId != null) {

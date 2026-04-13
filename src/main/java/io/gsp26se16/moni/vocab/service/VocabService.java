@@ -9,7 +9,8 @@ import io.gsp26se16.moni.vocab.dto.VocabResponse;
 
 public interface VocabService {
 
-    Page<VocabResponse> getMyWords(String userId, int page, int size, Integer listId, String search);
+    Page<VocabResponse> getMyWords(
+            String credentialId, int page, int size, Integer listId, String search, String status);
 
     VocabResponse saveWord(String userId, SaveVocabRequest request);
 
