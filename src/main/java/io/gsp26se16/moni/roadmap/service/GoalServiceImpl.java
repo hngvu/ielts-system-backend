@@ -451,8 +451,9 @@ public class GoalServiceImpl implements GoalService {
         if (daysToExam != null && daysToExam < 0) daysToExam = 0;
 
         // [NEW] Get current bands from WeeklyPlanService (priority: Monthly > Weekly > Placement > Goal)
-        WeeklyPlan activeWeeklyPlan =
-                weeklyPlanRepository.findByUserAndStatus(learner, "ACTIVE").orElse(null);
+        WeeklyPlan activeWeeklyPlan = weeklyPlanRepository
+                .findFirstByUserAndStatusOrderByWeekNumberDesc(learner, "ACTIVE")
+                .orElse(null);
 
         double curReading = weeklyPlanService.getCurrentBandForSkill(learner, Skill.READING, activeWeeklyPlan);
         double curListening = weeklyPlanService.getCurrentBandForSkill(learner, Skill.LISTENING, activeWeeklyPlan);

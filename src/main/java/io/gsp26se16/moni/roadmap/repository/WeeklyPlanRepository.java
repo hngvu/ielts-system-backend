@@ -12,7 +12,7 @@ import io.gsp26se16.moni.roadmap.entity.WeeklyPlan;
 @Repository
 public interface WeeklyPlanRepository extends JpaRepository<WeeklyPlan, Integer> {
 
-    Optional<WeeklyPlan> findByUserAndStatus(Users user, String status);
+    Optional<WeeklyPlan> findFirstByUserAndStatusOrderByWeekNumberDesc(Users user, String status);
 
     Optional<WeeklyPlan> findTopByUserOrderByWeekNumberDesc(Users user);
 

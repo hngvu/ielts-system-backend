@@ -231,8 +231,9 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     @Transactional(readOnly = true)
     public WeeklyPlanDetailResponse getCurrentPlan() {
         Users user = getCurrentUser();
-        WeeklyPlan plan =
-                weeklyPlanRepository.findByUserAndStatus(user, "ACTIVE").orElse(null);
+        WeeklyPlan plan = weeklyPlanRepository
+                .findFirstByUserAndStatusOrderByWeekNumberDesc(user, "ACTIVE")
+                .orElse(null);
 
         if (plan == null) {
             return null;
@@ -245,8 +246,9 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     @Transactional(readOnly = true)
     public WeeklyPlanDetailResponse getTodaySlots() {
         Users user = getCurrentUser();
-        WeeklyPlan plan =
-                weeklyPlanRepository.findByUserAndStatus(user, "ACTIVE").orElse(null);
+        WeeklyPlan plan = weeklyPlanRepository
+                .findFirstByUserAndStatusOrderByWeekNumberDesc(user, "ACTIVE")
+                .orElse(null);
 
         if (plan == null) {
             return null;
@@ -389,7 +391,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     public WeeklyPlanDetailResponse evaluateWeekAndGenerateNext() {
         Users user = getCurrentUser();
         WeeklyPlan currentPlan = weeklyPlanRepository
-                .findByUserAndStatus(user, "ACTIVE")
+                .findFirstByUserAndStatusOrderByWeekNumberDesc(user, "ACTIVE")
                 .orElseThrow(() -> new AppException(ErrorCode.ACTIVE_ROADMAP_NOT_FOUND));
 
         // Calculate metrics
@@ -439,8 +441,9 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         generateWeeklyPlan(user);
 
         // Return the new plan
-        WeeklyPlan newPlan =
-                weeklyPlanRepository.findByUserAndStatus(user, "ACTIVE").orElse(null);
+        WeeklyPlan newPlan = weeklyPlanRepository
+                .findFirstByUserAndStatusOrderByWeekNumberDesc(user, "ACTIVE")
+                .orElse(null);
         return newPlan != null ? buildDetailResponse(newPlan, user) : null;
     }
 
@@ -470,7 +473,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     public MonthlyAssessmentResponse getPendingMonthlyAssessment() {
         Users user = getCurrentUser();
         return monthlyAssessmentRepository
-                .findByUserAndStatus(user, "PENDING")
+                .findTopByUserAndStatusOrderByIdDesc(user, "PENDING")
                 .map(ma -> MonthlyAssessmentResponse.builder()
                         .id(ma.getId())
                         .monthCycle(ma.getMonthCycle())
@@ -852,7 +855,8 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
 
     private void triggerMonthlyAssessment(Users user, int monthCycle) {
         // Check if already exists
-        Optional<MonthlyAssessment> existing = monthlyAssessmentRepository.findByUserAndStatus(user, "PENDING");
+        Optional<MonthlyAssessment> existing =
+                monthlyAssessmentRepository.findTopByUserAndStatusOrderByIdDesc(user, "PENDING");
         if (existing.isPresent()) {
             log.info("[MonthlyAssessment] Already pending for user {}", user.getId());
             return;
@@ -930,8 +934,9 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         boolean suggestVocabulary = todayCompleted;
 
         // Check for pending monthly assessment
-        boolean monthlyPending =
-                monthlyAssessmentRepository.findByUserAndStatus(user, "PENDING").isPresent();
+        boolean monthlyPending = monthlyAssessmentRepository
+                .findTopByUserAndStatusOrderByIdDesc(user, "PENDING")
+                .isPresent();
 
         // Get previous verdict
         String previousVerdict = null;
