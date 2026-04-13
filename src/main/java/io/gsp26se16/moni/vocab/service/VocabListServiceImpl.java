@@ -33,7 +33,11 @@ public class VocabListServiceImpl implements VocabListService {
         Users user = authHelper.getUser(credentialId);
         ensureDefaultList(user);
         List<VocabList> lists = vocabListRepository.findByUserId(user.getId());
-        return lists.stream().map(l -> toResponse(l, user.getId())).toList();
+        // Exclude the default "Sổ tay của tôi" list — it is represented as a system notebook on the frontend
+        return lists.stream()
+                .filter(l -> !l.isDefault())
+                .map(l -> toResponse(l, user.getId()))
+                .toList();
     }
 
     @Override

@@ -39,9 +39,14 @@ public class VocabLearningService {
     @Transactional(readOnly = true)
     public List<VocabResponse> getDueReview(String credentialId, int limit) {
         Users user = authHelper.getUser(credentialId);
-        List<Vocab> due = vocabRepository.findByUserIdAndNextReviewAtBeforeAndStatusNot(
-                user.getId(), LocalDateTime.now(), VocabStatus.ARCHIVED);
-        return due.stream().limit(limit).map(this::toResponse).toList();
+        // Include DRAFT words (Sổ từ biết tuốt) + ACTIVE words past due date
+        List<Vocab> draftWords = vocabRepository.findByUserIdAndStatus(user.getId(), VocabStatus.DRAFT);
+        List<Vocab> dueActiveWords = vocabRepository.findByUserIdAndNextReviewAtBeforeAndStatus(
+                user.getId(), LocalDateTime.now(), VocabStatus.ACTIVE);
+        List<Vocab> combined = new ArrayList<>();
+        combined.addAll(draftWords);
+        combined.addAll(dueActiveWords);
+        return combined.stream().limit(limit).map(this::toResponse).toList();
     }
 
     @Transactional
@@ -59,9 +64,21 @@ public class VocabLearningService {
         vocab.setInterval(result.interval());
         vocab.setNextReviewAt(result.nextReviewAt());
 
+        // Status transition logic based on our 4-notebook system:
+        // quality = 1 (Chưa biết) -> keep in or move back to DRAFT (Sổ từ biết tuốt)
+        // quality >= 4 (Đã biết) -> DRAFT transitions to ACTIVE (Sổ tay nhắc lại)
+        // sufficient repetitions -> MASTERED (Sổ tay Master)
         if (result.easeFactor() >= 2.5 && result.repetitions() >= 5) {
             vocab.setStatus(VocabStatus.MASTERED);
+        } else if (quality <= 2) {
+            // "Chưa biết" - put/keep in Sổ từ biết tuốt (DRAFT)
+            vocab.setStatus(VocabStatus.DRAFT);
+        } else if (quality >= 4 && vocab.getStatus() == VocabStatus.DRAFT) {
+            // "Đã biết" and word was in DRAFT -> promote to Sổ tay nhắc lại (ACTIVE)
+            vocab.setStatus(VocabStatus.ACTIVE);
         }
+        // If already ACTIVE and quality >= 4, keep ACTIVE (SM2 handles scheduling)
+
         vocabRepository.save(vocab);
 
         VocabReview review =

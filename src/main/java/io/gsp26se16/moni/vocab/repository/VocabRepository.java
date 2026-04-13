@@ -48,6 +48,10 @@ public interface VocabRepository extends JpaRepository<Vocab, Integer> {
 
     long countByUserIdAndStatus(String userId, VocabStatus status);
 
+    List<Vocab> findByUserIdAndStatus(String userId, VocabStatus status);
+
+    List<Vocab> findByUserIdAndNextReviewAtBeforeAndStatus(String userId, LocalDateTime now, VocabStatus status);
+
     long countByUserIdAndStatusAndSourceTypeNot(String userId, VocabStatus status, VocabSourceType sourceType);
 
     long countByUserIdAndVocabListIdAndStatusNot(String userId, Integer listId, VocabStatus status);
