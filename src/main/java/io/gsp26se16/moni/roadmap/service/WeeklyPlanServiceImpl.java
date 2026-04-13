@@ -750,19 +750,28 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         }
 
         List<DailySlotResponse> slotResponses = allSlots.stream()
-                .map(s -> DailySlotResponse.builder()
-                        .id(s.getId())
-                        .dayOfWeek(s.getDayOfWeek())
-                        .slotDate(s.getSlotDate().toString())
-                        .skill(s.getSkill().name())
-                        .taskType(s.getTaskType())
-                        .stimulusId(s.getStimulus() != null ? s.getStimulus().getId() : null)
-                        .stimulusTitle(s.getStimulus() != null ? s.getStimulus().getTitle() : null)
-                        .testId(s.getTest() != null ? s.getTest().getId() : null)
-                        .status(s.getStatus())
-                        .score(s.getScore())
-                        .totalQuestions(s.getTotalQuestions())
-                        .build())
+                .map(s -> {
+                    Integer totalQ = s.getTotalQuestions();
+                    if (totalQ == null && s.getStimulus() != null) {
+                        totalQ = calculateStimulusQuestions(s.getStimulus());
+                    }
+
+                    return DailySlotResponse.builder()
+                            .id(s.getId())
+                            .dayOfWeek(s.getDayOfWeek())
+                            .slotDate(s.getSlotDate().toString())
+                            .skill(s.getSkill().name())
+                            .taskType(s.getTaskType())
+                            .stimulusId(
+                                    s.getStimulus() != null ? s.getStimulus().getId() : null)
+                            .stimulusTitle(
+                                    s.getStimulus() != null ? s.getStimulus().getTitle() : null)
+                            .testId(s.getTest() != null ? s.getTest().getId() : null)
+                            .status(s.getStatus())
+                            .score(s.getScore())
+                            .totalQuestions(totalQ)
+                            .build();
+                })
                 .toList();
 
         return WeeklyPlanDetailResponse.builder()
@@ -808,5 +817,15 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
             throw new AppException(ErrorCode.USER_NOT_EXISTED);
         }
         return credentials.getUser();
+    }
+
+    private Integer calculateStimulusQuestions(Stimulus stimulus) {
+        if (stimulus == null) return 0;
+        if (stimulus.getQuestionGroups() == null) return 0;
+
+        return stimulus.getQuestionGroups().stream()
+                .mapToInt(group ->
+                        group.getQuestions() != null ? group.getQuestions().size() : 0)
+                .sum();
     }
 }
