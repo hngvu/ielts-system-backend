@@ -8,9 +8,13 @@ import jakarta.persistence.criteria.Predicate;
 
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import io.gsp26se16.moni.authentication.entity.Users;
+import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
+import io.gsp26se16.moni.payment.dto.request.CreditAdjustmentRequest;
 import io.gsp26se16.moni.payment.dto.response.CreditTransactionResponse;
 import io.gsp26se16.moni.payment.entity.CreditTransaction;
 import io.gsp26se16.moni.payment.enumeration.PaymentType;
@@ -22,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CreditTransactionServiceImpl implements CreditTransactionService {
     private final CreditTransactionRepository creditTransactionRepository;
+    private final UsersRepository usersRepository;
 
     @Override
     public List<CreditTransactionResponse> searchCreditTransactions(
@@ -77,6 +82,33 @@ public class CreditTransactionServiceImpl implements CreditTransactionService {
         return mapToCreditTransactionResponse(creditTransaction);
     }
 
+    @Override
+    @Transactional
+    public CreditTransactionResponse adjustCredit(String userId, CreditAdjustmentRequest request) {
+        Users user = usersRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        int currentBalance = user.getCredit() != null ? user.getCredit().intValue() : 0;
+        int adjustmentAmount = request.amount();
+        int newBalance = currentBalance + adjustmentAmount;
+
+        user.setCredit((double) newBalance);
+        usersRepository.save(user);
+
+        CreditTransaction creditTransaction = CreditTransaction.builder()
+                .delta(adjustmentAmount)
+                .balanceBefore(currentBalance)
+                .balanceAfter(newBalance)
+                .paymentType(PaymentType.CREDIT_ADJUSTMENT)
+                .createdAt(LocalDateTime.now())
+                .user(user)
+                .remark("Admin adjustment: " + request.reason())
+                .build();
+
+        creditTransactionRepository.save(creditTransaction);
+
+        return mapToCreditTransactionResponse(creditTransaction);
+    }
+
     private CreditTransactionResponse mapToCreditTransactionResponse(CreditTransaction creditTransaction) {
         return CreditTransactionResponse.builder()
                 .id(creditTransaction.getId())
@@ -118,6 +150,7 @@ public class CreditTransactionServiceImpl implements CreditTransactionService {
                         creditTransaction.getPayment() != null
                                 ? creditTransaction.getPayment().getId()
                                 : null)
+                .remark(creditTransaction.getRemark())
                 .build();
     }
 }

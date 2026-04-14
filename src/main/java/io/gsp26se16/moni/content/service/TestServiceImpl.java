@@ -367,7 +367,28 @@ public class TestServiceImpl implements TestService {
             if (instruction.contains("heading")) return "MATCHING_HEADINGS";
             if (instruction.contains("information")) return "MATCHING_INFORMATION";
             if (instruction.contains("feature")) return "MATCHING_FEATURE";
-            return "MATCHING_HEADINGS";
+
+            // Analyze sharedOptions labels to determine matching subtype
+            List<String> labels = group.getSharedOptions().stream()
+                    .map(opt -> opt.get("label") != null
+                            ? opt.get("label").toString().trim()
+                            : "")
+                    .toList();
+
+            // MATCHING_HEADINGS: labels look like roman numerals (i, ii, iii, iv, v, etc.) or letters used as headings
+            boolean isRomanNumerals = labels.stream().allMatch(l -> l.matches("^[ivxlc]+$"));
+            if (isRomanNumerals) return "MATCHING_HEADINGS";
+
+            // MATCHING_INFORMATION: labels are paragraph/section identifiers (A, B, C, D or Paragraph A, Section B,
+            // etc.)
+            boolean isParagraphLabels = labels.stream()
+                    .allMatch(l -> l.matches("^[A-Z]$")
+                            || l.toLowerCase(Locale.ROOT).startsWith("paragraph")
+                            || l.toLowerCase(Locale.ROOT).startsWith("section"));
+            if (isParagraphLabels) return "MATCHING_INFORMATION";
+
+            // MATCHING_FEATURE: labels are terms, categories, or feature names (anything else with shared options)
+            return "MATCHING_FEATURE";
         }
 
         boolean hasOptions =

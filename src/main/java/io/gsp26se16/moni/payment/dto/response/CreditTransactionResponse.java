@@ -18,4 +18,5 @@ public record CreditTransactionResponse(
         String userEmail,
         String userFullName,
         Integer serviceId,
-        Integer paymentId) {}
+        Integer paymentId,
+        String remark) {}
