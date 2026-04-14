@@ -2,54 +2,81 @@ package io.gsp26se16.moni.ai.writing.service;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
-import lombok.RequiredArgsConstructor;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Loads prompt templates and rubric files from classpath resources.
+ * Loads prompt templates from a versioned filesystem.
  * <p>
- * Directory layout (src/main/resources):
+ * Resolution order for a prompt "writing/phase3_cc.txt":
+ * <ol>
+ *   <li>External dir: {@code {baseDir}/{activeVersion}/writing/phase3_cc.txt}</li>
+ *   <li>Classpath fallback: {@code prompts/v1/writing/phase3_cc.txt}</li>
+ * </ol>
  *
+ * The active version per prompt is stored in:
+ *   {@code {baseDir}/active_versions.json} (external) or
+ *   {@code prompts/active_versions.json} (classpath fallback)
+ *
+ * Directory layout (external, configurable via app.prompts.base-dir):
  * <pre>
- *   prompts/           – prompt template text files
- *   rubrics/writing/   – TA.txt | CC.txt | LR.txt | GRA.txt | TR.txt
- *   rubrics/speaking/  – FC.txt | GRA.txt | LR.txt | PR.txt
+ *   {baseDir}/
+ *     active_versions.json        – maps "skill/file.txt" → "vN"
+ *     v1/
+ *       writing/
+ *         phase1_parse.txt  ...
+ *       speaking/
+ *         phase1_fc.txt     ...
+ *     v2/
+ *       writing/
+ *         phase3_cc.txt     (only files that were edited)
  * </pre>
- *
- * Each speaking rubric file contains all bands (4–8) in a single file.
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class PromptLoader {
 
-    /** In-memory cache so each file is read from disk only once. */
-    private final Map<String, String> cache = new ConcurrentHashMap<>();
+    /** External prompts directory. If empty/null, falls back to classpath only. */
+    @Value("${app.prompts.base-dir:}")
+    private String baseDir;
 
-    // ─────────────────────────────── Prompt loading ──────────────────────────────
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    /** Cache: resolved classpath/filesystem path → content */
+    private final ConcurrentHashMap<String, String> contentCache = new ConcurrentHashMap<>();
+
+    /** Cached active version map. Refreshed on every cache-clear call. */
+    private volatile Map<String, String> activeVersionsCache = null;
+
+    // ─── Public API ───────────────────────────────────────────────────────────
 
     /**
-     * Load a raw prompt template (no placeholder substitution).
+     * Load a prompt by its skill-relative path, e.g. "writing/phase3_cc.txt".
+     * Version resolution is applied automatically.
      */
-    public String loadPrompt(String filename) {
-        return cache.computeIfAbsent("prompts/" + filename, this::readClasspath);
+    public String loadPrompt(String skillRelativePath) {
+        return contentCache.computeIfAbsent(skillRelativePath, this::resolve);
     }
 
     /**
-     * Load a prompt template and replace the given placeholders.
-     *
-     * @param filename     e.g. "phase3_cc.txt"
-     * @param placeholders key → value map; each key {@code K} replaces {@code {K}}
+     * Load a prompt and substitute placeholders.
+     * Each key {@code K} in {@code placeholders} replaces {@code {K}} in the template.
      */
-    public String loadPrompt(String filename, Map<String, String> placeholders) {
-        String result = loadPrompt(filename);
+    public String loadPrompt(String skillRelativePath, Map<String, String> placeholders) {
+        String result = loadPrompt(skillRelativePath);
         for (Map.Entry<String, String> e : placeholders.entrySet()) {
             result = result.replace("{" + e.getKey() + "}", String.valueOf(e.getValue()));
         }
@@ -57,66 +84,142 @@ public class PromptLoader {
     }
 
     /**
-     * Load a prompt template, inject a writing rubric, then apply extra
-     * placeholders.
-     * The rubric is injected by replacing {@code {NAME_RUBRIC}} in the template.
+     * Load a prompt, inject a writing rubric, then apply extra placeholders.
      *
-     * @param filename   e.g. "phase3_cc.txt"
-     * @param rubricName e.g. "CC" → rubrics/writing/CC.txt
-     * @param extras     additional placeholder substitutions (may be empty)
+     * @param skillRelativePath e.g. "writing/phase3_cc.txt"
+     * @param rubricName        e.g. "CC" → rubrics/writing/CC.txt
+     * @param extras            additional placeholder substitutions (may be empty)
      */
-    public String loadPromptWithWritingRubric(String filename, String rubricName, Map<String, String> extras) {
+    public String loadPromptWithWritingRubric(String skillRelativePath, String rubricName, Map<String, String> extras) {
         Map<String, String> placeholders = new HashMap<>(extras);
         placeholders.put(rubricName + "_RUBRIC", getWritingRubric(rubricName));
-        return loadPrompt(filename, placeholders);
+        return loadPrompt(skillRelativePath, placeholders);
     }
 
     /**
-     * Load a prompt template, inject a speaking rubric, then apply extra
-     * placeholders.
-     * The rubric is injected by replacing {@code {NAME_RUBRIC}} in the template.
+     * Load a prompt, inject a speaking rubric, then apply extra placeholders.
      *
-     * @param filename  e.g. "speaking.txt"
-     * @param criterion e.g. "FC" → rubrics/speaking/FC.txt
-     * @param extras    additional placeholder substitutions (may be empty)
+     * @param skillRelativePath e.g. "speaking/phase1_fc.txt"
+     * @param criterion         e.g. "FC" → rubrics/speaking/FC.txt
+     * @param extras            additional placeholder substitutions (may be empty)
      */
-    public String loadPromptWithSpeakingRubric(String filename, String criterion, Map<String, String> extras) {
+    public String loadPromptWithSpeakingRubric(String skillRelativePath, String criterion, Map<String, String> extras) {
         Map<String, String> placeholders = new HashMap<>(extras);
         placeholders.put(criterion + "_RUBRIC", getSpeakingRubric(criterion));
-        return loadPrompt(filename, placeholders);
+        return loadPrompt(skillRelativePath, placeholders);
     }
 
-    // ──────────────────────────── Writing rubric loading ─────────────────────────
+    // ─── Rubric loading ───────────────────────────────────────────────────────
 
-    /**
-     * Get a writing rubric by criterion name.
-     *
-     * @param name TA | CC | LR | GRA | TR
-     */
+    /** @param name TA | CC | LR | GRA | TR */
     public String getWritingRubric(String name) {
-        return cache.computeIfAbsent("rubrics/writing/" + name.toUpperCase() + ".txt", this::readClasspath);
+        return contentCache.computeIfAbsent(
+                "rubric/writing/" + name.toUpperCase(),
+                k -> readClasspath("rubrics/writing/" + name.toUpperCase() + ".txt"));
     }
 
-    // ─────────────────────────── Speaking rubric loading ─────────────────────────
+    /** @param criterion FC | GRA | LR | PR */
+    public String getSpeakingRubric(String criterion) {
+        return contentCache.computeIfAbsent(
+                "rubric/speaking/" + criterion.toUpperCase(),
+                k -> readClasspath("rubrics/speaking/" + criterion.toUpperCase() + ".txt"));
+    }
+
+    // ─── Cache management ─────────────────────────────────────────────────────
 
     /**
-     * Get the full speaking rubric for a criterion (all bands 4–8 in one file).
+     * Invalidate the cache for a specific prompt path after it has been updated.
+     * Called by PromptManagementService after writing a new version.
      *
-     * @param criterion FC | GRA | LR | PR
+     * @param skillRelativePath e.g. "writing/phase3_cc.txt"
      */
-    public String getSpeakingRubric(String criterion) {
-        return cache.computeIfAbsent("rubrics/speaking/" + criterion.toUpperCase() + ".txt", this::readClasspath);
+    public void invalidateCache(String skillRelativePath) {
+        contentCache.remove(skillRelativePath);
+        activeVersionsCache = null;
+        log.info("Cache invalidated for prompt: {}", skillRelativePath);
     }
 
-    // ─────────────────────────────────── I/O ─────────────────────────────────────
+    /** Invalidate all cached prompts and version info. */
+    public void invalidateAll() {
+        contentCache.clear();
+        activeVersionsCache = null;
+        log.info("All prompt caches cleared.");
+    }
+
+    // ─── Resolution ───────────────────────────────────────────────────────────
+
+    /**
+     * Resolve the content for a skill-relative path.
+     * 1. Try external baseDir/{activeVersion}/{skillRelativePath}
+     * 2. Fallback to classpath prompts/v1/{skillRelativePath}
+     */
+    private String resolve(String skillRelativePath) {
+        // 1. If external dir is configured, try that first
+        if (baseDir != null && !baseDir.isBlank()) {
+            String activeVersion = getActiveVersion(skillRelativePath);
+            Path externalPath = Paths.get(baseDir, activeVersion, skillRelativePath);
+            if (Files.exists(externalPath)) {
+                try {
+                    log.debug("Loading prompt from external: {}", externalPath);
+                    return Files.readString(externalPath, StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    log.warn("Failed to read external prompt {}: {}", externalPath, e.getMessage());
+                }
+            }
+        }
+
+        // 2. Fallback to classpath
+        String classpathPath = "prompts/v1/" + skillRelativePath;
+        log.debug("Loading prompt from classpath: {}", classpathPath);
+        return readClasspath(classpathPath);
+    }
+
+    /**
+     * Get the active version for a given skill-relative path.
+     * Reads from external active_versions.json first, then classpath.
+     */
+    private String getActiveVersion(String skillRelativePath) {
+        Map<String, String> versions = loadActiveVersions();
+        return versions.getOrDefault(skillRelativePath, "v1");
+    }
+
+    private Map<String, String> loadActiveVersions() {
+        if (activeVersionsCache != null) return activeVersionsCache;
+
+        // Try external first
+        if (baseDir != null && !baseDir.isBlank()) {
+            Path externalConfig = Paths.get(baseDir, "active_versions.json");
+            if (Files.exists(externalConfig)) {
+                try {
+                    String json = Files.readString(externalConfig, StandardCharsets.UTF_8);
+                    activeVersionsCache = objectMapper.readValue(json, new TypeReference<>() {});
+                    return activeVersionsCache;
+                } catch (IOException e) {
+                    log.warn("Failed to read external active_versions.json: {}", e.getMessage());
+                }
+            }
+        }
+
+        // Fallback to classpath
+        try {
+            String json = readClasspath("prompts/active_versions.json");
+            activeVersionsCache = objectMapper.readValue(json, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.warn("No active_versions.json found, using v1 for all: {}", e.getMessage());
+            activeVersionsCache = new java.util.HashMap<>();
+        }
+        return activeVersionsCache;
+    }
+
+    // ─── I/O ──────────────────────────────────────────────────────────────────
 
     private String readClasspath(String path) {
         try {
             ClassPathResource resource = new ClassPathResource(path);
-            log.debug("Loading resource: {}", path);
+            log.debug("Loading classpath resource: {}", path);
             return resource.getContentAsString(StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load resource: " + path, e);
+            throw new RuntimeException("Failed to load classpath resource: " + path, e);
         }
     }
 }

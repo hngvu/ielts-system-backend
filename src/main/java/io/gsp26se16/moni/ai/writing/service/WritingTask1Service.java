@@ -149,7 +149,7 @@ public class WritingTask1Service {
     // =========================================================================
 
     private Map<String, Object> phase1Parse(ChatClient chatClient, String essay) {
-        String prompt = promptLoader.loadPrompt("phase1_parse.txt", Map.of("essay", essay));
+        String prompt = promptLoader.loadPrompt("writing/phase1_parse.txt", Map.of("essay", essay));
         return callEvaluation(chatClient, prompt);
     }
 
@@ -157,7 +157,7 @@ public class WritingTask1Service {
             ChatClient chatClient, String essay, Map<String, Object> parsed, Map<String, Object> chartData)
             throws JsonProcessingException {
         String prompt = promptLoader.loadPrompt(
-                "phase2_ta.txt",
+                "writing/phase2_ta.txt",
                 Map.of(
                         "essay",
                         essay,
@@ -171,17 +171,18 @@ public class WritingTask1Service {
     private Map<String, Object> phase3Coherence(ChatClient chatClient, String essay, Map<String, Object> parsed)
             throws JsonProcessingException {
         String prompt = promptLoader.loadPrompt(
-                "phase3_cc.txt", Map.of("essay", essay, "phase1_json", objectMapper.writeValueAsString(parsed)));
+                "writing/phase3_cc.txt",
+                Map.of("essay", essay, "phase1_json", objectMapper.writeValueAsString(parsed)));
         return callEvaluation(chatClient, prompt);
     }
 
     private Map<String, Object> phase4Lexical(ChatClient chatClient, String essay) {
-        String prompt = promptLoader.loadPrompt("phase4_lr.txt", Map.of("essay", essay));
+        String prompt = promptLoader.loadPrompt("writing/phase4_lr.txt", Map.of("essay", essay));
         return callEvaluation(chatClient, prompt);
     }
 
     private Map<String, Object> phase5Grammar(ChatClient chatClient, String essay) {
-        String prompt = promptLoader.loadPrompt("phase5_gra.txt", Map.of("essay", essay));
+        String prompt = promptLoader.loadPrompt("writing/phase5_gra.txt", Map.of("essay", essay));
         return callEvaluation(chatClient, prompt);
     }
 
@@ -216,7 +217,7 @@ public class WritingTask1Service {
             ChatClient chatClient, Map<String, Object> chartData, String essay, Map<String, Object> finalResult)
             throws JsonProcessingException {
         String prompt = promptLoader.loadPrompt(
-                "phase7_feedback.txt",
+                "writing/phase7_feedback.txt",
                 Map.of(
                         "chart_entities",
                         chartData != null ? objectMapper.writeValueAsString(chartData) : "[]",

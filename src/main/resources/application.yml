@@ -98,3 +98,12 @@ logging:
 springdoc:
   swagger-ui:
     enabled: true
+# Prompt Management System
+# External directory for versioned prompt files.
+# Leave empty to use only classpath (bundled v1 prompts).
+# When set, admin can create/update prompt versions via API.
+# Example: /app/prompts   (production)
+#          ./prompts       (local dev — relative to working dir)
+app:
+  prompts:
+    base-dir: ${APP_PROMPTS_BASE_DIR:}

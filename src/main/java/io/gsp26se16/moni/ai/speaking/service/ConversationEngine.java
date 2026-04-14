@@ -32,6 +32,7 @@ import io.gsp26se16.moni.common.enumeration.EvaluationStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
 import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
+import io.gsp26se16.moni.tag.entity.Tag;
 import io.gsp26se16.moni.tag.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,13 +41,13 @@ import lombok.extern.slf4j.Slf4j;
  * AI orchestrator cho Speaking exam pipeline.
  *
  * Flow:
- *   SpeakingExamHandler gọi evaluateFromExam() sau khi user hoàn thành 3 parts.
- *   1. Tạo SpeakingSubmission (PROCESSING)
- *   2. Chấm điểm 4 tiêu chí: FC, LR, GRA, PR
- *   3. SpeakingRuleEngine điều chỉnh band
- *   4. Tạo feedback
- *   5. Lưu AiEvaluation + cập nhật SpeakingSubmission → COMPLETED
- *   6. Trả kết quả về WebSocket
+ * SpeakingExamHandler gọi evaluateFromExam() sau khi user hoàn thành 3 parts.
+ * 1. Tạo SpeakingSubmission (PROCESSING)
+ * 2. Chấm điểm 4 tiêu chí: FC, LR, GRA, PR
+ * 3. SpeakingRuleEngine điều chỉnh band
+ * 4. Tạo feedback
+ * 5. Lưu AiEvaluation + cập nhật SpeakingSubmission → COMPLETED
+ * 6. Trả kết quả về WebSocket
  */
 @Slf4j
 @Service
@@ -103,7 +104,8 @@ public class ConversationEngine {
                         "justification", "Fallback due to evaluation error");
             };
 
-            // The transcript already contains questions inline, so pass it as the "question" context
+            // The transcript already contains questions inline, so pass it as the
+            // "question" context
             // AI prompts use {question} placeholder — now it receives the full Q&A context
             CompletableFuture<Map<String, Object>> fcFuture = CompletableFuture.supplyAsync(
                             () -> phase1FC(chatClient, fullTranscript, fullTranscript), aiExecutor)
@@ -175,10 +177,12 @@ public class ConversationEngine {
             return defaultResult();
         }
     }
+
     /**
      * Đánh giá practice mode: 1 câu hỏi + 1 transcript.
      * Dùng bởi REST endpoint /ai/speaking/score.
-     * Trả format FE expects: { overallScore, fluency, pronunciation, vocabulary, grammar, comments }
+     * Trả format FE expects: { overallScore, fluency, pronunciation, vocabulary,
+     * grammar, comments }
      */
     public Map<String, Object> evaluatePractice(String userId, String question, String transcript) {
         if (transcript == null || transcript.isBlank()) {
@@ -539,8 +543,7 @@ public class ConversationEngine {
      * Update single metric using BKT formula.
      * Integrated from MasteryService for inline use.
      */
-    private void updateMetricBKT(
-            Users user, io.gsp26se16.moni.tag.entity.Tag tag, boolean isCorrect, double scoreNormalized) {
+    private void updateMetricBKT(Users user, Tag tag, boolean isCorrect, double scoreNormalized) {
 
         LearnerMetric metric = learnerMetricRepository
                 .findByUserAndTag(user, tag)
