@@ -22,4 +22,20 @@ public interface StimulusService {
     List<Map<String, Object>> getTranscript(Integer stimulusId);
 
     List<Map<String, Object>> transcribeByUrl(String audioUrl);
+
+    /**
+     * Analyze chart image using Vision AI and cache result in Stimulus.visonAnalysisResult.
+     * Called by Admin when creating/editing Writing Task 1 tests.
+     */
+    Map<String, Object> analyzeChart(Integer stimulusId, byte[] imageBytes);
+
+    /**
+     * Update the visonAnalysisResult JSON directly (Admin manual correction).
+     */
+    void updateVisonAnalysisResult(Integer stimulusId, Map<String, Object> visonAnalysisResult);
+
+    /**
+     * Get the stored visonAnalysisResult for a stimulus.
+     */
+    Map<String, Object> getVisonAnalysisResult(Integer stimulusId);
 }

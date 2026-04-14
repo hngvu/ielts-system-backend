@@ -1,7 +1,6 @@
 package io.gsp26se16.moni.ai.writing.service;
 
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -12,7 +11,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -78,10 +76,10 @@ public class WritingTask1Service {
         try {
             ChatClient chatClient = chatClientBuilder.build();
 
-            // ── Vision analysis (cache nếu đã có) ─────────────────────────────
+            // ── Vision analysis: read pre-computed data from DB ────────────────
             Map<String, Object> tempChartData = null;
             if (request.getStimulusId() != null) {
-                tempChartData = getOrCacheVisionAnalysis(request.getStimulusId(), request.getChartImage());
+                tempChartData = getPreComputedVisionAnalysis(request.getStimulusId());
             }
             final Map<String, Object> chartData = tempChartData;
 
@@ -491,42 +489,28 @@ public class WritingTask1Service {
         return helper.parseJson(response);
     }
 
-    // =========================================================================
-    // VISION CACHE
-    // =========================================================================
-
-    private Map<String, Object> getOrCacheVisionAnalysis(Integer stimulusId, MultipartFile chartImage) {
+    /**
+     * Retrieves the pre-computed Vision analysis result for a stimulus.
+     * This data is populated by Admin at test creation time via
+     * POST /api/v1/admin/stimuli/{id}/analyze-chart.
+     *
+     * Returns empty map if no analysis has been performed yet.
+     */
+    private Map<String, Object> getPreComputedVisionAnalysis(Integer stimulusId) {
         Stimulus stimulus = stimulusRepository
                 .findById(stimulusId)
                 .orElseThrow(() -> new AppException(ErrorCode.QUESTION_GROUP_NOT_FOUND));
 
         if (stimulus.getVisonAnalysisResult() != null
                 && !stimulus.getVisonAnalysisResult().isEmpty()) {
-            log.info("Dùng cached vision analysis cho QuestionGroup: {}", stimulusId);
+            log.info("Using pre-computed vision analysis for Stimulus: {}", stimulusId);
             return stimulus.getVisonAnalysisResult();
         }
 
-        try {
-            if (chartImage == null || chartImage.isEmpty() || chartImage.getSize() <= 0) {
-                log.warn("Chart image rỗng cho QuestionGroup: {}", stimulusId);
-                return Map.of();
-            }
-
-            byte[] imageBytes = chartImage.getBytes();
-            if (imageBytes == null || imageBytes.length == 0) {
-                log.warn("Chart image bytes rỗng cho QuestionGroup: {}", stimulusId);
-                return Map.of();
-            }
-
-            String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-            Map<String, Object> analysis = visionClient.analyzeChart(base64Image);
-
-            stimulus.setVisonAnalysisResult(analysis);
-            stimulusRepository.save(stimulus);
-            return analysis;
-
-        } catch (Exception e) {
-            throw new RuntimeException("Không thể xử lý chart image", e);
-        }
+        log.warn(
+                "No pre-computed vision analysis for Stimulus {}. "
+                        + "Please use /api/v1/admin/stimuli/{id}/analyze-chart to pre-compute.",
+                stimulusId);
+        return Map.of();
     }
 }

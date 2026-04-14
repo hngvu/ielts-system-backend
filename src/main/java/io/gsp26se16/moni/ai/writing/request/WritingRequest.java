@@ -2,8 +2,6 @@ package io.gsp26se16.moni.ai.writing.request;
 
 import jakarta.validation.constraints.NotBlank;
 
-import org.springframework.web.multipart.MultipartFile;
-
 import lombok.Data;
 
 @Data
@@ -13,16 +11,14 @@ public class WritingRequest {
 
     private String answer;
 
-    // For Task 1: Question Group ID to cache vision analysis
+    /**
+     * 1 = Task 1 (chart/diagram), 2 = Task 2 (essay).
+     */
+    private Integer taskType;
+
+    // For Task 1: Stimulus ID to look up cached vision analysis result
     private Integer stimulusId;
 
     // Optional: link to existing WritingSubmission to update status after scoring
     private Long submissionId;
-
-    // Optional: Chart image for Task 1 (only if first submission)
-    private MultipartFile chartImage;
-
-    // Deprecated: Use questionGroupId for caching instead
-    @Deprecated
-    private String visionAnalysis;
 }

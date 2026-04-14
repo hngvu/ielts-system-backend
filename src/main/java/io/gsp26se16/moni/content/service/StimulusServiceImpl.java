@@ -37,6 +37,7 @@ public class StimulusServiceImpl implements StimulusService {
     private final TagRepository tagRepository;
     private final UsersRepository userRepository;
     private final TranscriptService transcriptService;
+    private final io.gsp26se16.moni.ai.writing.service.GeminiVisionClient geminiVisionClient;
 
     @Override
     @Transactional
@@ -166,5 +167,38 @@ public class StimulusServiceImpl implements StimulusService {
                 .findById(stimulusId)
                 .orElseThrow(() -> new AppException(ErrorCode.STIMULUS_NOT_FOUND));
         return stimulus.getTranscript();
+    }
+
+    @Override
+    @Transactional
+    public Map<String, Object> analyzeChart(Integer stimulusId, byte[] imageBytes) {
+        Stimulus stimulus = stimulusRepository
+                .findById(stimulusId)
+                .orElseThrow(() -> new AppException(ErrorCode.STIMULUS_NOT_FOUND));
+
+        String base64Image = java.util.Base64.getEncoder().encodeToString(imageBytes);
+        Map<String, Object> analysis = geminiVisionClient.analyzeChart(base64Image);
+
+        stimulus.setVisonAnalysisResult(analysis);
+        stimulusRepository.save(stimulus);
+        return analysis;
+    }
+
+    @Override
+    @Transactional
+    public void updateVisonAnalysisResult(Integer stimulusId, Map<String, Object> visonAnalysisResult) {
+        Stimulus stimulus = stimulusRepository
+                .findById(stimulusId)
+                .orElseThrow(() -> new AppException(ErrorCode.STIMULUS_NOT_FOUND));
+        stimulus.setVisonAnalysisResult(visonAnalysisResult);
+        stimulusRepository.save(stimulus);
+    }
+
+    @Override
+    public Map<String, Object> getVisonAnalysisResult(Integer stimulusId) {
+        Stimulus stimulus = stimulusRepository
+                .findById(stimulusId)
+                .orElseThrow(() -> new AppException(ErrorCode.STIMULUS_NOT_FOUND));
+        return stimulus.getVisonAnalysisResult();
     }
 }

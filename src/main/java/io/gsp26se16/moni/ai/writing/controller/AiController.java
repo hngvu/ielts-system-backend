@@ -51,9 +51,9 @@ public class AiController {
             creditService.checkAndDeduct(userId, "AI_WRITING_SCORE");
         }
 
-        boolean isTask1 = (request.getChartImage() != null
-                && !request.getChartImage().isEmpty()
-                && request.getChartImage().getSize() > 0);
+        // taskType: 1 = Task 1 (chart/diagram), 2 = Task 2 (essay)
+        // Default to Task 2 if not specified
+        boolean isTask1 = request.getTaskType() != null && request.getTaskType() == 1;
 
         Map<String, Object> result;
         if (isTask1) {

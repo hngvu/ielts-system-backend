@@ -101,4 +101,41 @@ public class StimulusController {
                 .result(result)
                 .build());
     }
+
+    // =========================================================================
+    // Chart Analysis (Writing Task 1)
+    // =========================================================================
+
+    @PostMapping(value = "/{id}/analyze-chart", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<Map<String, Object>>> analyzeChart(
+            @PathVariable Integer id,
+            @RequestPart("chartImage") org.springframework.web.multipart.MultipartFile chartImage)
+            throws java.io.IOException {
+        Map<String, Object> analysis = stimulusService.analyzeChart(id, chartImage.getBytes());
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
+                .code(1000)
+                .message("Phân tích biểu đồ thành công")
+                .result(analysis)
+                .build());
+    }
+
+    @PutMapping("/{id}/vison-analysis")
+    public ResponseEntity<ApiResponse<Void>> updateVisonAnalysis(
+            @PathVariable Integer id, @RequestBody Map<String, Object> visonAnalysisResult) {
+        stimulusService.updateVisonAnalysisResult(id, visonAnalysisResult);
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .code(1000)
+                .message("Cập nhật dữ liệu biểu đồ thành công")
+                .build());
+    }
+
+    @GetMapping("/{id}/vison-analysis")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getVisonAnalysis(@PathVariable Integer id) {
+        Map<String, Object> result = stimulusService.getVisonAnalysisResult(id);
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
+                .code(1000)
+                .message("Lấy dữ liệu biểu đồ thành công")
+                .result(result)
+                .build());
+    }
 }
