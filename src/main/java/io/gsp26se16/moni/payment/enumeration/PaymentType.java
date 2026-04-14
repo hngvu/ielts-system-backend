@@ -2,6 +2,8 @@ package io.gsp26se16.moni.payment.enumeration;
 
 public enum PaymentType {
     TOPUP,
+    LATE_PAYMENT_TOPUP,
     CONSUME,
-    REFUND
+    REFUND,
+    CREDIT_ADJUSTMENT
 }

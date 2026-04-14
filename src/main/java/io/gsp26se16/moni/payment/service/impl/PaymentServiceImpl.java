@@ -149,13 +149,32 @@ public class PaymentServiceImpl implements PaymentService {
                 payment.getStatus());
 
         if (payment.getStatus() != PaymentStatus.PENDING) {
+            log.warn("Duplicate webhook received for payment: id={}, status={}", payment.getId(), payment.getStatus());
+            return toResponse(payment);
+        }
+
+        if (payment.getGatewayTxnId() != null && payment.getGatewayTxnId().equals(sePayWebhookRequest.code())) {
+            log.warn("Duplicate webhook with same gatewayTxnId: {}", payment.getGatewayTxnId());
             return toResponse(payment);
         }
 
         if (payment.getExpiredAt() != null && LocalDateTime.now().isAfter(payment.getExpiredAt())) {
-            payment.setStatus(PaymentStatus.CANCELLED);
+            log.warn("Late payment received after expiry: txnCode={}, paymentId={}", txnCode, payment.getId());
+            payment.setStatus(PaymentStatus.LATE_PAYMENT);
+            payment.setGatewayTxnId(sePayWebhookRequest.code());
+            payment.setWebhookResponse(sePayWebhookRequest.toString());
             payment.setUpdatedAt(LocalDateTime.now());
             paymentRepository.save(payment);
+
+            createCreditTransaction(payment, true);
+
+            if (payment.getUser() != null) {
+                double newBalance = payment.getUser().getCredit() != null
+                        ? payment.getUser().getCredit()
+                        : 0;
+                notificationService.notifyPaymentSuccess(payment.getUser().getId(), payment.getId(), newBalance);
+            }
+
             return toResponse(payment);
         }
 
@@ -173,7 +192,7 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setUpdatedAt(LocalDateTime.now());
         paymentRepository.save(payment);
 
-        createCreditTransaction(payment);
+        createCreditTransaction(payment, false);
 
         // Push realtime notification to frontend
         if (payment.getUser() != null) {
@@ -229,7 +248,7 @@ public class PaymentServiceImpl implements PaymentService {
         return txnCodePrefix + RandomStringUtils.random(txnCodeLength, txnCodeCharset);
     }
 
-    private void createCreditTransaction(Payment payment) {
+    private void createCreditTransaction(Payment payment, boolean isLatePayment) {
         if (payment.getPackagePricing() == null || payment.getUser() == null) {
             log.error(
                     "Cannot create credit transaction: packagePricing={}, user={}",
@@ -244,11 +263,12 @@ public class PaymentServiceImpl implements PaymentService {
         int newBalance = currentBalance + creditAmount;
 
         log.info(
-                "Updating user credit: userId={}, oldBalance={}, creditAmount={}, newBalance={}",
+                "Updating user credit: userId={}, oldBalance={}, creditAmount={}, newBalance={}, isLate={}",
                 user.getId(),
                 currentBalance,
                 creditAmount,
-                newBalance);
+                newBalance,
+                isLatePayment);
 
         user.setCredit((double) newBalance);
         usersRepository.save(user);
@@ -257,14 +277,24 @@ public class PaymentServiceImpl implements PaymentService {
                 .delta(creditAmount)
                 .balanceBefore(currentBalance)
                 .balanceAfter(newBalance)
-                .paymentType(PaymentType.TOPUP)
+                .paymentType(isLatePayment ? PaymentType.LATE_PAYMENT_TOPUP : PaymentType.TOPUP)
                 .createdAt(LocalDateTime.now())
                 .user(user)
                 .payment(payment)
+                .remark(
+                        isLatePayment
+                                ? "Late payment after expiry - admin review may be needed. txnCode: "
+                                        + payment.getTxnCode()
+                                : null)
                 .build();
 
         creditTransactionRepository.save(creditTransaction);
-        log.info("Credit topped up: user={}, amount=+{}, newBalance={}", user.getId(), creditAmount, newBalance);
+        log.info(
+                "Credit topped up: user={}, amount=+{}, newBalance={}, late={}",
+                user.getId(),
+                creditAmount,
+                newBalance,
+                isLatePayment);
     }
 
     private Users getCurrentUser() {

@@ -1,5 +1,7 @@
 package io.gsp26se16.moni.content.service;
 
+import java.util.*;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,6 +12,7 @@ import io.gsp26se16.moni.content.dto.request.QuestionGroupCreateRequest;
 import io.gsp26se16.moni.content.entity.Question;
 import io.gsp26se16.moni.content.entity.QuestionGroup;
 import io.gsp26se16.moni.content.entity.QuestionOption;
+import io.gsp26se16.moni.content.entity.QuestionType;
 import io.gsp26se16.moni.content.entity.Stimulus;
 import io.gsp26se16.moni.content.repository.QuestionGroupRepository;
 import io.gsp26se16.moni.content.repository.QuestionRepository;
@@ -162,5 +165,98 @@ public class QuestionGroupServiceImpl implements QuestionGroupService {
         group.setQuestionType(questionTypeRepository
                 .findByCode(normalizedCode)
                 .orElseThrow(() -> new AppException(ErrorCode.QUESTION_TYPE_NOT_FOUND)));
+    }
+
+    /**
+     * Find all question groups with generic "MATCHING" type and reclassify them
+     * to specific types: MATCHING_HEADINGS, MATCHING_INFORMATION, or MATCHING_FEATURE.
+     */
+    @Transactional
+    public Map<String, Object> fixGenericMatchingTypes() {
+        List<QuestionGroup> allGroups = questionGroupRepository.findAll();
+        int updated = 0;
+        int matchedHeadings = 0;
+        int matchedInformation = 0;
+        int matchedFeature = 0;
+
+        Optional<QuestionType> matchingHeadingsType = questionTypeRepository.findByCode("MATCHING_HEADINGS");
+        Optional<QuestionType> matchingInformationType = questionTypeRepository.findByCode("MATCHING_INFORMATION");
+        Optional<QuestionType> matchingFeatureType = questionTypeRepository.findByCode("MATCHING_FEATURE");
+
+        for (QuestionGroup group : allGroups) {
+            if (group.getQuestionType() == null
+                    || !"MATCHING".equals(group.getQuestionType().getCode())) {
+                continue;
+            }
+
+            // Reclassify based on sharedOptions labels and instruction
+            String newTypeCode = classifyMatchingGroup(group);
+
+            Optional<QuestionType> newType =
+                    switch (newTypeCode) {
+                        case "MATCHING_HEADINGS" -> matchingHeadingsType;
+                        case "MATCHING_INFORMATION" -> matchingInformationType;
+                        case "MATCHING_FEATURE" -> matchingFeatureType;
+                        default -> Optional.empty();
+                    };
+
+            if (newType.isPresent()) {
+                group.setQuestionType(newType.get());
+                questionGroupRepository.save(group);
+                updated++;
+
+                switch (newTypeCode) {
+                    case "MATCHING_HEADINGS" -> matchedHeadings++;
+                    case "MATCHING_INFORMATION" -> matchedInformation++;
+                    case "MATCHING_FEATURE" -> matchedFeature++;
+                }
+            }
+        }
+
+        return Map.of(
+                "totalScanned", allGroups.size(),
+                "totalUpdated", updated,
+                "matchingHeadings", matchedHeadings,
+                "matchingInformation", matchedInformation,
+                "matchingFeature", matchedFeature);
+    }
+
+    /**
+     * Classify a matching question group into the correct specific type.
+     */
+    private String classifyMatchingGroup(QuestionGroup group) {
+        String instruction =
+                group.getInstruction() == null ? "" : group.getInstruction().toLowerCase(Locale.ROOT);
+
+        // Check instruction keywords first
+        if (instruction.contains("heading")) return "MATCHING_HEADINGS";
+        if (instruction.contains("information")) return "MATCHING_INFORMATION";
+        if (instruction.contains("feature")) return "MATCHING_FEATURE";
+
+        // Analyze sharedOptions labels
+        if (group.getSharedOptions() != null && !group.getSharedOptions().isEmpty()) {
+            List<String> labels = group.getSharedOptions().stream()
+                    .map(opt -> opt.get("label") != null
+                            ? opt.get("label").toString().trim()
+                            : "")
+                    .toList();
+
+            // MATCHING_HEADINGS: labels look like roman numerals (i, ii, iii, iv, v, vi, vii, viii, ix, x, etc.)
+            boolean isRomanNumerals = labels.stream().allMatch(l -> l.matches("^[ivxlc]+$"));
+            if (isRomanNumerals) return "MATCHING_HEADINGS";
+
+            // MATCHING_INFORMATION: labels are paragraph/section identifiers (A, B, C, D or "Paragraph A", etc.)
+            boolean isParagraphLabels = labels.stream()
+                    .allMatch(l -> l.matches("^[A-Z]$")
+                            || l.toLowerCase(Locale.ROOT).startsWith("paragraph")
+                            || l.toLowerCase(Locale.ROOT).startsWith("section"));
+            if (isParagraphLabels) return "MATCHING_INFORMATION";
+
+            // Default: anything else with shared options is matching features
+            return "MATCHING_FEATURE";
+        }
+
+        // Fallback: if no shared options, default to matching feature
+        return "MATCHING_FEATURE";
     }
 }

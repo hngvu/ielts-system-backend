@@ -5,15 +5,21 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.gsp26se16.moni.common.dto.ApiResponse;
+import io.gsp26se16.moni.payment.dto.request.CreditAdjustmentRequest;
 import io.gsp26se16.moni.payment.dto.response.CreditTransactionResponse;
 import io.gsp26se16.moni.payment.service.CreditTransactionService;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +47,19 @@ public class AdminCreditTransactionController {
 
         return ResponseEntity.ok(ApiResponse.<List<CreditTransactionResponse>>builder()
                 .result(result)
+                .build());
+    }
+
+    @PostMapping("/users/{userId}/adjust")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<CreditTransactionResponse>> adjustCredit(
+            @PathVariable String userId, @RequestBody @Valid CreditAdjustmentRequest request) {
+
+        CreditTransactionResponse result = creditTransactionService.adjustCredit(userId, request);
+
+        return ResponseEntity.ok(ApiResponse.<CreditTransactionResponse>builder()
+                .result(result)
+                .message("Credit adjusted successfully")
                 .build());
     }
 }

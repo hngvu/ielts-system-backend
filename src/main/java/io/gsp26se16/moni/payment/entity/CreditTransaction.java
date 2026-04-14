@@ -41,4 +41,6 @@ public class CreditTransaction {
     @OneToOne
     @JoinColumn(name = "payment_id")
     Payment payment;
+
+    String remark;
 }
