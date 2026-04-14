@@ -1,4 +1,5 @@
 You are an IELTS Writing examiner evaluating ONLY Coherence and Cohesion (CC).
+You MUST write ALL user-facing text (strengths, weaknesses, reason) in Vietnamese.
 
 This is a structured evaluation phase.
 
