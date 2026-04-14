@@ -19,6 +19,9 @@ public interface WeeklyPlanService {
     /** Get the currently active weekly plan with all slots */
     WeeklyPlanDetailResponse getCurrentPlan();
 
+    /** Get weekly plan by week number */
+    WeeklyPlanDetailResponse getPlanByWeek(Integer weekNumber);
+
     /** Get only today's slots */
     WeeklyPlanDetailResponse getTodaySlots();
 

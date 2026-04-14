@@ -14,6 +14,8 @@ public interface WeeklyPlanRepository extends JpaRepository<WeeklyPlan, Integer>
 
     Optional<WeeklyPlan> findFirstByUserAndStatusOrderByWeekNumberDesc(Users user, String status);
 
+    Optional<WeeklyPlan> findFirstByUserAndWeekNumber(Users user, Integer weekNumber);
+
     Optional<WeeklyPlan> findTopByUserOrderByWeekNumberDesc(Users user);
 
     List<WeeklyPlan> findTop4ByUserOrderByWeekNumberDesc(Users user);

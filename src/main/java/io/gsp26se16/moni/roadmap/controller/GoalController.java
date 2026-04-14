@@ -94,6 +94,20 @@ public class GoalController {
                 .build());
     }
 
+    @GetMapping("/insights/week/{weekNumber}")
+    @Operation(summary = "Lấy chỉ số cá nhân snapshot theo tuần")
+    public ResponseEntity<ApiResponse<LearnerRoadmapInsightsResponse>> getRoadmapInsightsByWeek(
+            @PathVariable Integer weekNumber) {
+
+        LearnerRoadmapInsightsResponse result = goalService.getRoadmapInsightsByWeek(weekNumber);
+
+        return ResponseEntity.ok(ApiResponse.<LearnerRoadmapInsightsResponse>builder()
+                .code(1000)
+                .message("Lấy thông tin insights lịch sử thành công!")
+                .result(result)
+                .build());
+    }
+
     @GetMapping("/roadmap")
     @Operation(summary = "Lấy chi tiết Roadmap + Tasks cho tất cả kỹ năng của user hiện tại")
     public ResponseEntity<ApiResponse<List<RoadmapDetailResponse>>> getRoadmapDetails() {

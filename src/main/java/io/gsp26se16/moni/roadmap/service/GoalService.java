@@ -36,4 +36,8 @@ public interface GoalService {
     List<RoadmapDetailResponse> getRoadmapDetails();
 
     LearnerRoadmapInsightsResponse getRoadmapInsights();
+
+    LearnerRoadmapInsightsResponse getRoadmapInsightsByWeek(Integer weekNumber);
+
+    void snapshotInsightsForWeek(Users user, Integer weekNumber);
 }

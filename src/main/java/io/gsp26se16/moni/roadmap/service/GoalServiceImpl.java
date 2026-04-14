@@ -63,6 +63,7 @@ public class GoalServiceImpl implements GoalService {
     private final TestRepository testRepository;
     private final WeeklyPlanService weeklyPlanService;
     private final WeeklyPlanRepository weeklyPlanRepository;
+    private final io.gsp26se16.moni.roadmap.repository.InsightSnapshotRepository insightSnapshotRepository;
 
     @Override
     @Transactional
@@ -432,6 +433,58 @@ public class GoalServiceImpl implements GoalService {
     @Transactional(readOnly = true)
     public LearnerRoadmapInsightsResponse getRoadmapInsights() {
         Users learner = getCurrentUser();
+        return generateInsightsForUser(learner);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public LearnerRoadmapInsightsResponse getRoadmapInsightsByWeek(Integer weekNumber) {
+        Users learner = getCurrentUser();
+
+        java.util.Optional<io.gsp26se16.moni.roadmap.entity.InsightSnapshot> snapshotOpt =
+                insightSnapshotRepository.findFirstByUserAndWeekNumberOrderByCreatedAtDesc(learner, weekNumber);
+        if (snapshotOpt.isPresent()) {
+            io.gsp26se16.moni.roadmap.entity.InsightSnapshot snap = snapshotOpt.get();
+            LearnerRoadmapInsightsResponse insights = generateInsightsForUser(learner);
+
+            insights.setCalibratedReading(snap.getReadingCalibrated());
+            insights.setCalibratedListening(snap.getListeningCalibrated());
+            insights.setCalibratedWriting(snap.getWritingCalibrated());
+            insights.setCalibratedSpeaking(snap.getSpeakingCalibrated());
+            insights.setCalibratedOverall(snap.getOverallCalibrated());
+            insights.setMasteryIndex(snap.getMasteryIndex());
+            insights.setConfidenceIndex(snap.getConfidenceIndex());
+            insights.setLastMetricUpdatedAt(snap.getCreatedAt());
+
+            return insights;
+        }
+
+        return generateInsightsForUser(learner);
+    }
+
+    @Override
+    @Transactional
+    public void snapshotInsightsForWeek(Users user, Integer weekNumber) {
+        LearnerRoadmapInsightsResponse insights = generateInsightsForUser(user);
+
+        io.gsp26se16.moni.roadmap.entity.InsightSnapshot snapshot =
+                io.gsp26se16.moni.roadmap.entity.InsightSnapshot.builder()
+                        .user(user)
+                        .weekNumber(weekNumber)
+                        .overallCalibrated(insights.getCalibratedOverall())
+                        .readingCalibrated(insights.getCalibratedReading())
+                        .listeningCalibrated(insights.getCalibratedListening())
+                        .writingCalibrated(insights.getCalibratedWriting())
+                        .speakingCalibrated(insights.getCalibratedSpeaking())
+                        .masteryIndex(insights.getMasteryIndex())
+                        .confidenceIndex(insights.getConfidenceIndex())
+                        .createdAt(LocalDateTime.now())
+                        .build();
+
+        insightSnapshotRepository.save(snapshot);
+    }
+
+    private LearnerRoadmapInsightsResponse generateInsightsForUser(Users learner) {
 
         PlacementResult placement = placementResultRepository
                 .findFirstByUserOrderByCompletedAtDesc(learner)

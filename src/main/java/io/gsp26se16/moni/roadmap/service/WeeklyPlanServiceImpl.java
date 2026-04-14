@@ -49,6 +49,10 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     private final TestRepository testRepository;
     private final VocabLearningService vocabLearningService;
 
+    @org.springframework.context.annotation.Lazy
+    @org.springframework.beans.factory.annotation.Autowired
+    private GoalService goalService;
+
     // =====================================================================
     // PUBLIC API
     // =====================================================================
@@ -244,6 +248,21 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
 
     @Override
     @Transactional(readOnly = true)
+    public WeeklyPlanDetailResponse getPlanByWeek(Integer weekNumber) {
+        Users user = getCurrentUser();
+        WeeklyPlan plan = weeklyPlanRepository
+                .findFirstByUserAndWeekNumber(user, weekNumber)
+                .orElse(null);
+
+        if (plan == null) {
+            return null;
+        }
+
+        return buildDetailResponse(plan, user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public WeeklyPlanDetailResponse getTodaySlots() {
         Users user = getCurrentUser();
         WeeklyPlan plan = weeklyPlanRepository
@@ -424,6 +443,13 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         currentPlan.setPerformanceVerdict(verdict);
         currentPlan.setStatus("COMPLETED");
         weeklyPlanRepository.save(currentPlan);
+
+        // [NEW] Snapshot the personal insight metrics at the end of the week
+        try {
+            goalService.snapshotInsightsForWeek(user, currentPlan.getWeekNumber());
+        } catch (Exception e) {
+            log.error("Failed to snapshot insights for week {}: {}", currentPlan.getWeekNumber(), e.getMessage());
+        }
 
         log.info(
                 "[WeeklyPlan] Week {} evaluated. Accuracy: {}, Completion: {}, Verdict: {}",

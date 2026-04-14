@@ -33,6 +33,17 @@ public class WeeklyPlanController {
                 .build());
     }
 
+    @GetMapping("/week/{weekNumber}")
+    @Operation(summary = "Lấy plan tuần theo số tuần + tất cả slots")
+    public ResponseEntity<ApiResponse<WeeklyPlanDetailResponse>> getPlanByWeek(@PathVariable Integer weekNumber) {
+        WeeklyPlanDetailResponse result = weeklyPlanService.getPlanByWeek(weekNumber);
+        return ResponseEntity.ok(ApiResponse.<WeeklyPlanDetailResponse>builder()
+                .code(1000)
+                .message("Lấy lộ trình tuần lịch sử thành công!")
+                .result(result)
+                .build());
+    }
+
     @GetMapping("/today")
     @Operation(summary = "Lấy tasks hôm nay")
     public ResponseEntity<ApiResponse<WeeklyPlanDetailResponse>> getTodaySlots() {
