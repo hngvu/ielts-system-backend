@@ -38,10 +38,30 @@ Step 1: Extract ALL numerical claims from the essay.
   For each claim, record: { "claim": "...", "essay_value": "...", "chart_value": "...", "accurate": true|false }
 
 Step 2: Compare each claim against the chart data.
-  - A claim is INACCURATE if the essay states a value that differs significantly
-    from the chart data (e.g., essay says "35%" but chart shows "20%").
-  - A minor deviation of 1-2% or minor rounding (e.g., essay says "about 20%" or "19%" when chart shows 21%) is considered ACCURATE and insignificant. Do not flag it as an error.
-  - Inverted trends (e.g., "increased" when data shows decrease) are INACCURATE.
+
+You MUST apply tolerance for approximate reporting, as IELTS Task 1 allows rounding.
+
+A claim is ACCURATE if:
+- The essay uses approximation language such as:
+  "about", "around", "approximately", "just over", "just under"
+- OR the value is reasonably close to the chart (within ~5–10% or typical rounding range)
+
+Examples of ACCEPTABLE:
+- 8 vs 8.5
+- 11 vs 11.5
+- 15 vs 15.5
+- 20% vs 21%
+
+A claim is INACCURATE only if:
+- The difference is clearly misleading or exceeds ~10–15%
+- The value changes category meaning (e.g., 20 → 35)
+- The trend direction is wrong (increase vs decrease)
+- The comparison relationship is incorrect (largest vs smallest)
+
+IMPORTANT:
+- Systematic small rounding (e.g., all values 0.5 lower) should be treated as MINOR, not MAJOR.
+- Do NOT mark every small rounding as separate inaccuracies.
+- Group similar rounding patterns into ONE issue if they follow the same pattern.
 
 Step 3: Count inaccurate claims and determine violation severity.
 
