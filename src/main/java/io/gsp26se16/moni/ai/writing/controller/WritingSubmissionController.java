@@ -99,6 +99,7 @@ public class WritingSubmissionController {
      * Lấy lịch sử nộp bài Writing của user hiện tại.
      */
     @GetMapping("/submissions")
+    @Transactional(readOnly = true)
     @Operation(summary = "Lấy lịch sử nộp bài Writing của user")
     public ResponseEntity<ApiResponse<List<WritingSubmissionSummary>>> getMySubmissions() {
         Users user = getCurrentUser();
@@ -148,6 +149,7 @@ public class WritingSubmissionController {
      * Lấy chi tiết một bài nộp (bao gồm nội dung bài viết và kết quả chấm nếu có).
      */
     @GetMapping("/submissions/{id}")
+    @Transactional(readOnly = true)
     @Operation(summary = "Lấy chi tiết bài viết theo ID")
     public ResponseEntity<ApiResponse<WritingSubmissionDetail>> getSubmissionDetail(@PathVariable Long id) {
 
