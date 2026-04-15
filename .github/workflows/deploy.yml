@@ -66,11 +66,12 @@ jobs:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           DAILY_API_KEY: ${{ secrets.DAILY_API_KEY }}
           SEPAY_API_KEY: ${{ secrets.SEPAY_API_KEY }}
+          APP_PROMPTS_BASE_DIR: "/app/prompts"
         with:
           host: ${{ secrets.VM_IP }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
-          envs: DB_URL,DB_USERNAME,DB_PASSWORD,NVIDIA_API_KEY,GEMINI_API_KEY,ASSEMBLYAI_API_KEY,ELEVENLABS_API_KEY,DAILY_API_KEY,SEPAY_API_KEY
+          envs: DB_URL,DB_USERNAME,DB_PASSWORD,NVIDIA_API_KEY,GEMINI_API_KEY,ASSEMBLYAI_API_KEY,ELEVENLABS_API_KEY,DAILY_API_KEY,SEPAY_API_KEY,APP_PROMPTS_BASE_DIR
           script: |
             set -e
             cd ~/app
@@ -86,6 +87,7 @@ jobs:
             ELEVENLABS_API_KEY=$ELEVENLABS_API_KEY
             DAILY_API_KEY=$DAILY_API_KEY
             SEPAY_API_KEY=$SEPAY_API_KEY
+            APP_PROMPTS_BASE_DIR=$APP_PROMPTS_BASE_DIR
             EOF
             chmod 600 .env
       

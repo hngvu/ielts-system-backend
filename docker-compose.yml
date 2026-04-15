@@ -35,6 +35,9 @@ services:
       ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY}
       DAILY_API_KEY: ${DAILY_API_KEY}
       SEPAY_API_KEY: ${SEPAY_API_KEY}
+      APP_PROMPTS_BASE_DIR: /app/prompts
+    volumes:
+      - ./prompts-data:/app/prompts
     deploy:
       resources:
         limits:

@@ -106,7 +106,8 @@ springdoc:
 #          ./prompts       (local dev — relative to working dir)
 app:
   prompts:
-    base-dir: ${APP_PROMPTS_BASE_DIR:}
+    base-dir: ${APP_PROMPTS_BASE_DIR:src/main/resources/prompts}
+
 
 # ─── Rate Limiting ──────────────────────────────────────────────────────────
 # Tắt/bật toàn bộ rate limiting (set false khi debug local)
