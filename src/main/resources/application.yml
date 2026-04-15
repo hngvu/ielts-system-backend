@@ -107,3 +107,26 @@ springdoc:
 app:
   prompts:
     base-dir: ${APP_PROMPTS_BASE_DIR:}
+
+# ─── Rate Limiting ──────────────────────────────────────────────────────────
+# Tắt/bật toàn bộ rate limiting (set false khi debug local)
+# app.rate-limit.enabled=false để tắt
+app:
+  rate-limit:
+    enabled: ${APP_RATE_LIMIT_ENABLED:true}
+    ai:
+      # AI scoring: 5 requests / phút per user — tốn token OpenAI
+      capacity: ${APP_RATE_LIMIT_AI_CAPACITY:5}
+      refill-per-minute: ${APP_RATE_LIMIT_AI_REFILL:5}
+    auth:
+      # Auth/login: 10 requests / phút per IP — chống brute-force
+      capacity: ${APP_RATE_LIMIT_AUTH_CAPACITY:10}
+      refill-per-minute: ${APP_RATE_LIMIT_AUTH_REFILL:10}
+    public:
+      # Public vocab/tests: 60 requests / phút per IP
+      capacity: ${APP_RATE_LIMIT_PUBLIC_CAPACITY:60}
+      refill-per-minute: ${APP_RATE_LIMIT_PUBLIC_REFILL:60}
+    general:
+      # Authenticated APIs: 120 requests / phút per user
+      capacity: ${APP_RATE_LIMIT_GENERAL_CAPACITY:120}
+      refill-per-minute: ${APP_RATE_LIMIT_GENERAL_REFILL:120}
