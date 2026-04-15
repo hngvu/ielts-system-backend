@@ -111,7 +111,6 @@ app:
 # ─── Rate Limiting ──────────────────────────────────────────────────────────
 # Tắt/bật toàn bộ rate limiting (set false khi debug local)
 # app.rate-limit.enabled=false để tắt
-app:
   rate-limit:
     enabled: ${APP_RATE_LIMIT_ENABLED:true}
     ai:
