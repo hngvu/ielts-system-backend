@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 import jakarta.persistence.criteria.Predicate;
 
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import io.gsp26se16.moni.authentication.entity.Users;
@@ -22,7 +21,6 @@ import io.gsp26se16.moni.payment.repository.CreditTransactionRepository;
 import io.gsp26se16.moni.payment.service.CreditTransactionService;
 import lombok.RequiredArgsConstructor;
 
-@Service
 @RequiredArgsConstructor
 public class CreditTransactionServiceImpl implements CreditTransactionService {
     private final CreditTransactionRepository creditTransactionRepository;
@@ -36,11 +34,14 @@ public class CreditTransactionServiceImpl implements CreditTransactionService {
 
             if (userId != null && !userId.isBlank()) {
                 String rawKeyword = userId.trim();
-                String keyword = rawKeyword.toLowerCase();
-                Predicate byUserId = criteriaBuilder.equal(root.get("user").get("id"), rawKeyword);
-                Predicate byEmail = criteriaBuilder.equal(
+                String keyword = "%" + rawKeyword.toLowerCase() + "%";
+                Predicate byUserId = criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("user").get("id")), keyword);
+                Predicate byEmail = criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("user").get("credential").get("email")), keyword);
-                predicate = criteriaBuilder.and(predicate, criteriaBuilder.or(byUserId, byEmail));
+                Predicate byFullName = criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("user").get("full_name")), keyword);
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.or(byUserId, byEmail, byFullName));
             }
 
             if (paymentType != null) {

@@ -3,6 +3,5 @@
     "allow": [
       "Read(C:\\Users\\hoang\\Desktop\\captime\\ielts-system-backend\\src/**)"
     ]
-  },
-  "$version": 3
+  }
 }
