@@ -9,12 +9,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import io.gsp26se16.moni.tag.entity.Tag;
+import io.gsp26se16.moni.tag.entity.TagType;
+import io.gsp26se16.moni.tag.repository.TagRepository;
 import io.gsp26se16.moni.vocab.entity.CuratedWord;
 import io.gsp26se16.moni.vocab.repository.CuratedWordRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,26 +28,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CuratedWordImporter implements ApplicationRunner {
 
-    /* ───── batch-insert helper (JDBC, much faster than saveAll over remote DB) ───── */
-    private void batchInsert(List<CuratedWord> words, JdbcTemplate jdbc) {
-        String sql =
-                "INSERT INTO curated_word (word, pos, cefr_level, band, topic, phonetic, definition, example, meaning, audio_url) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    /* ───── batch-insert helper (JPA) ───── */
+    private void batchInsert(List<CuratedWord> words) {
         int batchSize = 500;
         for (int i = 0; i < words.size(); i += batchSize) {
             List<CuratedWord> batch = words.subList(i, Math.min(i + batchSize, words.size()));
-            jdbc.batchUpdate(sql, batch, batchSize, (ps, cw) -> {
-                ps.setString(1, cw.getWord());
-                ps.setString(2, cw.getPos());
-                ps.setString(3, cw.getCefrLevel());
-                ps.setString(4, cw.getBand());
-                ps.setString(5, cw.getTopic());
-                ps.setString(6, cw.getPhonetic());
-                ps.setString(7, cw.getDefinition());
-                ps.setString(8, cw.getExample());
-                ps.setString(9, cw.getMeaning());
-                ps.setString(10, cw.getAudioUrl());
-            });
+            curatedWordRepository.saveAll(batch);
             log.info("Imported batch {}/{}", Math.min(i + batchSize, words.size()), words.size());
         }
     }
@@ -327,7 +316,7 @@ public class CuratedWordImporter implements ApplicationRunner {
                             "cultural")));
 
     private final CuratedWordRepository curatedWordRepository;
-    private final JdbcTemplate jdbcTemplate;
+    private final TagRepository tagRepository;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -336,7 +325,7 @@ public class CuratedWordImporter implements ApplicationRunner {
             log.info("No curated words found. Importing CEFR dataset...");
             try {
                 List<CuratedWord> words = downloadAndParse();
-                batchInsert(words, jdbcTemplate);
+                batchInsert(words);
                 log.info("CEFR import complete: {} words imported.", words.size());
             } catch (Exception e) {
                 log.error("CEFR import failed: {}", e.getMessage(), e);
@@ -351,7 +340,7 @@ public class CuratedWordImporter implements ApplicationRunner {
             try {
                 List<CuratedWord> c1c2Words = downloadAndParseC1C2();
                 if (!c1c2Words.isEmpty()) {
-                    batchInsert(c1c2Words, jdbcTemplate);
+                    batchInsert(c1c2Words);
                     log.info("Octanove C1/C2 import complete: {} words imported.", c1c2Words.size());
                 } else {
                     log.warn("Octanove C1/C2 dataset returned 0 new words.");
@@ -367,6 +356,11 @@ public class CuratedWordImporter implements ApplicationRunner {
     private List<CuratedWord> downloadAndParse() throws Exception {
         List<CuratedWord> result = new ArrayList<>();
         Set<String> seen = new HashSet<>();
+        Map<String, Tag> diffTags = tagRepository.findByType(TagType.DIFFICULTY).stream()
+                .filter(t -> t.getCode().startsWith("CEFR_"))
+                .collect(Collectors.toMap(t -> t.getName().toUpperCase(), t -> t));
+        Map<String, Tag> topicTags = tagRepository.findByType(TagType.TOPIC).stream()
+                .collect(Collectors.toMap(t -> t.getName().toLowerCase(), t -> t));
 
         try (var in = URI.create(CSV_URL).toURL().openStream();
                 var reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
@@ -390,12 +384,19 @@ public class CuratedWordImporter implements ApplicationRunner {
                 String band = BAND_MAP.get(cefr);
                 if (band == null) continue; // skip A1 or unknown
 
+                Set<Tag> tags = new HashSet<>();
+                Tag diffTag = diffTags.get(cefr);
+                if (diffTag != null) tags.add(diffTag);
+                String topicMatch = detectTopic(word);
+                if (topicMatch != null) {
+                    Tag tTag = topicTags.get(topicMatch.toLowerCase());
+                    if (tTag != null) tags.add(tTag);
+                }
+
                 CuratedWord cw = CuratedWord.builder()
                         .word(word)
                         .pos(pos.isEmpty() ? null : pos)
-                        .cefrLevel(cefr)
-                        .band(band)
-                        .topic(detectTopic(word))
+                        .tags(tags)
                         .build();
                 result.add(cw);
             }
@@ -407,6 +408,11 @@ public class CuratedWordImporter implements ApplicationRunner {
         // Load existing words from DB to avoid duplicates
         Set<String> existingWords = new HashSet<>(curatedWordRepository.findWordByBandIn(C1C2_BANDS));
         Set<String> seen = new HashSet<>(existingWords);
+        Map<String, Tag> diffTags = tagRepository.findByType(TagType.DIFFICULTY).stream()
+                .filter(t -> t.getCode().startsWith("CEFR_"))
+                .collect(Collectors.toMap(t -> t.getName().toUpperCase(), t -> t));
+        Map<String, Tag> topicTags = tagRepository.findByType(TagType.TOPIC).stream()
+                .collect(Collectors.toMap(t -> t.getName().toLowerCase(), t -> t));
 
         List<CuratedWord> result = new ArrayList<>();
 
@@ -433,12 +439,19 @@ public class CuratedWordImporter implements ApplicationRunner {
                 String band = BAND_MAP.get(cefr);
                 if (band == null) continue; // skip unexpected CEFR values
 
+                Set<Tag> tags = new HashSet<>();
+                Tag diffTag = diffTags.get(cefr);
+                if (diffTag != null) tags.add(diffTag);
+                String topicMatch = detectTopic(word);
+                if (topicMatch != null) {
+                    Tag tTag = topicTags.get(topicMatch.toLowerCase());
+                    if (tTag != null) tags.add(tTag);
+                }
+
                 CuratedWord cw = CuratedWord.builder()
                         .word(word)
                         .pos(pos.isEmpty() ? null : pos)
-                        .cefrLevel(cefr)
-                        .band(band)
-                        .topic(detectTopic(word))
+                        .tags(tags)
                         .build();
                 result.add(cw);
             }

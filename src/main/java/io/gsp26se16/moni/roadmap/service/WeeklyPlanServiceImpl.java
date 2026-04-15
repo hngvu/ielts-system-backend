@@ -397,12 +397,12 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     }
 
     private String formatBandRange(double band) {
-        if (band < 4.5) return "3-4";
-        if (band < 5.5) return "4-5";
-        if (band < 6.5) return "5.5-6.5";
-        if (band < 7.5) return "6.5-7.5";
-        if (band >= 8.5) return "8.5-9.0";
-        return "7-8";
+        if (band < 4.5) return "A1"; // Beginner / Elementary
+        if (band < 5.5) return "A2"; // Pre-Intermediate
+        if (band < 6.5) return "B1"; // Intermediate
+        if (band < 7.5) return "B2"; // Upper Intermediate
+        if (band >= 8.5) return "C2"; // Master
+        return "C1"; // 7.5 - 8.0 Advanced
     }
 
     @Override
@@ -554,9 +554,9 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
 
         List<Stimulus> pool = unseen.isEmpty() ? candidates : unseen;
 
-        // 4. Sort by stimulus ID distance for variety (simple, avoids lazy-load)
+        // 4. [FIXED] Sort by comprehensive Adaptive Score (Difficulty Proximity + Weak Tag Hits)
         return pool.stream()
-                .min(Comparator.comparingInt(s -> Math.abs(s.getId() % 100 - (int) (targetDifficulty * 100))))
+                .min(Comparator.comparingDouble(s -> scoreStimulus(s, targetDifficulty, weakTags)))
                 .orElse(pool.get(0));
     }
 
@@ -593,8 +593,12 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                 candidates.stream().filter(s -> !excludeIds.contains(s.getId())).toList();
 
         List<Stimulus> pool = unseen.isEmpty() ? new ArrayList<>(candidates) : new ArrayList<>(unseen);
-        Collections.shuffle(pool);
-        return pool.get(0);
+
+        // [FIXED] For assessment, we still want to score by comprehensive Adaptive Score
+        // Baseline for assessment is slightly higher difficulty (0.7 ~ Band 6.5-7.0)
+        return pool.stream()
+                .min(Comparator.comparingDouble(s -> scoreStimulus(s, 0.7, weakTags)))
+                .orElse(pool.get(0));
     }
 
     // =====================================================================
@@ -904,6 +908,34 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     // PRIVATE HELPERS — Utilities
     // =====================================================================
 
+    private double scoreStimulus(Stimulus s, double targetDifficulty, List<Tag> weakTags) {
+        // 1. Difficulty Penalty (0.0 to 1.0, where 0.0 is perfect match)
+        double difficultyPenalty = Math.abs(estimateDifficulty(s) - targetDifficulty);
+
+        // 2. Weak Tag Match Bonus (0.0 to 1.0, where 1.0 means it covers all weak tags)
+        double tagBonus = 0.0;
+        if (weakTags != null && !weakTags.isEmpty() && s.getTags() != null) {
+            long matchCount = s.getTags().stream()
+                    .filter(t -> weakTags.stream().anyMatch(wt -> wt.getId().equals(t.getId())))
+                    .count();
+            // Also check Question tags if it's Reading/Listening
+            if (s.getQuestionGroups() != null) {
+                long qMatchCount = s.getQuestionGroups().stream()
+                        .flatMap(qg -> qg.getQuestions().stream())
+                        .filter(q -> q.getTags() != null)
+                        .flatMap(q -> q.getTags().stream())
+                        .filter(t -> weakTags.stream().anyMatch(wt -> wt.getId().equals(t.getId())))
+                        .count();
+                matchCount += qMatchCount;
+            }
+            tagBonus = Math.min(1.0, (double) matchCount / weakTags.size());
+        }
+
+        // Adaptive Score (Lower is better):
+        // Combines strict difficulty matching with a bonus if the stimulus contains weak topics/formats.
+        return (difficultyPenalty * 0.6) - (tagBonus * 0.4);
+    }
+
     private double weakAreaScore(LearnerMetric metric) {
         double mastery = metric.getMasteryLevel() != null ? metric.getMasteryLevel() : 0.5;
         double confidence = metric.getConfidenceScore() != null ? metric.getConfidenceScore() : 0.0;
@@ -911,6 +943,20 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     }
 
     private double estimateDifficulty(Stimulus stimulus) {
+        // 1. Try to get difficulty from Stimulus directly
+        if (stimulus.getTags() != null) {
+            Optional<Tag> diffTag = stimulus.getTags().stream()
+                    .filter(t -> t.getType() == io.gsp26se16.moni.tag.entity.TagType.DIFFICULTY)
+                    .findFirst();
+            if (diffTag.isPresent()) {
+                String code = diffTag.get().getCode();
+                if ("DIF_HARD".equals(code)) return 0.75;
+                if ("DIF_MEDIUM".equals(code)) return 0.55;
+                if ("DIF_EASY".equals(code)) return 0.35;
+            }
+        }
+
+        // 2. Fallback to average of Question tags
         if (stimulus.getQuestionGroups() == null || stimulus.getQuestionGroups().isEmpty()) {
             return 0.5;
         }
@@ -920,11 +966,26 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                     if (q.getTags() == null || q.getTags().isEmpty()) return 0.5;
                     return q.getTags().stream()
                             .mapToDouble(tag -> {
-                                String name = tag.getName().toUpperCase();
-                                if (name.contains("8") || name.contains("BAND_8")) return 0.8;
-                                if (name.contains("7") || name.contains("BAND_7")) return 0.7;
-                                if (name.contains("6") || name.contains("BAND_6")) return 0.6;
-                                if (name.contains("5") || name.contains("BAND_5")) return 0.5;
+                                String code = tag.getCode() != null ? tag.getCode() : "";
+                                String name =
+                                        tag.getName() != null ? tag.getName().toUpperCase() : "";
+
+                                // Strict code matching
+                                if ("DIF_HARD".equals(code)) return 0.75;
+                                if ("DIF_MEDIUM".equals(code)) return 0.55;
+                                if ("DIF_EASY".equals(code)) return 0.35;
+
+                                // Legacy text matching as fallback
+                                if (name.contains("HARD") || name.contains("KHÓ")) return 0.75;
+                                if (name.contains("MEDIUM") || name.contains("TRUNG BÌNH")) return 0.55;
+                                if (name.contains("EASY") || name.contains("DỄ")) return 0.35;
+
+                                // Legacy band matching
+                                if (name.contains("BAND_8") || name.contains("8")) return 0.8;
+                                if (name.contains("BAND_7") || name.contains("7")) return 0.7;
+                                if (name.contains("BAND_6") || name.contains("6")) return 0.6;
+                                if (name.contains("BAND_5") || name.contains("5")) return 0.5;
+
                                 return 0.5;
                             })
                             .average()

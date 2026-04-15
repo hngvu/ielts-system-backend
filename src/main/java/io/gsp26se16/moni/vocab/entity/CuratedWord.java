@@ -1,7 +1,11 @@
 package io.gsp26se16.moni.vocab.entity;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import jakarta.persistence.*;
 
+import io.gsp26se16.moni.tag.entity.Tag;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -15,8 +19,6 @@ import lombok.experimental.FieldDefaults;
 @Table(
         indexes = {
             @Index(name = "idx_curated_word", columnList = "word"),
-            @Index(name = "idx_curated_band", columnList = "band"),
-            @Index(name = "idx_curated_topic", columnList = "topic"),
         })
 public class CuratedWord {
 
@@ -38,9 +40,12 @@ public class CuratedWord {
 
     String meaning; // Vietnamese translation (populated via AI later)
 
-    String band; // IELTS band range: "4-5", "5.5-6.5", "7-8", "8.5-9"
-    String cefrLevel; // B1, B2, C1, C2
+    @ManyToMany
+    @JoinTable(
+            name = "curated_word_tag",
+            joinColumns = @JoinColumn(name = "curated_word_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id"))
+    Set<Tag> tags = new HashSet<>();
 
-    String topic; // nullable: "environment", "technology", etc.
     String audioUrl;
 }

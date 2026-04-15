@@ -7,6 +7,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import io.gsp26se16.moni.tag.entity.Tag;
+import io.gsp26se16.moni.tag.entity.TagType;
 import io.gsp26se16.moni.vocab.dto.BandSummary;
 import io.gsp26se16.moni.vocab.dto.CuratedWordResponse;
 import io.gsp26se16.moni.vocab.dto.TopicSummary;
@@ -58,6 +60,17 @@ public class CuratedWordService {
 
     private CuratedWordResponse toResponse(CuratedWord c, String userId) {
         boolean saved = userId != null && vocabRepository.existsByUserIdAndWord(userId, c.getWord());
+        String difficultyStr = c.getTags().stream()
+                .filter(t -> t.getType() == TagType.DIFFICULTY)
+                .map(Tag::getName)
+                .findFirst()
+                .orElse(null);
+        String topicStr = c.getTags().stream()
+                .filter(t -> t.getType() == TagType.TOPIC)
+                .map(Tag::getName)
+                .findFirst()
+                .orElse(null);
+
         return CuratedWordResponse.builder()
                 .id(c.getId())
                 .word(c.getWord())
@@ -66,9 +79,9 @@ public class CuratedWordService {
                 .definition(c.getDefinition())
                 .example(c.getExample())
                 .meaning(c.getMeaning())
-                .band(c.getBand())
-                .cefrLevel(c.getCefrLevel())
-                .topic(c.getTopic())
+                .band(difficultyStr)
+                .cefrLevel(difficultyStr)
+                .topic(topicStr)
                 .saved(saved)
                 .build();
     }
