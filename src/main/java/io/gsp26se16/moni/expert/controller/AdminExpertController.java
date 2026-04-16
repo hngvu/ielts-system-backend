@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.expert.dto.CreateExpertRequest;
 import io.gsp26se16.moni.expert.dto.ExpertProfileResponse;
+import io.gsp26se16.moni.expert.dto.UpdateAccountStatusRequest;
 import io.gsp26se16.moni.expert.dto.UpdateExpertRequest;
 import io.gsp26se16.moni.expert.dto.UpdateExpertStatusRequest;
 import io.gsp26se16.moni.expert.service.ExpertService;
@@ -53,6 +54,14 @@ public class AdminExpertController {
     public ResponseEntity<ApiResponse<ExpertProfileResponse>> updateStatus(
             @PathVariable Integer id, @RequestBody UpdateExpertStatusRequest request) {
         ExpertProfileResponse updated = expertService.updateStatus(id, request.getStatus());
+        return ResponseEntity.ok(
+                ApiResponse.<ExpertProfileResponse>builder().result(updated).build());
+    }
+
+    @PatchMapping("/{id}/account-status")
+    public ResponseEntity<ApiResponse<ExpertProfileResponse>> updateAccountStatus(
+            @PathVariable Integer id, @RequestBody UpdateAccountStatusRequest request) {
+        ExpertProfileResponse updated = expertService.updateAccountStatus(id, request.isEnabled());
         return ResponseEntity.ok(
                 ApiResponse.<ExpertProfileResponse>builder().result(updated).build());
     }

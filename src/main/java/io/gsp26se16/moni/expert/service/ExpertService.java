@@ -19,6 +19,8 @@ public interface ExpertService {
 
     ExpertProfileResponse updateStatus(Integer id, ExpertStatus status);
 
+    ExpertProfileResponse updateAccountStatus(Integer id, boolean enabled);
+
     ExpertProfileResponse getMyProfile(String credentialId);
 
     void updateMyStatus(String credentialId, ExpertStatus status);

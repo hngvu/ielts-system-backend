@@ -172,16 +172,28 @@ public class ExpertServiceImpl implements ExpertService {
         ExpertProfile profile =
                 expertProfileRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.EXPERT_NOT_FOUND));
         profile.setStatus(status);
-        ExpertProfile saved = expertProfileRepository.save(profile);
+        return toResponse(expertProfileRepository.save(profile));
+    }
 
-        // Admin ban/unban: sync isActive on UserCredentials
+    @Override
+    @Transactional
+    public ExpertProfileResponse updateAccountStatus(Integer id, boolean enabled) {
+        ExpertProfile profile =
+                expertProfileRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.EXPERT_NOT_FOUND));
+
         var cred = userCredentialsRepository.findByUser_Id(profile.getUser().getId());
         if (cred.isPresent()) {
-            cred.get().setActive(status != ExpertStatus.OFFLINE);
+            cred.get().setActive(enabled);
             userCredentialsRepository.save(cred.get());
         }
 
-        return toResponse(saved);
+        // If disabling account, also set expert status to OFFLINE
+        if (!enabled) {
+            profile.setStatus(ExpertStatus.OFFLINE);
+            expertProfileRepository.save(profile);
+        }
+
+        return toResponse(profile);
     }
 
     @Override
@@ -253,11 +265,15 @@ public class ExpertServiceImpl implements ExpertService {
     }
 
     private ExpertProfileResponse toResponse(ExpertProfile p) {
-        // Look up email from UserCredentials
+        // Look up email and active status from UserCredentials
         String email = null;
+        boolean enabled = true;
         if (p.getUser() != null) {
             var cred = userCredentialsRepository.findByUser_Id(p.getUser().getId());
-            if (cred.isPresent()) email = cred.get().getEmail();
+            if (cred.isPresent()) {
+                email = cred.get().getEmail();
+                enabled = cred.get().isActive();
+            }
         }
 
         return ExpertProfileResponse.builder()
@@ -274,6 +290,7 @@ public class ExpertServiceImpl implements ExpertService {
                 .specialization(p.getSpecialization())
                 .bio(p.getBio())
                 .status(p.getStatus())
+                .enabled(enabled)
                 .rating(p.getRating())
                 .totalSessions(p.getTotalSessions())
                 .certificates(deserializeCertificates(p.getCertificates()))

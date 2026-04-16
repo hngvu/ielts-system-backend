@@ -26,6 +26,7 @@ public class ExpertProfileResponse {
     ExpertSpecialization specialization; // kept for backward compat, may be null
     String bio;
     ExpertStatus status;
+    Boolean enabled; // Account enabled/disabled
     Double rating;
     Integer totalSessions;
     List<String> certificates;
