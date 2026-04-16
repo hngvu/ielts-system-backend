@@ -15,10 +15,22 @@ public record AdminRevenueDashboardResponse(
         long expertSpeakingJobs,
         long totalExpertCredits,
         long totalExpertJobs,
+
+        // AI workload metrics
+        long aiWritingJobs,
+        long aiSpeakingJobs,
+        long totalAiJobs,
+        long totalAiCredits,
+
+        // Operation metrics
+        long totalTests,
+        long totalUsers,
+        long newUsers,
         List<DailyRevenue> dailyRevenue,
         List<DailyExpertJobs> dailyExpertJobs) {
 
     public record DailyRevenue(LocalDate date, long amount) {}
 
-    public record DailyExpertJobs(LocalDate date, long writingJobs, long speakingJobs) {}
+    public record DailyExpertJobs(
+            LocalDate date, long writingJobs, long speakingJobs, long aiWritingJobs, long aiSpeakingJobs) {}
 }

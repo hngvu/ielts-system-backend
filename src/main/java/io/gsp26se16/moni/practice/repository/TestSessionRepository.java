@@ -1,9 +1,12 @@
 package io.gsp26se16.moni.practice.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import io.gsp26se16.moni.authentication.entity.Users;
@@ -18,4 +21,9 @@ public interface TestSessionRepository extends JpaRepository<TestSession, Intege
     List<TestSession> findAllByStatus(TestSessionStatus status);
 
     List<TestSession> findAllByUserAndStatus(Users user, TestSessionStatus status);
+
+    long countByStartedAtBetween(LocalDateTime start, LocalDateTime end);
+
+    @Query("SELECT COUNT(DISTINCT ts.user) FROM TestSession ts WHERE ts.startedAt BETWEEN :start AND :end")
+    long countDistinctUserByStartedAtBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 }

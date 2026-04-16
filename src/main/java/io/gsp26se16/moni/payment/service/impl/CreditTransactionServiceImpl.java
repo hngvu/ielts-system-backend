@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import jakarta.persistence.criteria.Predicate;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,7 +68,8 @@ public class CreditTransactionServiceImpl implements CreditTransactionService {
             return predicate;
         };
 
-        List<CreditTransaction> creditTransactions = creditTransactionRepository.findAll(spec);
+        List<CreditTransaction> creditTransactions =
+                creditTransactionRepository.findAll(spec, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         return creditTransactions.stream()
                 .map(this::mapToCreditTransactionResponse)

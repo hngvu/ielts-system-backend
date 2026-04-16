@@ -1,5 +1,6 @@
 package io.gsp26se16.moni.authentication.repository;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,4 +11,6 @@ import io.gsp26se16.moni.authentication.entity.Users;
 @Repository
 public interface UsersRepository extends JpaRepository<Users, String> {
     Optional<Users> findByCredential_Id(String credentialId);
+
+    long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 }
