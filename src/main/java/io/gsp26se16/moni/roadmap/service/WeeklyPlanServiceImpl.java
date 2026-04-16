@@ -207,16 +207,14 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         // Generate assessment slots for day 7 (Sunday) — one per skill
         LocalDate day7Date = weekStart.plusDays(6);
         for (Skill skill : Arrays.asList(Skill.READING, Skill.LISTENING, Skill.WRITING, Skill.SPEAKING)) {
-            Stimulus assessmentStimulus = selectAssessmentStimulus(skill, user, doneStimulusIds);
-
             DailySlot assessmentSlot = DailySlot.builder()
                     .weeklyPlan(plan)
                     .dayOfWeek(7)
                     .slotDate(day7Date)
                     .skill(skill)
                     .taskType("ASSESSMENT")
-                    .stimulus(assessmentStimulus)
-                    .test(findTestForStimulus(assessmentStimulus))
+                    .stimulus(null) // Assigned JIT on day 7
+                    .test(null)
                     .status("TODO")
                     .build();
             dailySlotRepository.save(assessmentSlot);
@@ -518,86 +516,54 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     // PRIVATE HELPERS — Stimulus Selection
     // =====================================================================
 
-    /**
-     * Select the best stimulus for a practice slot based on weak tags and difficulty alignment.
-     */
     private Stimulus selectStimulus(Skill skill, Users user, double targetDifficulty, Set<Integer> excludeIds) {
-        // 1. Get weak tags for this user
         List<LearnerMetric> metrics = learnerMetricRepository.findByUser(user);
-        List<Tag> weakTags = metrics.stream()
-                .sorted(Comparator.comparingDouble(this::weakAreaScore))
-                .map(LearnerMetric::getTag)
-                .limit(5)
-                .toList();
 
-        // 2. Find smart stimuli matching skill + weak tags
-        List<Stimulus> candidates;
-        if (!weakTags.isEmpty()) {
-            candidates = stimulusRepository.findSmartStimuli(skill, weakTags);
-        } else {
-            candidates = stimulusRepository.findBySkill(skill);
-        }
+        io.gsp26se16.moni.tag.entity.TagType structType = getStructType(skill);
+        List<Tag> weakStructs = structType != null ? getWeakTags(metrics, structType, 2) : Collections.emptyList();
+
+        io.gsp26se16.moni.tag.entity.TagType subType = getSubType(skill);
+        List<Tag> weakSubTypes = subType != null ? getWeakTags(metrics, subType, 5) : Collections.emptyList();
+
+        List<Stimulus> candidates = stimulusRepository.findBySkill(skill);
 
         if (candidates.isEmpty()) {
-            // Ultimate fallback
-            candidates = stimulusRepository.findBySkill(skill);
-        }
-
-        if (candidates.isEmpty()) {
-            log.warn("[WeeklyPlan] No stimuli found for skill {}", skill);
             return null;
         }
 
-        // 3. Prefer stimuli not yet done (exclude IDs)
         List<Stimulus> unseen =
                 candidates.stream().filter(s -> !excludeIds.contains(s.getId())).toList();
-
         List<Stimulus> pool = unseen.isEmpty() ? candidates : unseen;
 
-        // 4. [FIXED] Sort by comprehensive Adaptive Score (Difficulty Proximity + Weak Tag Hits)
         return pool.stream()
-                .min(Comparator.comparingDouble(s -> scoreStimulus(s, targetDifficulty, weakTags)))
+                .min(Comparator.comparingDouble(s -> scoreStimulusV4(s, targetDifficulty, weakStructs, weakSubTypes)))
                 .orElse(pool.get(0));
     }
 
-    /**
-     * Select a stimulus for the weekly assessment — targets the weakest tag for the given skill.
-     */
     private Stimulus selectAssessmentStimulus(Skill skill, Users user, Set<Integer> excludeIds) {
         List<LearnerMetric> metrics = learnerMetricRepository.findByUser(user);
 
-        // Find weakest tag for this skill by looking at tag associations
-        List<Tag> weakTags = metrics.stream()
-                .sorted(Comparator.comparingDouble(this::weakAreaScore))
-                .map(LearnerMetric::getTag)
-                .limit(3)
-                .toList();
+        io.gsp26se16.moni.tag.entity.TagType structType = getStructType(skill);
+        List<Tag> weakStructs = structType != null ? getWeakTags(metrics, structType, 2) : Collections.emptyList();
 
-        List<Stimulus> candidates;
-        if (!weakTags.isEmpty()) {
-            candidates = stimulusRepository.findSmartStimuli(skill, weakTags);
-        } else {
-            candidates = stimulusRepository.findBySkill(skill);
-        }
+        io.gsp26se16.moni.tag.entity.TagType subType = getSubType(skill);
+        List<Tag> weakSubTypes = subType != null ? getWeakTags(metrics, subType, 3) : Collections.emptyList();
 
-        if (candidates.isEmpty()) {
-            candidates = stimulusRepository.findBySkill(skill);
-        }
+        List<Stimulus> candidates = stimulusRepository.findBySkill(skill);
 
         if (candidates.isEmpty()) {
             return null;
         }
 
-        // Prefer unseen
         List<Stimulus> unseen =
                 candidates.stream().filter(s -> !excludeIds.contains(s.getId())).toList();
+        List<Stimulus> pool = unseen.isEmpty() ? candidates : unseen;
 
-        List<Stimulus> pool = unseen.isEmpty() ? new ArrayList<>(candidates) : new ArrayList<>(unseen);
+        double baseDifficulty = getTargetBandFromUser(user, skill) / 9.0;
+        final double targetDifficulty = Math.max(0.2, Math.min(0.9, baseDifficulty));
 
-        // [FIXED] For assessment, we still want to score by comprehensive Adaptive Score
-        // Baseline for assessment is slightly higher difficulty (0.7 ~ Band 6.5-7.0)
         return pool.stream()
-                .min(Comparator.comparingDouble(s -> scoreStimulus(s, 0.7, weakTags)))
+                .min(Comparator.comparingDouble(s -> scoreStimulusV4(s, targetDifficulty, weakStructs, weakSubTypes)))
                 .orElse(pool.get(0));
     }
 
@@ -908,32 +874,56 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     // PRIVATE HELPERS — Utilities
     // =====================================================================
 
-    private double scoreStimulus(Stimulus s, double targetDifficulty, List<Tag> weakTags) {
-        // 1. Difficulty Penalty (0.0 to 1.0, where 0.0 is perfect match)
+    private io.gsp26se16.moni.tag.entity.TagType getStructType(Skill skill) {
+        if (skill == Skill.READING) return io.gsp26se16.moni.tag.entity.TagType.PASSAGE;
+        if (skill == Skill.LISTENING) return io.gsp26se16.moni.tag.entity.TagType.SECTION;
+        if (skill == Skill.WRITING) return io.gsp26se16.moni.tag.entity.TagType.TASK;
+        if (skill == Skill.SPEAKING) return io.gsp26se16.moni.tag.entity.TagType.PART;
+        return null;
+    }
+
+    private io.gsp26se16.moni.tag.entity.TagType getSubType(Skill skill) {
+        if (skill == Skill.SPEAKING) return io.gsp26se16.moni.tag.entity.TagType.TOPIC;
+        return io.gsp26se16.moni.tag.entity.TagType.QUESTION_TYPE;
+    }
+
+    private List<Tag> getWeakTags(List<LearnerMetric> metrics, io.gsp26se16.moni.tag.entity.TagType type, int limit) {
+        return metrics.stream()
+                .filter(m -> m.getTag().getType() == type)
+                .sorted(Comparator.comparingDouble(this::weakAreaScore))
+                .map(LearnerMetric::getTag)
+                .limit(limit)
+                .toList();
+    }
+
+    private double scoreStimulusV4(Stimulus s, double targetDifficulty, List<Tag> weakStructs, List<Tag> weakSubTypes) {
         double difficultyPenalty = Math.abs(estimateDifficulty(s) - targetDifficulty);
 
-        // 2. Weak Tag Match Bonus (0.0 to 1.0, where 1.0 means it covers all weak tags)
-        double tagBonus = 0.0;
-        if (weakTags != null && !weakTags.isEmpty() && s.getTags() != null) {
-            long matchCount = s.getTags().stream()
-                    .filter(t -> weakTags.stream().anyMatch(wt -> wt.getId().equals(t.getId())))
-                    .count();
-            // Also check Question tags if it's Reading/Listening
-            if (s.getQuestionGroups() != null) {
-                long qMatchCount = s.getQuestionGroups().stream()
-                        .flatMap(qg -> qg.getQuestions().stream())
-                        .filter(q -> q.getTags() != null)
-                        .flatMap(q -> q.getTags().stream())
-                        .filter(t -> weakTags.stream().anyMatch(wt -> wt.getId().equals(t.getId())))
-                        .count();
-                matchCount += qMatchCount;
-            }
-            tagBonus = Math.min(1.0, (double) matchCount / weakTags.size());
+        double structBonus = 0.0;
+        if (weakStructs != null && !weakStructs.isEmpty() && s.getTags() != null) {
+            boolean hasWeakStruct = s.getTags().stream().anyMatch(t -> weakStructs.stream()
+                    .anyMatch(wt -> wt.getId().equals(t.getId())));
+            structBonus = hasWeakStruct ? 0.5 : 0.0;
         }
 
-        // Adaptive Score (Lower is better):
-        // Combines strict difficulty matching with a bonus if the stimulus contains weak topics/formats.
-        return (difficultyPenalty * 0.6) - (tagBonus * 0.4);
+        double subTypeBonus = 0.0;
+        if (weakSubTypes != null && !weakSubTypes.isEmpty()) {
+            Set<Integer> sTags = new HashSet<>();
+            if (s.getTags() != null) {
+                s.getTags().forEach(t -> sTags.add(t.getId()));
+            }
+            if (s.getQuestionGroups() != null) {
+                s.getQuestionGroups().forEach(qg -> qg.getQuestions().forEach(q -> {
+                    if (q.getTags() != null) q.getTags().forEach(t -> sTags.add(t.getId()));
+                }));
+            }
+            long matchCount = weakSubTypes.stream()
+                    .filter(wt -> sTags.contains(wt.getId()))
+                    .count();
+            subTypeBonus = Math.min(0.5, (double) matchCount / weakSubTypes.size() * 0.5);
+        }
+
+        return 1.0 + (difficultyPenalty * 0.5) - structBonus - subTypeBonus;
     }
 
     private double weakAreaScore(LearnerMetric metric) {
@@ -1037,6 +1027,14 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
 
         List<DailySlotResponse> slotResponses = allSlots.stream()
                 .map(s -> {
+                    // JIT Assessment assignment if it's Day 7 and today >= slotDate
+                    if (s.getDayOfWeek() == 7
+                            && !s.getSlotDate().isAfter(today)
+                            && s.getStimulus() == null
+                            && "ASSESSMENT".equals(s.getTaskType())) {
+                        s = assignAssessmentIfPending(s, user);
+                    }
+
                     Integer totalQ = s.getTotalQuestions();
                     if (totalQ == null && s.getStimulus() != null) {
                         totalQ = calculateStimulusQuestions(s.getStimulus());
@@ -1084,6 +1082,18 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                 .suggestVocabulary(suggestVocabulary)
                 .monthlyAssessmentPending(monthlyPending)
                 .build();
+    }
+
+    private DailySlot assignAssessmentIfPending(DailySlot s, Users user) {
+        if (s.getStimulus() == null && s.getTest() == null && "TODO".equals(s.getStatus())) {
+            Set<Integer> doneStimulusIds = new HashSet<>(dailySlotRepository.findDoneStimulusIdsByUser(user));
+            Stimulus assessmentStimulus = selectAssessmentStimulus(s.getSkill(), user, doneStimulusIds);
+
+            s.setStimulus(assessmentStimulus);
+            s.setTest(findTestForStimulus(assessmentStimulus));
+            return dailySlotRepository.save(s);
+        }
+        return s;
     }
 
     private Users getCurrentUser() {

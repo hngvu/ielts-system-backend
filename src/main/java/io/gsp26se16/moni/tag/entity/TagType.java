@@ -7,4 +7,8 @@ public enum TagType {
     DIFFICULTY, // Độ khó: Easy, Medium, Hard
     WRITING_TYPE, // Dạng đề Writing: Line Graph, Agree/Disagree, etc.
     WRITING_TOPIC, // Chủ đề Writing: Education, Environment, etc.
+    PASSAGE, // Reading Passage 1, 2, 3
+    SECTION, // Listening Section 1, 2, 3, 4
+    TASK, // Writing Task 1, 2
+    PART, // Speaking Part 1, 2, 3
 }
