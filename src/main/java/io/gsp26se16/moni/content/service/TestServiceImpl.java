@@ -80,6 +80,10 @@ public class TestServiceImpl implements TestService {
 
             stimulus.setStatus(PublishStatus.PUBLISHED);
             stimulus.setCreatedBy(adminUser);
+
+            // [V4] Tự động map Tag cấu trúc dựa trên Kỹ năng và Section
+            applyStructuralTag(stimulus, request.getSkill(), stimReq.getSection());
+
             Stimulus savedStimulus = stimulusRepository.save(stimulus);
 
             TestStructure testStructure = new TestStructure();
@@ -337,6 +341,22 @@ public class TestServiceImpl implements TestService {
                 .attemptCount(testRepository.countAttemptsByTestId(testId))
                 .questionTypes(testRepository.findQuestionTypesByTestId(testId))
                 .build();
+    }
+
+    private void applyStructuralTag(Stimulus stimulus, Skill skill, Integer section) {
+        if (section == null) return;
+        String tagCode = null;
+        switch (skill) {
+            case READING -> tagCode = "READ_PASSAGE_" + section;
+            case LISTENING -> tagCode = "LIST_SECTION_" + section;
+            case WRITING -> tagCode = "WRIT_TASK_" + section;
+            case SPEAKING -> tagCode = "SPEAK_PART_" + section;
+        }
+
+        if (tagCode != null) {
+            tagRepository.findByCode(tagCode).ifPresent(tag -> stimulus.getTags()
+                    .add(tag));
+        }
     }
 
     private String resolveQuestionTypeCode(QuestionGroup group) {
