@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.payment.service.impl;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -96,13 +97,14 @@ public class PaymentServiceImpl implements PaymentService {
                 packagePricing.getId(),
                 paymentInitRequest.amount());
 
+        LocalDateTime nowUtc = LocalDateTime.now(ZoneOffset.UTC);
         var payment = paymentRepository.save(Payment.builder()
                 .packagePricing(packagePricing)
                 .amount(paymentInitRequest.amount())
                 .txnCode(txnCode)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .expiredAt(LocalDateTime.now().plusMinutes(15))
+                .createdAt(nowUtc)
+                .updatedAt(nowUtc)
+                .expiredAt(nowUtc.plusMinutes(15))
                 .status(PaymentStatus.PENDING)
                 .user(currentUser)
                 .build());
@@ -148,8 +150,14 @@ public class PaymentServiceImpl implements PaymentService {
                 payment.getUser() != null ? payment.getUser().getId() : "null",
                 payment.getStatus());
 
-        if (payment.getStatus() != PaymentStatus.PENDING) {
-            log.warn("Duplicate webhook received for payment: id={}, status={}", payment.getId(), payment.getStatus());
+        // Already finalized by a previous webhook (SUCCESS, FAILED, LATE_PAYMENT)
+        if (payment.getStatus() == PaymentStatus.SUCCESS
+                || payment.getStatus() == PaymentStatus.FAILED
+                || payment.getStatus() == PaymentStatus.LATE_PAYMENT) {
+            log.warn(
+                    "Duplicate webhook received for already-finalized payment: id={}, status={}",
+                    payment.getId(),
+                    payment.getStatus());
             return toResponse(payment);
         }
 
@@ -158,12 +166,36 @@ public class PaymentServiceImpl implements PaymentService {
             return toResponse(payment);
         }
 
-        if (payment.getExpiredAt() != null && LocalDateTime.now().isAfter(payment.getExpiredAt())) {
-            log.warn("Late payment received after expiry: txnCode={}, paymentId={}", txnCode, payment.getId());
+        // Amount mismatch → FAILED regardless of timing
+        if (payment.getAmount() != sePayWebhookRequest.transferAmount().intValue()) {
+            log.warn(
+                    "Amount mismatch: expected={}, received={}, paymentId={}",
+                    payment.getAmount(),
+                    sePayWebhookRequest.transferAmount(),
+                    payment.getId());
+            payment.setStatus(PaymentStatus.FAILED);
+            payment.setGatewayTxnId(sePayWebhookRequest.code());
+            payment.setWebhookResponse(sePayWebhookRequest.toString());
+            payment.setUpdatedAt(LocalDateTime.now(ZoneOffset.UTC));
+            paymentRepository.save(payment);
+            return toResponse(payment);
+        }
+
+        // Late payment: status is EXPIRED (set by scheduler) OR expiredAt has passed but scheduler hasn't run yet
+        boolean isExpiredByScheduler = payment.getStatus() == PaymentStatus.EXPIRED;
+        boolean isExpiredByTime = payment.getExpiredAt() != null
+                && LocalDateTime.now(ZoneOffset.UTC).isAfter(payment.getExpiredAt());
+
+        if (isExpiredByScheduler || isExpiredByTime) {
+            log.warn(
+                    "Late payment received: txnCode={}, paymentId={}, wasExpiredByScheduler={}",
+                    txnCode,
+                    payment.getId(),
+                    isExpiredByScheduler);
             payment.setStatus(PaymentStatus.LATE_PAYMENT);
             payment.setGatewayTxnId(sePayWebhookRequest.code());
             payment.setWebhookResponse(sePayWebhookRequest.toString());
-            payment.setUpdatedAt(LocalDateTime.now());
+            payment.setUpdatedAt(LocalDateTime.now(ZoneOffset.UTC));
             paymentRepository.save(payment);
 
             createCreditTransaction(payment, true);
@@ -178,18 +210,11 @@ public class PaymentServiceImpl implements PaymentService {
             return toResponse(payment);
         }
 
-        if (payment.getAmount() != sePayWebhookRequest.transferAmount().intValue()) {
-            payment.setStatus(PaymentStatus.FAILED);
-            payment.setUpdatedAt(LocalDateTime.now());
-            paymentRepository.save(payment);
-            return toResponse(payment);
-        }
-
-        // SUCCESS
+        // SUCCESS (PENDING + within expiry window + amount matches)
         payment.setGatewayTxnId(sePayWebhookRequest.code());
         payment.setWebhookResponse(sePayWebhookRequest.toString());
         payment.setStatus(PaymentStatus.SUCCESS);
-        payment.setUpdatedAt(LocalDateTime.now());
+        payment.setUpdatedAt(LocalDateTime.now(ZoneOffset.UTC));
         paymentRepository.save(payment);
 
         createCreditTransaction(payment, false);
@@ -278,7 +303,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .balanceBefore(currentBalance)
                 .balanceAfter(newBalance)
                 .paymentType(isLatePayment ? PaymentType.LATE_PAYMENT_TOPUP : PaymentType.TOPUP)
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                 .user(user)
                 .payment(payment)
                 .remark(

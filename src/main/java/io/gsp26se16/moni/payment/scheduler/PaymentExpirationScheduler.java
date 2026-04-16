@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.payment.scheduler;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,12 +23,12 @@ public class PaymentExpirationScheduler {
     @Scheduled(fixedRate = 60000) // Run every 60 seconds
     @Transactional
     public void expireOverduePayments() {
-        List<Payment> expired =
-                paymentRepository.findByStatusAndExpiredAtBefore(PaymentStatus.PENDING, LocalDateTime.now());
+        List<Payment> expired = paymentRepository.findByStatusAndExpiredAtBefore(
+                PaymentStatus.PENDING, LocalDateTime.now(ZoneOffset.UTC));
 
         if (expired.isEmpty()) return;
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         for (Payment payment : expired) {
             payment.setStatus(PaymentStatus.EXPIRED);
             payment.setUpdatedAt(now);
