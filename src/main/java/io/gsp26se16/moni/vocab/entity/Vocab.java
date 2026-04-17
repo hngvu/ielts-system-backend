@@ -34,9 +34,16 @@ public class Vocab {
     String word;
     String phonetic;
     String pos;
+
+    @Column(columnDefinition = "TEXT")
     String definition;
+
+    @Column(columnDefinition = "TEXT")
     String example;
+
     String audioUrl;
+
+    @Column(columnDefinition = "TEXT")
     String meaning; // Vietnamese translation
 
     @Enumerated(EnumType.STRING)

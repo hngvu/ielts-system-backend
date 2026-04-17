@@ -38,6 +38,7 @@ public class CuratedWord {
     @Column(columnDefinition = "TEXT")
     String example;
 
+    @Column(columnDefinition = "TEXT")
     String meaning; // Vietnamese translation (populated via AI later)
 
     @ManyToMany
