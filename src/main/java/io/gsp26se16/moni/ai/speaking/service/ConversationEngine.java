@@ -30,6 +30,8 @@ import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import io.gsp26se16.moni.common.enumeration.EvaluationStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
+import io.gsp26se16.moni.content.entity.TestStructure;
+import io.gsp26se16.moni.content.repository.TestStructureRepository;
 import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
 import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
 import io.gsp26se16.moni.tag.entity.Tag;
@@ -68,6 +70,7 @@ public class ConversationEngine {
     private final ChatClient.Builder chatClientBuilder;
     private final Executor aiExecutor;
     private final io.gsp26se16.moni.content.repository.TestRepository testRepository;
+    private final TestStructureRepository testStructureRepository;
 
     // ─────────────────────────────── Public API ───────────────────────────────
 
@@ -551,16 +554,20 @@ public class ConversationEngine {
         }
 
         // Update metric for TOPIC tags specifically attached to the Speaking Test structures
-        if (submission.getTest() != null && submission.getTest().getTestStructures() != null) {
-            double finalS = finalBand / 9.0;
-            boolean finalIsCorrect = finalS >= 0.6;
+        if (submission.getTest() != null) {
+            List<TestStructure> structures =
+                    testStructureRepository.findByTestId(submission.getTest().getId());
+            if (structures != null) {
+                double finalS = finalBand / 9.0;
+                boolean finalIsCorrect = finalS >= 0.6;
 
-            for (io.gsp26se16.moni.content.entity.TestStructure structure :
-                    submission.getTest().getTestStructures()) {
-                if (structure.getStimulus() != null && structure.getStimulus().getTags() != null) {
-                    for (Tag tag : structure.getStimulus().getTags()) {
-                        if (tag.getType() == io.gsp26se16.moni.tag.entity.TagType.TOPIC) {
-                            updateMetricBKT(user, tag, finalIsCorrect, finalS);
+                for (TestStructure structure : structures) {
+                    if (structure.getStimulus() != null
+                            && structure.getStimulus().getTags() != null) {
+                        for (Tag tag : structure.getStimulus().getTags()) {
+                            if (tag.getType() == io.gsp26se16.moni.tag.entity.TagType.TOPIC) {
+                                updateMetricBKT(user, tag, finalIsCorrect, finalS);
+                            }
                         }
                     }
                 }
