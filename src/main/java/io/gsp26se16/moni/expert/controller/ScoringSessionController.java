@@ -65,6 +65,18 @@ public class ScoringSessionController {
                 ApiResponse.<ScoringSessionResponse>builder().result(rated).build());
     }
 
+    // Allow user to attach their recording AFTER rating (fire-and-forget upload pattern).
+    // Called by client once the audio upload finishes, if the user already submitted rating.
+    @PatchMapping("/{id}/recording")
+    public ResponseEntity<ApiResponse<ScoringSessionResponse>> attachRecording(
+            @PathVariable Integer id, @RequestBody Map<String, Object> body) {
+        String recordingUrl = (String) body.get("recordingUrl");
+        String credentialId = getCurrentUserId();
+        ScoringSessionResponse updated = sessionService.attachUserRecording(id, recordingUrl, credentialId);
+        return ResponseEntity.ok(
+                ApiResponse.<ScoringSessionResponse>builder().result(updated).build());
+    }
+
     @GetMapping("/admin/all")
     public ResponseEntity<ApiResponse<List<ScoringSessionResponse>>> allSessions() {
         return ResponseEntity.ok(ApiResponse.<List<ScoringSessionResponse>>builder()

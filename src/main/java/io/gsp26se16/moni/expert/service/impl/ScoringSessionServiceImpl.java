@@ -386,6 +386,30 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
     }
 
     @Override
+    @Transactional
+    public ScoringSessionResponse attachUserRecording(Integer sessionId, String recordingUrl, String credentialId) {
+        if (recordingUrl == null || recordingUrl.isBlank()) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+        var credential = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        ScoringSession session = sessionRepository
+                .findById(sessionId)
+                .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
+
+        // Only the learner who booked can attach their recording
+        if (session.getUser() == null
+                || !session.getUser().getId().equals(credential.getUser().getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        session.setRecordingUrl(recordingUrl);
+        return toResponse(sessionRepository.save(session));
+    }
+
+    @Override
     public java.util.List<java.util.Map<String, Object>> getExpertReviews(Integer expertId) {
         return sessionRepository.findByExpert_IdAndUserRatingIsNotNullOrderByCreatedAtDesc(expertId).stream()
                 .limit(10)

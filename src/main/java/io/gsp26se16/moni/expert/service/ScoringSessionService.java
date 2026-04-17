@@ -43,4 +43,6 @@ public interface ScoringSessionService {
     List<ScoringSessionResponse> getAllSessionsForExpert(String credentialId);
 
     ScoringSessionResponse saveExpertRecording(Integer sessionId, String expertRecordingUrl, String credentialId);
+
+    ScoringSessionResponse attachUserRecording(Integer sessionId, String recordingUrl, String credentialId);
 }
