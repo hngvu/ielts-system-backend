@@ -193,11 +193,14 @@ public class VocabLearningService {
                         .toList());
 
         List<Vocab> toSave = new ArrayList<>();
+        java.util.Set<String> seenWords = new java.util.HashSet<>();
         for (var cw : allCurated) {
-            // Skip words that already exist for this user (unique constraint: user_id + word)
-            if (vocabRepository.existsByUserIdAndWord(user.getId(), cw.getWord())) {
+            // Skip words that already exist for this user in DB
+            // OR that are duplicated within this same batch
+            if (seenWords.contains(cw.getWord()) || vocabRepository.existsByUserIdAndWord(user.getId(), cw.getWord())) {
                 continue;
             }
+            seenWords.add(cw.getWord());
 
             VocabStatus status = notLearnedIds.contains(cw.getId()) ? VocabStatus.DRAFT : VocabStatus.ARCHIVED;
 
@@ -250,7 +253,7 @@ public class VocabLearningService {
                 .findByUserIdAndStatusNot(user.getId(), VocabStatus.ARCHIVED, Pageable.ofSize(200))
                 .getContent()
                 .stream()
-                .filter(v -> v.getSourceType() == io.gsp26se16.moni.vocab.enumeration.VocabSourceType.ROADMAP_SYSTEM)
+                .filter(v -> v.getSourceType() == VocabSourceType.ROADMAP_SYSTEM)
                 .filter(v -> v.getStatus() == VocabStatus.DRAFT || v.getStatus() == VocabStatus.ACTIVE)
                 .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
                 .limit(15)
