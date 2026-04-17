@@ -81,6 +81,10 @@ public class TestServiceImpl implements TestService {
             stimulus.setStatus(PublishStatus.PUBLISHED);
             stimulus.setCreatedBy(adminUser);
 
+            if (stimReq.getTagIds() != null && !stimReq.getTagIds().isEmpty()) {
+                stimulus.getTags().addAll(tagRepository.findAllById(stimReq.getTagIds()));
+            }
+
             // [V4] Tự động map Tag cấu trúc dựa trên Kỹ năng và Section
             applyStructuralTag(stimulus, request.getSkill(), stimReq.getSection());
 

@@ -48,6 +48,8 @@ public class TestImportRequest {
 
         // Danh sách nhóm câu hỏi trong bài đọc này
         private List<QuestionGroupRequest> questionGroups;
+
+        private List<Integer> tagIds;
     }
 
     @Data
