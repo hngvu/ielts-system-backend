@@ -194,6 +194,11 @@ public class VocabLearningService {
 
         List<Vocab> toSave = new ArrayList<>();
         for (var cw : allCurated) {
+            // Skip words that already exist for this user (unique constraint: user_id + word)
+            if (vocabRepository.existsByUserIdAndWord(user.getId(), cw.getWord())) {
+                continue;
+            }
+
             VocabStatus status = notLearnedIds.contains(cw.getId()) ? VocabStatus.DRAFT : VocabStatus.ARCHIVED;
 
             Vocab v = Vocab.builder()
