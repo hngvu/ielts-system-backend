@@ -13,7 +13,8 @@ import io.gsp26se16.moni.content.dto.response.StimulusResponse;
 public interface StimulusService {
     public Integer createStimulus(StimulusCreateRequest request);
 
-    public StimulusResponse updateStimulus(Integer id, String content, String mediaUrl, Object transcript);
+    public StimulusResponse updateStimulus(
+            Integer id, String content, String mediaUrl, Object transcript, java.util.List<Integer> tagIds);
 
     public Page<StimulusResponse> getAllStimuli(String keyword, Skill skill, Pageable pageable);
 
