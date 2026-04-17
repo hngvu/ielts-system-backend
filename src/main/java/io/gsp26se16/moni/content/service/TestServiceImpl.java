@@ -235,6 +235,7 @@ public class TestServiceImpl implements TestService {
                             .mediaUrl(s.getMediaUrl())
                             .section(ts.getSection())
                             .transcript(s.getTranscript())
+                            .tagIds(s.getTags().stream().map(Tag::getId).collect(Collectors.toList()))
                             .questionGroups(groupDetails)
                             .build();
                 })

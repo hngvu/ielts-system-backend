@@ -40,8 +40,16 @@ public class StimulusController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<StimulusResponse>> updateStimulus(
             @PathVariable Integer id, @RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        List<Integer> tagIds = body.get("tagIds") != null
+                ? ((List<?>) body.get("tagIds"))
+                        .stream()
+                                .map(v ->
+                                        v instanceof Number ? ((Number) v).intValue() : Integer.parseInt(v.toString()))
+                                .collect(java.util.stream.Collectors.toList())
+                : null;
         StimulusResponse updated = stimulusService.updateStimulus(
-                id, (String) body.get("content"), (String) body.get("mediaUrl"), body.get("transcript"));
+                id, (String) body.get("content"), (String) body.get("mediaUrl"), body.get("transcript"), tagIds);
         return ResponseEntity.ok(ApiResponse.<StimulusResponse>builder()
                 .code(1000)
                 .message("Cập nhật ngữ liệu thành công")
