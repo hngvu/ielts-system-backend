@@ -23,6 +23,8 @@ public interface ExpertService {
 
     ExpertProfileResponse getMyProfile(String credentialId);
 
+    ExpertProfileResponse updateMyProfile(String credentialId, UpdateExpertRequest request);
+
     void updateMyStatus(String credentialId, ExpertStatus status);
 
     void deleteExpert(Integer id);

@@ -12,6 +12,7 @@ import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.expert.dto.ExpertProfileResponse;
+import io.gsp26se16.moni.expert.dto.UpdateExpertRequest;
 import io.gsp26se16.moni.expert.dto.UpdateExpertStatusRequest;
 import io.gsp26se16.moni.expert.enumeration.ExpertSpecialization;
 import io.gsp26se16.moni.expert.service.ExpertService;
@@ -45,6 +46,14 @@ public class ExpertController {
     public ResponseEntity<ApiResponse<ExpertProfileResponse>> getMyProfile() {
         return ResponseEntity.ok(ApiResponse.<ExpertProfileResponse>builder()
                 .result(expertService.getMyProfile(getCurrentUserId()))
+                .build());
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<ApiResponse<ExpertProfileResponse>> updateMyProfile(@RequestBody UpdateExpertRequest request) {
+        return ResponseEntity.ok(ApiResponse.<ExpertProfileResponse>builder()
+                .result(expertService.updateMyProfile(getCurrentUserId(), request))
+                .message("Cập nhật hồ sơ thành công")
                 .build());
     }
 

@@ -197,6 +197,18 @@ public class ExpertServiceImpl implements ExpertService {
     }
 
     @Override
+    public ExpertProfileResponse updateMyProfile(String credentialId, UpdateExpertRequest request) {
+        var cred = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        ExpertProfile profile = expertProfileRepository
+                .findByUser_Id(cred.getUser().getId())
+                .orElseThrow(() -> new AppException(ErrorCode.EXPERT_NOT_FOUND));
+
+        return updateExpert(profile.getId(), request);
+    }
+
+    @Override
     public ExpertProfileResponse getMyProfile(String credentialId) {
         var cred = userCredentialsRepository
                 .findById(credentialId)
