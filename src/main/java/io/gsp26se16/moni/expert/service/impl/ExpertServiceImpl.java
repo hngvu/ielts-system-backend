@@ -47,13 +47,13 @@ public class ExpertServiceImpl implements ExpertService {
     public List<ExpertProfileResponse> listExperts(ExpertSpecialization filter) {
         List<ExpertProfile> experts;
         if (filter != null) {
-            experts = expertProfileRepository.findBySpecializationInAndStatus(
-                    java.util.List.of(filter, ExpertSpecialization.BOTH), ExpertStatus.AVAILABLE);
+            experts = expertProfileRepository.findBySpecializationIn(
+                    java.util.List.of(filter, ExpertSpecialization.BOTH));
         } else {
             experts = expertProfileRepository.findAll();
         }
 
-        // Auto-set OFFLINE nếu không ping trong 30s
+        // Auto-set OFFLINE nếu không ping trong 30s (không lọc, chỉ đồng bộ trạng thái hiển thị)
         java.time.LocalDateTime threshold = java.time.LocalDateTime.now().minusSeconds(30);
         for (ExpertProfile ep : experts) {
             if (ep.getStatus() == ExpertStatus.AVAILABLE
@@ -63,11 +63,6 @@ public class ExpertServiceImpl implements ExpertService {
             }
         }
 
-        if (filter != null) {
-            experts = experts.stream()
-                    .filter(e -> e.getStatus() == ExpertStatus.AVAILABLE)
-                    .toList();
-        }
         return experts.stream().map(this::toResponse).collect(Collectors.toList());
     }
 

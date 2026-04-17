@@ -20,4 +20,6 @@ public interface ExpertProfileRepository extends JpaRepository<ExpertProfile, In
 
     List<ExpertProfile> findBySpecializationInAndStatus(
             java.util.Collection<ExpertSpecialization> specializations, ExpertStatus status);
+
+    List<ExpertProfile> findBySpecializationIn(java.util.Collection<ExpertSpecialization> specializations);
 }

@@ -50,7 +50,8 @@ public class ExpertController {
     }
 
     @PutMapping("/me")
-    public ResponseEntity<ApiResponse<ExpertProfileResponse>> updateMyProfile(@RequestBody UpdateExpertRequest request) {
+    public ResponseEntity<ApiResponse<ExpertProfileResponse>> updateMyProfile(
+            @RequestBody UpdateExpertRequest request) {
         return ResponseEntity.ok(ApiResponse.<ExpertProfileResponse>builder()
                 .result(expertService.updateMyProfile(getCurrentUserId(), request))
                 .message("Cập nhật hồ sơ thành công")
