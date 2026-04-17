@@ -476,7 +476,7 @@ public class ConversationEngine {
                 UserCredentials credentials =
                         userCredentialsRepository.findById(userIdStr).orElse(null);
                 if (credentials != null && credentials.getUser() != null) {
-                    updateMetricsFromSpeakingEval(credentials.getUser(), assessment);
+                    updateMetricsFromSpeakingEval(submission, finalBand, assessment);
                     log.info("Speaking metrics updated for user={}, finalBand={}", userIdStr, finalBand);
                 }
             }
@@ -498,8 +498,20 @@ public class ConversationEngine {
      *
      * Uses BKT (Bayesian Knowledge Tracing) algorithm to update mastery.
      */
-    private void updateMetricsFromSpeakingEval(Users user, Map<String, Object> assessment) {
+    private void updateMetricsFromSpeakingEval(
+            SpeakingSubmission submission, double finalBand, Map<String, Object> assessment) {
         if (assessment == null) return;
+
+        Users user = submission.getUser();
+        if (user == null) {
+            String userIdStr = submission.getUser().getId();
+            if (userIdStr != null) {
+                UserCredentials credentials =
+                        userCredentialsRepository.findById(userIdStr).orElse(null);
+                if (credentials != null) user = credentials.getUser();
+            }
+        }
+        if (user == null) return;
 
         Map<String, Object> criteriaMap = (Map<String, Object>) assessment.get("criteria");
         if (criteriaMap == null) return;
@@ -536,6 +548,23 @@ public class ConversationEngine {
 
             // Update with BKT algorithm
             updateMetricBKT(user, tag, isCorrect, S);
+        }
+
+        // Update metric for TOPIC tags specifically attached to the Speaking Test structures
+        if (submission.getTest() != null && submission.getTest().getTestStructures() != null) {
+            double finalS = finalBand / 9.0;
+            boolean finalIsCorrect = finalS >= 0.6;
+
+            for (io.gsp26se16.moni.content.entity.TestStructure structure :
+                    submission.getTest().getTestStructures()) {
+                if (structure.getStimulus() != null && structure.getStimulus().getTags() != null) {
+                    for (Tag tag : structure.getStimulus().getTags()) {
+                        if (tag.getType() == io.gsp26se16.moni.tag.entity.TagType.TOPIC) {
+                            updateMetricBKT(user, tag, finalIsCorrect, finalS);
+                        }
+                    }
+                }
+            }
         }
     }
 

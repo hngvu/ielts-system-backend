@@ -134,6 +134,15 @@ public class TestServiceImpl implements TestService {
                                 question.getOptions().add(option);
                             }
                         }
+
+                        // [NEW] Auto-attach QUESTION_TYPE tag matching the group's type
+                        if (groupReq.getQuestionTypeCode() != null) {
+                            String tagCode =
+                                    "QT_" + groupReq.getQuestionTypeCode().toUpperCase();
+                            tagRepository.findByCode(tagCode).ifPresent(tag -> question.getTags()
+                                    .add(tag));
+                        }
+
                         Question saved = questionRepository.save(question);
                         positionToQuestion.put(saved.getPosition(), saved);
                     }

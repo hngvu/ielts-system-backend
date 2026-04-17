@@ -100,8 +100,15 @@ public class QuestionGroupServiceImpl implements QuestionGroupService {
         QuestionGroup group = questionGroupRepository
                 .findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.QUESTION_GROUP_NOT_FOUND));
+
+        QuestionType oldType = group.getQuestionType();
         applyQuestionTypeCode(group, questionTypeCode);
-        questionGroupRepository.save(group);
+        QuestionGroup savedGroup = questionGroupRepository.save(group);
+
+        QuestionType newType = savedGroup.getQuestionType();
+        if ((oldType == null && newType != null) || (oldType != null && !oldType.equals(newType))) {
+            syncQuestionTagsForGroup(savedGroup, oldType, newType);
+        }
     }
 
     @Override
@@ -147,6 +154,13 @@ public class QuestionGroupServiceImpl implements QuestionGroupService {
             }
         }
 
+        // Auto-attach QUESTION_TYPE tag matching the group's type
+        if (group.getQuestionType() != null) {
+            String tagCode = "QT_" + group.getQuestionType().getCode();
+            tagRepository.findByCode(tagCode).ifPresent(tag -> question.getTags()
+                    .add(tag));
+        }
+
         questionRepository.save(question);
     }
 
@@ -165,6 +179,33 @@ public class QuestionGroupServiceImpl implements QuestionGroupService {
         group.setQuestionType(questionTypeRepository
                 .findByCode(normalizedCode)
                 .orElseThrow(() -> new AppException(ErrorCode.QUESTION_TYPE_NOT_FOUND)));
+    }
+
+    private void syncQuestionTagsForGroup(QuestionGroup group, QuestionType oldType, QuestionType newType) {
+        if (group.getQuestions() == null || group.getQuestions().isEmpty()) {
+            return;
+        }
+        io.gsp26se16.moni.tag.entity.Tag oldTag = oldType != null
+                ? tagRepository.findByCode("QT_" + oldType.getCode()).orElse(null)
+                : null;
+        io.gsp26se16.moni.tag.entity.Tag newTag = newType != null
+                ? tagRepository.findByCode("QT_" + newType.getCode()).orElse(null)
+                : null;
+
+        for (Question q : group.getQuestions()) {
+            boolean changed = false;
+            if (oldTag != null && q.getTags().contains(oldTag)) {
+                q.getTags().remove(oldTag);
+                changed = true;
+            }
+            if (newTag != null && !q.getTags().contains(newTag)) {
+                q.getTags().add(newTag);
+                changed = true;
+            }
+            if (changed) {
+                questionRepository.save(q);
+            }
+        }
     }
 
     /**

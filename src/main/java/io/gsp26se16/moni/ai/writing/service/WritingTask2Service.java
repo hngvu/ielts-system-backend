@@ -237,7 +237,7 @@ public class WritingTask2Service {
         try {
             Users user = submission.getUser();
             if (user != null) {
-                updateMetricsFromWritingEval(user, analysisResult);
+                updateMetricsFromWritingEval(submission, finalBand, analysisResult);
                 log.info("Writing metrics updated for user={}, finalBand={}", user.getId(), finalBand);
             }
         } catch (Exception e) {
@@ -258,8 +258,12 @@ public class WritingTask2Service {
      *
      * Uses BKT (Bayesian Knowledge Tracing) algorithm to update mastery.
      */
-    private void updateMetricsFromWritingEval(Users user, Map<String, Object> analysisResult) {
+    private void updateMetricsFromWritingEval(
+            WritingSubmission submission, double finalBand, Map<String, Object> analysisResult) {
         if (analysisResult == null) return;
+
+        Users user = submission.getUser();
+        if (user == null) return;
 
         Map<String, Object> criteriaMap = (Map<String, Object>) analysisResult.get("criteria");
         if (criteriaMap == null) return;
@@ -300,6 +304,19 @@ public class WritingTask2Service {
 
             // Update with BKT algorithm
             updateMetricBKT(user, tag, isCorrect, S);
+        }
+
+        // Update metric for tags specifically attached to the Stimulus (like WRITING_TYPE or TOPIC)
+        if (submission.getStimulus() != null && submission.getStimulus().getTags() != null) {
+            double finalS = finalBand / 9.0;
+            boolean finalIsCorrect = finalS >= 0.6;
+
+            for (io.gsp26se16.moni.tag.entity.Tag tag : submission.getStimulus().getTags()) {
+                if (tag.getType() == io.gsp26se16.moni.tag.entity.TagType.WRITING_TYPE
+                        || tag.getType() == io.gsp26se16.moni.tag.entity.TagType.TOPIC) {
+                    updateMetricBKT(user, tag, finalIsCorrect, finalS);
+                }
+            }
         }
     }
 

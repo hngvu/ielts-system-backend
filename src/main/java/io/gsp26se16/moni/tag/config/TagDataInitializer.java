@@ -1,8 +1,5 @@
 package io.gsp26se16.moni.tag.config;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,55 +20,74 @@ public class TagDataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        // Kiểm tra xem bảng tags đã có dữ liệu chưa
-        if (tagRepository.count() > 0) {
-            log.info("Tags data already exists. Skipping initialization.");
-            return;
-        }
-
-        log.info("Initializing Tags data...");
-        List<Tag> tags = new ArrayList<>();
+        log.info("Initializing Tags data if not present...");
 
         // 1. Tạo SKILL Tags (4 Kỹ năng)
-        tags.add(createTag("Listening", "SKILL_LISTENING", TagType.SKILL, "Kỹ năng Nghe IELTS"));
-        tags.add(createTag("Reading", "SKILL_READING", TagType.SKILL, "Kỹ năng Đọc IELTS"));
-        tags.add(createTag("Writing", "SKILL_WRITING", TagType.SKILL, "Kỹ năng Viết IELTS"));
-        tags.add(createTag("Speaking", "SKILL_SPEAKING", TagType.SKILL, "Kỹ năng Nói IELTS"));
+        createTagIfNotExists("Listening", "SKILL_LISTENING", TagType.SKILL, "Kỹ năng Nghe IELTS");
+        createTagIfNotExists("Reading", "SKILL_READING", TagType.SKILL, "Kỹ năng Đọc IELTS");
+        createTagIfNotExists("Writing", "SKILL_WRITING", TagType.SKILL, "Kỹ năng Viết IELTS");
+        createTagIfNotExists("Speaking", "SKILL_SPEAKING", TagType.SKILL, "Kỹ năng Nói IELTS");
 
         // 2. Tạo DIFFICULTY Tags (Độ khó)
-        tags.add(createTag("Easy", "DIFF_EASY", TagType.DIFFICULTY, "Dành cho người mới bắt đầu (Band 0-4.0)"));
-        tags.add(createTag("Medium", "DIFF_MEDIUM", TagType.DIFFICULTY, "Trung bình (Band 4.5-6.0)"));
-        tags.add(createTag("Hard", "DIFF_HARD", TagType.DIFFICULTY, "Nâng cao (Band 6.5+)"));
+        createTagIfNotExists("Easy", "DIFF_EASY", TagType.DIFFICULTY, "Dành cho người mới bắt đầu (Band 0-4.0)");
+        createTagIfNotExists("Medium", "DIFF_MEDIUM", TagType.DIFFICULTY, "Trung bình (Band 4.5-6.0)");
+        createTagIfNotExists("Hard", "DIFF_HARD", TagType.DIFFICULTY, "Nâng cao (Band 6.5+)");
 
-        // 3. Tạo QUESTION TYPE Tags (Dạng bài phổ biến)
-        // Reading & Listening
-        tags.add(createTag("Multiple Choice", "QT_MCQ", TagType.QUESTION_TYPE, "Trắc nghiệm nhiều lựa chọn"));
-        tags.add(createTag("Matching Headings", "QT_MATCH_HEAD", TagType.QUESTION_TYPE, "Nối tiêu đề đoạn văn"));
-        tags.add(createTag("True/False/Not Given", "QT_TFNG", TagType.QUESTION_TYPE, "Xác định thông tin đúng sai"));
-        tags.add(createTag("Map Labeling", "QT_MAP", TagType.QUESTION_TYPE, "Dán nhãn bản đồ"));
-        tags.add(createTag("Sentence Completion", "QT_SENTENCE_COMP", TagType.QUESTION_TYPE, "Hoàn thành câu"));
-        // Writing
-        tags.add(createTag("Task 1: Line Graph", "QT_W_TASK1_LINE", TagType.QUESTION_TYPE, "Biểu đồ đường"));
-        tags.add(createTag("Task 2: Essay", "QT_W_TASK2_ESSAY", TagType.QUESTION_TYPE, "Bài luận xã hội"));
+        // 3. Tạo QUESTION TYPE Tags (Dạng bài phổ biến mapped từ QuestionTypeCode)
+        // Cần phải có tag code chuẩn "QT_" + QuestionTypeCode
+        createTagIfNotExists("Multiple Choice", "QT_MCQ", TagType.QUESTION_TYPE, "Trắc nghiệm 1 lựa chọn");
+        createTagIfNotExists(
+                "Multiple Choice (Multiple Answers)",
+                "QT_MCQ_MULTIPLE",
+                TagType.QUESTION_TYPE,
+                "Trắc nghiệm nhiều lựa chọn");
+        createTagIfNotExists(
+                "True/False/Not Given", "QT_TFNG", TagType.QUESTION_TYPE, "Xác định thông tin đúng/sai/không đề cập");
+        createTagIfNotExists(
+                "Yes/No/Not Given", "QT_YNNG", TagType.QUESTION_TYPE, "Xác định quan điểm đúng/sai/không có");
+        createTagIfNotExists(
+                "Matching Headings", "QT_MATCHING_HEADINGS", TagType.QUESTION_TYPE, "Nối tiêu đề đoạn văn");
+        createTagIfNotExists(
+                "Matching Information", "QT_MATCHING_INFORMATION", TagType.QUESTION_TYPE, "Nối thông tin vào đoạn văn");
+        createTagIfNotExists(
+                "Matching Features", "QT_MATCHING_FEATURE", TagType.QUESTION_TYPE, "Nối đặc điểm nhân vật");
+        createTagIfNotExists(
+                "Diagram/Map Labeling", "QT_DIAGRAM_LABEL", TagType.QUESTION_TYPE, "Dán nhãn sơ đồ/bản đồ");
+        createTagIfNotExists("Gap Filling", "QT_GAP_FILLING", TagType.QUESTION_TYPE, "Điền từ vào chỗ trống");
+        createTagIfNotExists("Short Answer", "QT_SHORT_ANSWER", TagType.QUESTION_TYPE, "Trả lời câu hỏi ngắn");
+
+        // Writing Task
+        createTagIfNotExists("Task 1: Line Graph", "QT_W_TASK1_LINE", TagType.QUESTION_TYPE, "Biểu đồ đường");
+        createTagIfNotExists("Task 2: Essay", "QT_W_TASK2_ESSAY", TagType.QUESTION_TYPE, "Bài luận xã hội");
 
         // 4. Tạo TOPIC Tags (Chủ đề thường gặp)
-        tags.add(createTag("Environment", "TOPIC_ENV", TagType.TOPIC, "Môi trường, Khí hậu, Tái chế"));
-        tags.add(createTag("Education", "TOPIC_EDU", TagType.TOPIC, "Giáo dục, Trường học"));
-        tags.add(createTag("Technology", "TOPIC_TECH", TagType.TOPIC, "Công nghệ, AI, Internet"));
-        tags.add(createTag("Health", "TOPIC_HEALTH", TagType.TOPIC, "Sức khỏe, Y tế"));
-        tags.add(createTag("Travel", "TOPIC_TRAVEL", TagType.TOPIC, "Du lịch, Văn hóa"));
+        createTagIfNotExists("Environment", "TOPIC_ENV", TagType.TOPIC, "Môi trường, Khí hậu, Tái chế");
+        createTagIfNotExists("Education", "TOPIC_EDU", TagType.TOPIC, "Giáo dục, Trường học");
+        createTagIfNotExists("Technology", "TOPIC_TECH", TagType.TOPIC, "Công nghệ, AI, Internet");
+        createTagIfNotExists("Health", "TOPIC_HEALTH", TagType.TOPIC, "Sức khỏe, Y tế");
+        createTagIfNotExists("Travel", "TOPIC_TRAVEL", TagType.TOPIC, "Du lịch, Văn hóa");
 
-        tagRepository.saveAll(tags);
-        log.info("Successfully initialized {} tags into Database.", tags.size());
+        // 5. Tạo WRITING_TYPE Tags (Các dạng bài Writing cụ thể)
+        createTagIfNotExists("Line graph", "WT_LINE", TagType.WRITING_TYPE, "Biểu đồ đường - Task 1");
+        createTagIfNotExists("Bar chart", "WT_BAR", TagType.WRITING_TYPE, "Biểu đồ cột - Task 1");
+        createTagIfNotExists("Pie chart", "WT_PIE", TagType.WRITING_TYPE, "Biểu đồ tròn - Task 1");
+        createTagIfNotExists("Table", "WT_TABLE", TagType.WRITING_TYPE, "Bảng biểu - Task 1");
+        createTagIfNotExists("Map", "WT_MAP", TagType.WRITING_TYPE, "Bản đồ - Task 1");
+        createTagIfNotExists("Process", "WT_PROCESS", TagType.WRITING_TYPE, "Quy trình - Task 1");
+        createTagIfNotExists("Multiple charts", "WT_MULTI", TagType.WRITING_TYPE, "Biểu đồ kết hợp - Task 1");
+
+        log.info("Tags data initialization complete.");
     }
 
-    // Helper method để code gọn hơn
-    private Tag createTag(String name, String code, TagType type, String description) {
-        return Tag.builder()
-                .name(name)
-                .code(code)
-                .type(type)
-                .description(description)
-                .build();
+    private void createTagIfNotExists(String name, String code, TagType type, String description) {
+        if (!tagRepository.existsByCode(code)) {
+            Tag tag = Tag.builder()
+                    .name(name)
+                    .code(code)
+                    .type(type)
+                    .description(description)
+                    .build();
+            tagRepository.save(tag);
+        }
     }
 }

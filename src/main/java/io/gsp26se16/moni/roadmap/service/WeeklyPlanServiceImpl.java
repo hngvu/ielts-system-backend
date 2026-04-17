@@ -26,6 +26,7 @@ import io.gsp26se16.moni.roadmap.dto.response.*;
 import io.gsp26se16.moni.roadmap.entity.*;
 import io.gsp26se16.moni.roadmap.repository.*;
 import io.gsp26se16.moni.tag.entity.Tag;
+import io.gsp26se16.moni.tag.entity.TagType;
 import io.gsp26se16.moni.vocab.dto.QuizResponse;
 import io.gsp26se16.moni.vocab.dto.VocabResponse;
 import io.gsp26se16.moni.vocab.service.VocabLearningService;
@@ -131,7 +132,8 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
 
             for (Skill skill : skills) {
                 if (phase == 3) {
-                    // [PHASE 3] Intensive mode: assign FULL TEST (mode=FULL_TEST) instead of single Stimulus
+                    // [PHASE 3] Intensive mode: assign FULL TEST (mode=FULL_TEST) instead of single
+                    // Stimulus
                     io.gsp26se16.moni.content.entity.Test fullTest = selectFullTest(skill, user, doneStimulusIds);
 
                     DailySlot slot = DailySlot.builder()
@@ -147,7 +149,8 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                     dailySlotRepository.save(slot);
 
                     if (fullTest != null) {
-                        // Keep track so we don't repeat the test; here we use test id + offset for exclusion if needed
+                        // Keep track so we don't repeat the test; here we use test id + offset for
+                        // exclusion if needed
                         doneStimulusIds.add(-fullTest.getId());
                     }
                 } else {
@@ -342,7 +345,8 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION); // Provide proper logic error later
         }
 
-        // Only generate new words if slot isn't already DONE (to avoid re-generating on accidental re-clicks)
+        // Only generate new words if slot isn't already DONE (to avoid re-generating on
+        // accidental re-clicks)
         if ("DONE".equals(slot.getStatus())) {
             return List.of(); // Return empty if already complete. Or throw exception based on product rules.
         }
@@ -696,7 +700,8 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
 
     @Override
     public double getCurrentBandForSkill(Users user, Skill skill, WeeklyPlan previousPlan) {
-        // Priority 1: If creating Week 1 of Month (WeekInMonth == 1 and WeekNumber > 1), use Monthly Assessment
+        // Priority 1: If creating Week 1 of Month (WeekInMonth == 1 and WeekNumber >
+        // 1), use Monthly Assessment
         if (previousPlan != null && previousPlan.getWeekInMonth() == 4) {
             Optional<MonthlyAssessment> monthlyAss =
                     monthlyAssessmentRepository.findTopByUserAndStatusOrderByIdDesc(user, "COMPLETED");
@@ -828,7 +833,8 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         List<WeeklyPlan> recentPlans = weeklyPlanRepository.findTop4ByUserOrderByWeekNumberDesc(user);
         WeeklyPlan previousCompleted = recentPlans.stream()
                 .filter(p -> "COMPLETED".equals(p.getStatus()))
-                .skip(0) // Current plan is still ACTIVE at query time, so first COMPLETED is actual previous
+                .skip(0) // Current plan is still ACTIVE at query time, so first COMPLETED is actual
+                // previous
                 .findFirst()
                 .orElse(null);
 
@@ -858,7 +864,8 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
             return;
         }
 
-        // For now, create assessment without full test (test will be assigned later via admin or auto-generation)
+        // For now, create assessment without full test (test will be assigned later via
+        // admin or auto-generation)
         MonthlyAssessment assessment = MonthlyAssessment.builder()
                 .user(user)
                 .monthCycle(monthCycle)
@@ -883,11 +890,12 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     }
 
     private io.gsp26se16.moni.tag.entity.TagType getSubType(Skill skill) {
-        if (skill == Skill.SPEAKING) return io.gsp26se16.moni.tag.entity.TagType.TOPIC;
+        if (skill == Skill.SPEAKING) return TagType.TOPIC;
+        if (skill == Skill.WRITING) return TagType.WRITING_TYPE;
         return io.gsp26se16.moni.tag.entity.TagType.QUESTION_TYPE;
     }
 
-    private List<Tag> getWeakTags(List<LearnerMetric> metrics, io.gsp26se16.moni.tag.entity.TagType type, int limit) {
+    private List<Tag> getWeakTags(List<LearnerMetric> metrics, TagType type, int limit) {
         return metrics.stream()
                 .filter(m -> m.getTag().getType() == type)
                 .sorted(Comparator.comparingDouble(this::weakAreaScore))
