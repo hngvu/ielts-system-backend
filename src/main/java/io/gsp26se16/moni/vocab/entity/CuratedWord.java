@@ -48,5 +48,6 @@ public class CuratedWord {
             inverseJoinColumns = @JoinColumn(name = "tag_id"))
     Set<Tag> tags = new HashSet<>();
 
+    @Column(columnDefinition = "TEXT")
     String audioUrl;
 }

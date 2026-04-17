@@ -41,6 +41,7 @@ public class Vocab {
     @Column(columnDefinition = "TEXT")
     String example;
 
+    @Column(columnDefinition = "TEXT")
     String audioUrl;
 
     @Column(columnDefinition = "TEXT")
