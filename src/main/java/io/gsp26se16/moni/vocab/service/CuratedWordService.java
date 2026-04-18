@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import io.gsp26se16.moni.tag.entity.Tag;
 import io.gsp26se16.moni.tag.entity.TagType;
@@ -24,6 +25,7 @@ public class CuratedWordService {
     private final CuratedWordRepository curatedWordRepository;
     private final VocabRepository vocabRepository;
 
+    @Transactional(readOnly = true)
     public Page<CuratedWordResponse> browse(
             String band, String topic, String pos, String search, int page, int size, String userId) {
 
