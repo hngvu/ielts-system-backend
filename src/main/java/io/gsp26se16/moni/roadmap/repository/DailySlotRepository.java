@@ -42,4 +42,6 @@ public interface DailySlotRepository extends JpaRepository<DailySlot, Integer> {
             + "AND ds.status = 'TODO'")
     List<DailySlot> findMatchingSlots(
             @Param("user") Users user, @Param("stimulusId") Integer stimulusId, @Param("date") LocalDate date);
+
+    int deleteByWeeklyPlan(WeeklyPlan plan);
 }

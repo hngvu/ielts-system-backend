@@ -288,7 +288,7 @@ public class SimulationController {
         Users user = resolveUser(userId);
 
         // Delete all planning data
-        List<WeeklyPlan> allPlans = weeklyPlanRepository.findByUser(user);
+        List<WeeklyPlan> allPlans = weeklyPlanRepository.findByUserOrderByWeekNumberDesc(user);
         int deletedSlots = 0;
         for (WeeklyPlan p : allPlans) {
             deletedSlots += dailySlotRepository.deleteByWeeklyPlan(p);

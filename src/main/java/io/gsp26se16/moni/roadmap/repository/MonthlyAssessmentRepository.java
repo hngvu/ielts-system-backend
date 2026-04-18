@@ -1,5 +1,6 @@
 package io.gsp26se16.moni.roadmap.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,4 +17,6 @@ public interface MonthlyAssessmentRepository extends JpaRepository<MonthlyAssess
     Optional<MonthlyAssessment> findTopByUserAndStatusOrderByIdDesc(Users user, String status);
 
     Optional<MonthlyAssessment> findTopByUserOrderByMonthCycleDesc(Users user);
+
+    List<MonthlyAssessment> findByUser(Users user);
 }
