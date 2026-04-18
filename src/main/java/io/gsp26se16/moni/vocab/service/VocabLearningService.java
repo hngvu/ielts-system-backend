@@ -149,35 +149,31 @@ public class VocabLearningService {
     public List<VocabResponse> generateRoadmapVocabList(
             Users user, List<String> targetLevels, String topic, int count) {
         // Query words matching target CEFR levels (1-2 levels above user)
-        List<io.gsp26se16.moni.vocab.entity.CuratedWord> candidates;
-        if (topic != null) {
-            candidates = new ArrayList<>(curatedWordRepository
-                    .findByFilters(targetLevels.get(0), topic, null, null, Pageable.ofSize(100))
+        List<io.gsp26se16.moni.vocab.entity.CuratedWord> newWords;
+        int fetchSize = 100;
+        String userId = user.getId();
+
+        if (topic != null && !topic.isBlank()) {
+            newWords = new ArrayList<>(curatedWordRepository
+                    .findUnlearnedByFilters(targetLevels.get(0), topic, userId, Pageable.ofSize(fetchSize))
                     .getContent());
-            if (candidates.size() < count && targetLevels.size() > 1) {
-                // Add words from the second target level
-                candidates.addAll(curatedWordRepository
-                        .findByFilters(targetLevels.get(1), topic, null, null, Pageable.ofSize(100))
+
+            if (newWords.size() < count && targetLevels.size() > 1) {
+                newWords.addAll(curatedWordRepository
+                        .findUnlearnedByFilters(targetLevels.get(1), topic, userId, Pageable.ofSize(fetchSize))
                         .getContent());
             }
-            if (candidates.size() < count) {
+
+            if (newWords.size() < count) {
                 // Fallback: ignore topic, use multiple bands
-                candidates = new ArrayList<>(curatedWordRepository
-                        .findByBands(targetLevels, Pageable.ofSize(100))
+                newWords = new ArrayList<>(curatedWordRepository
+                        .findUnlearnedByBands(targetLevels, userId, Pageable.ofSize(fetchSize))
                         .getContent());
             }
         } else {
-            candidates = new ArrayList<>(curatedWordRepository
-                    .findByBands(targetLevels, Pageable.ofSize(100))
+            newWords = new ArrayList<>(curatedWordRepository
+                    .findUnlearnedByBands(targetLevels, userId, Pageable.ofSize(fetchSize))
                     .getContent());
-        }
-
-        // Filter out words user already has
-        List<io.gsp26se16.moni.vocab.entity.CuratedWord> newWords = new ArrayList<>();
-        for (var cw : candidates) {
-            if (!vocabRepository.existsByUserIdAndWord(user.getId(), cw.getWord())) {
-                newWords.add(cw);
-            }
         }
 
         Collections.shuffle(newWords);

@@ -47,4 +47,20 @@ public interface CuratedWordRepository extends JpaRepository<CuratedWord, Intege
     @Query("SELECT c FROM CuratedWord c WHERE "
             + "EXISTS (SELECT t FROM c.tags t WHERE t.name IN :bands AND t.type = 'DIFFICULTY')")
     Page<CuratedWord> findByBands(@Param("bands") java.util.Collection<String> bands, Pageable pageable);
+
+    @Query("SELECT c FROM CuratedWord c WHERE "
+            + "(:band IS NULL OR EXISTS (SELECT t FROM c.tags t WHERE t.name = :band AND t.type = 'DIFFICULTY')) AND "
+            + "(:topic IS NULL OR EXISTS (SELECT t FROM c.tags t WHERE t.name = :topic AND t.type = 'TOPIC')) AND "
+            + "NOT EXISTS (SELECT v FROM Vocab v WHERE v.word = c.word AND v.user.id = :userId)")
+    Page<CuratedWord> findUnlearnedByFilters(
+            @Param("band") String band,
+            @Param("topic") String topic,
+            @Param("userId") String userId,
+            Pageable pageable);
+
+    @Query("SELECT c FROM CuratedWord c WHERE "
+            + "EXISTS (SELECT t FROM c.tags t WHERE t.name IN :bands AND t.type = 'DIFFICULTY') AND "
+            + "NOT EXISTS (SELECT v FROM Vocab v WHERE v.word = c.word AND v.user.id = :userId)")
+    Page<CuratedWord> findUnlearnedByBands(
+            @Param("bands") java.util.Collection<String> bands, @Param("userId") String userId, Pageable pageable);
 }
