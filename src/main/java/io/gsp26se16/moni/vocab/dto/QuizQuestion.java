@@ -15,4 +15,5 @@ public class QuizQuestion {
     int correctIndex;
     String word;
     String explanation;
+    String vocabStatus; // "DRAFT" (Sổ biết tuốt) or "ACTIVE" (Sổ nhắc lại)
 }

@@ -43,4 +43,8 @@ public interface CuratedWordRepository extends JpaRepository<CuratedWord, Intege
 
     @Query("SELECT c.word FROM CuratedWord c JOIN c.tags t WHERE t.type = 'DIFFICULTY' AND t.name IN :bands")
     java.util.List<String> findWordByBandIn(@Param("bands") java.util.Collection<String> bands);
+
+    @Query("SELECT c FROM CuratedWord c WHERE "
+            + "EXISTS (SELECT t FROM c.tags t WHERE t.name IN :bands AND t.type = 'DIFFICULTY')")
+    Page<CuratedWord> findByBands(@Param("bands") java.util.Collection<String> bands, Pageable pageable);
 }

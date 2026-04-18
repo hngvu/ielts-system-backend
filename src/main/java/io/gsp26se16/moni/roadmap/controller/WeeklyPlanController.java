@@ -68,7 +68,12 @@ public class WeeklyPlanController {
             correctWords = (List<String>) body.get("correctWords");
         }
 
-        weeklyPlanService.completeSlot(slotId, score, totalQuestions, correctWords);
+        List<String> incorrectWords = null;
+        if (body.containsKey("incorrectWords")) {
+            incorrectWords = (List<String>) body.get("incorrectWords");
+        }
+
+        weeklyPlanService.completeSlot(slotId, score, totalQuestions, correctWords, incorrectWords);
 
         return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .code(1000)

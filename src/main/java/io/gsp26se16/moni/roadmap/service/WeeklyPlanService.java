@@ -26,7 +26,12 @@ public interface WeeklyPlanService {
     WeeklyPlanDetailResponse getTodaySlots();
 
     /** Mark a specific slot as completed */
-    void completeSlot(Integer slotId, Integer score, Integer totalQuestions, List<String> correctWords);
+    void completeSlot(
+            Integer slotId,
+            Integer score,
+            Integer totalQuestions,
+            List<String> correctWords,
+            List<String> incorrectWords);
 
     /** Auto-detect and complete slot based on stimulus + user + date */
     void autoCompleteSlot(Users user, Integer stimulusId, Integer score, Integer totalQuestions);

@@ -175,21 +175,29 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                 }
             }
 
-            // [NEW] Generate Vocab tasks for practice days (Day 1 to 6)
-            // OMIT Vocab in Phase 3
-            if (phase != 3) {
+            // [VOCAB SCHEDULE] Generate vocab tasks only on days 1-4
+            // Day 1,3 = VOCAB_LEARN (learn new words)
+            // Day 2,4 = VOCAB_TEST (quiz from Sổ biết tuốt + Sổ nhắc lại)
+            // Day 5,6 = no vocab (focus on 4 core skills)
+            // Phase 3 = no vocab at all
+            if (phase != 3 && day <= 4) {
                 String vocabTaskType = (day % 2 != 0) ? "VOCAB_LEARN" : "VOCAB_TEST";
 
                 String topicHint = null;
-                for (DailySlot s : dailySlotRepository.findByWeeklyPlanOrderByDayOfWeekAscIdAsc(plan)) {
-                    if (s.getDayOfWeek().equals(day)
-                            && (s.getSkill() == Skill.READING || s.getSkill() == Skill.LISTENING)) {
-                        if (s.getStimulus() != null
-                                && s.getStimulus().getTags() != null
-                                && !s.getStimulus().getTags().isEmpty()) {
-                            topicHint =
-                                    s.getStimulus().getTags().iterator().next().getName();
-                            break;
+                if ("VOCAB_LEARN".equals(vocabTaskType)) {
+                    for (DailySlot s : dailySlotRepository.findByWeeklyPlanOrderByDayOfWeekAscIdAsc(plan)) {
+                        if (s.getDayOfWeek().equals(day)
+                                && (s.getSkill() == Skill.READING || s.getSkill() == Skill.LISTENING)) {
+                            if (s.getStimulus() != null
+                                    && s.getStimulus().getTags() != null
+                                    && !s.getStimulus().getTags().isEmpty()) {
+                                topicHint = s.getStimulus()
+                                        .getTags()
+                                        .iterator()
+                                        .next()
+                                        .getName();
+                                break;
+                            }
                         }
                     }
                 }
@@ -279,7 +287,12 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
 
     @Override
     @Transactional
-    public void completeSlot(Integer slotId, Integer score, Integer totalQuestions, List<String> correctWords) {
+    public void completeSlot(
+            Integer slotId,
+            Integer score,
+            Integer totalQuestions,
+            List<String> correctWords,
+            List<String> incorrectWords) {
         Users user = getCurrentUser();
 
         DailySlot slot =
@@ -294,8 +307,15 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         slot.setTotalQuestions(totalQuestions);
         slot.setCompletedAt(LocalDateTime.now());
 
-        if ("VOCAB_TEST".equals(slot.getTaskType()) && correctWords != null && !correctWords.isEmpty()) {
-            vocabLearningService.markWordsAsMastered(user, correctWords);
+        if ("VOCAB_TEST".equals(slot.getTaskType())) {
+            // Process notebook transitions:
+            // DRAFT + correct → ACTIVE (Sổ biết tuốt → Sổ nhắc lại)
+            // ACTIVE + correct → MASTERED (Sổ nhắc lại → Sổ tay Master)
+            // incorrect → stay in current notebook
+            vocabLearningService.processQuizResults(
+                    user,
+                    correctWords != null ? correctWords : List.of(),
+                    incorrectWords != null ? incorrectWords : List.of());
         }
 
         dailySlotRepository.save(slot);
@@ -351,11 +371,19 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
             return List.of(); // Return empty if already complete. Or throw exception based on product rules.
         }
 
-        double band = getCurrentBandForSkill(user, Skill.VOCABULARY, null);
-        String bandRange = formatBandRange(band);
+        // Calculate overall band and target CEFR levels (1-2 levels above current)
+        double overallBand = getOverallBand(user);
+        List<String> targetLevels = getTargetVocabLevels(overallBand);
         String topic = slot.getReferenceMetadata();
 
-        return vocabLearningService.generateRoadmapVocabList(user, bandRange, topic, 15);
+        log.info(
+                "[VocabLearn] User {} overall band: {}, target levels: {}, topic: {}",
+                user.getId(),
+                overallBand,
+                targetLevels,
+                topic);
+
+        return vocabLearningService.generateRoadmapVocabList(user, targetLevels, topic, 15);
     }
 
     @Override
@@ -405,6 +433,44 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         if (band < 7.5) return "B2"; // Upper Intermediate
         if (band >= 8.5) return "C2"; // Master
         return "C1"; // 7.5 - 8.0 Advanced
+    }
+
+    /**
+     * Given the user's overall IELTS band, return target CEFR levels
+     * 1-2 levels ABOVE their current level for vocabulary improvement.
+     */
+    private List<String> getTargetVocabLevels(double band) {
+        if (band < 4.5) return List.of("A2", "B1"); // A1 → learn A2, B1
+        if (band < 5.5) return List.of("B1", "B2"); // A2 → learn B1, B2
+        if (band < 6.5) return List.of("B2", "C1"); // B1 → learn B2, C1
+        if (band < 7.5) return List.of("C1", "C2"); // B2 → learn C1, C2
+        if (band < 8.5) return List.of("C2"); // C1 → learn C2
+        return List.of("C2"); // C2 → stay C2 (max)
+    }
+
+    /**
+     * Get the user's overall IELTS band for CEFR level calculation.
+     * Priority: week assessment → placement test → fallback
+     */
+    private double getOverallBand(Users user) {
+        // Priority 1: Check latest completed weekly plan assessment (day 7 scores)
+        Optional<WeeklyPlan> latestCompleted = weeklyPlanRepository.findTopByUserOrderByWeekNumberDesc(user);
+        if (latestCompleted.isPresent()) {
+            WeeklyPlan plan = latestCompleted.get();
+            if (plan.getWeeklyAccuracy() != null && plan.getWeeklyAccuracy() > 0) {
+                // Convert accuracy to approximate band
+                return convertAccuracyToBand(plan.getWeeklyAccuracy());
+            }
+        }
+
+        // Priority 2: Placement test overall band
+        Optional<PlacementResult> placement = placementResultRepository.findFirstByUserOrderByCompletedAtDesc(user);
+        if (placement.isPresent() && placement.get().getOverallBand() != null) {
+            return placement.get().getOverallBand();
+        }
+
+        // Priority 3: Fallback
+        return 5.0;
     }
 
     @Override

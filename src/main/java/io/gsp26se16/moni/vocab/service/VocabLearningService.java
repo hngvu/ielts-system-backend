@@ -4,11 +4,16 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.common.exception.AppException;
@@ -25,7 +30,9 @@ import io.gsp26se16.moni.vocab.repository.VocabReviewRepository;
 import io.gsp26se16.moni.vocab.util.SM2Calculator;
 import io.gsp26se16.moni.vocab.util.SM2Calculator.SM2Result;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VocabLearningService {
@@ -35,6 +42,8 @@ public class VocabLearningService {
     private final VocabListRepository vocabListRepository;
     private final CuratedWordRepository curatedWordRepository;
     private final VocabAuthHelper authHelper;
+    private final ChatClient.Builder chatClientBuilder;
+    private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
     public List<VocabResponse> getDueReview(String credentialId, int limit) {
@@ -136,22 +145,29 @@ public class VocabLearningService {
     }
 
     @Transactional
-    public List<VocabResponse> generateRoadmapVocabList(Users user, String band, String topic, int count) {
-        // Query words matching band and topic
+    public List<VocabResponse> generateRoadmapVocabList(
+            Users user, List<String> targetLevels, String topic, int count) {
+        // Query words matching target CEFR levels (1-2 levels above user)
         List<io.gsp26se16.moni.vocab.entity.CuratedWord> candidates;
         if (topic != null) {
             candidates = curatedWordRepository
-                    .findByFilters(band, topic, null, null, Pageable.ofSize(100))
+                    .findByFilters(targetLevels.get(0), topic, null, null, Pageable.ofSize(100))
                     .getContent();
+            if (candidates.size() < count && targetLevels.size() > 1) {
+                // Add words from the second target level
+                candidates.addAll(curatedWordRepository
+                        .findByFilters(targetLevels.get(1), topic, null, null, Pageable.ofSize(100))
+                        .getContent());
+            }
             if (candidates.size() < count) {
-                // Fallback to purely band if topic is exhausted
+                // Fallback: ignore topic, use multiple bands
                 candidates = curatedWordRepository
-                        .findByFilters(band, null, null, null, Pageable.ofSize(100))
+                        .findByBands(targetLevels, Pageable.ofSize(100))
                         .getContent();
             }
         } else {
             candidates = curatedWordRepository
-                    .findByFilters(band, null, null, null, Pageable.ofSize(100))
+                    .findByBands(targetLevels, Pageable.ofSize(100))
                     .getContent();
         }
 
@@ -224,32 +240,63 @@ public class VocabLearningService {
         }
     }
 
+    /**
+     * Process quiz results: transition vocab between notebooks.
+     * - DRAFT (Sổ biết tuốt) + correct → ACTIVE (Sổ nhắc lại)
+     * - ACTIVE (Sổ nhắc lại) + correct → MASTERED (Sổ tay Master)
+     * - incorrect → stay in current notebook
+     */
     @Transactional
-    public void markWordsAsMastered(Users user, List<String> correctWords) {
-        if (correctWords == null || correctWords.isEmpty()) return;
+    public void processQuizResults(Users user, List<String> correctWords, List<String> incorrectWords) {
+        if (correctWords == null) correctWords = List.of();
 
-        List<Vocab> toUpdate =
+        // Fetch all DRAFT and ACTIVE vocab for the user
+        List<Vocab> allVocab =
                 vocabRepository
                         .findByUserIdAndStatusNot(user.getId(), VocabStatus.ARCHIVED, Pageable.unpaged())
                         .getContent()
                         .stream()
-                        .filter(v -> correctWords.contains(v.getWord()))
                         .filter(v -> v.getStatus() == VocabStatus.DRAFT || v.getStatus() == VocabStatus.ACTIVE)
                         .toList();
 
-        for (Vocab v : toUpdate) {
-            v.setStatus(VocabStatus.MASTERED);
+        List<Vocab> toUpdate = new ArrayList<>();
+
+        for (Vocab v : allVocab) {
+            if (correctWords.contains(v.getWord())) {
+                if (v.getStatus() == VocabStatus.DRAFT) {
+                    // Sổ biết tuốt → Sổ nhắc lại
+                    v.setStatus(VocabStatus.ACTIVE);
+                    toUpdate.add(v);
+                } else if (v.getStatus() == VocabStatus.ACTIVE) {
+                    // Sổ nhắc lại → Sổ tay Master
+                    v.setStatus(VocabStatus.MASTERED);
+                    toUpdate.add(v);
+                }
+            }
+            // incorrect words: stay in current notebook (no change needed)
         }
 
         if (!toUpdate.isEmpty()) {
             vocabRepository.saveAll(toUpdate);
+            log.info("[VocabQuiz] Processed {} word transitions for user {}", toUpdate.size(), user.getId());
         }
     }
 
+    /**
+     * Legacy method kept for backward compatibility.
+     */
+    @Transactional
+    public void markWordsAsMastered(Users user, List<String> correctWords) {
+        processQuizResults(user, correctWords, List.of());
+    }
+
+    /**
+     * Generate AI-powered gap-filling quiz from user's DRAFT + ACTIVE vocab.
+     */
     @Transactional(readOnly = true)
     public QuizResponse generateRoadmapQuiz(Users user) {
-        // Fetch up to 20 words recently added by roadmap
-        var recentRoadmapWords = vocabRepository
+        // Fetch words from both DRAFT (Sổ biết tuốt) and ACTIVE (Sổ nhắc lại)
+        var quizWords = vocabRepository
                 .findByUserIdAndStatusNot(user.getId(), VocabStatus.ARCHIVED, Pageable.ofSize(200))
                 .getContent()
                 .stream()
@@ -259,17 +306,155 @@ public class VocabLearningService {
                 .limit(15)
                 .toList();
 
-        List<WordEntry> pool = recentRoadmapWords.stream()
-                .map(v -> new WordEntry(v.getWord(), v.getDefinition(), v.getMeaning(), v.getExample()))
-                .toList();
-
-        // Pass an empty pool if no vocab
-        if (pool.size() < 4) {
+        if (quizWords.size() < 4) {
             return QuizResponse.builder().questions(List.of()).source("roadmap").build();
         }
 
-        // Use the same logic as standard Quiz builder but bypassing building pool
-        return generateQuizFromPool(pool, "roadmap", "random", 15);
+        // Try AI-powered gap-filling quiz first
+        try {
+            QuizResponse aiQuiz = generateAiGapFillingQuiz(quizWords);
+            if (aiQuiz != null && !aiQuiz.getQuestions().isEmpty()) {
+                return aiQuiz;
+            }
+        } catch (Exception e) {
+            log.warn("[VocabQuiz] AI quiz generation failed, falling back to standard quiz: {}", e.getMessage());
+        }
+
+        // Fallback: standard multiple-choice quiz
+        return generateStandardQuizFromVocab(quizWords);
+    }
+
+    /**
+     * Generate AI gap-filling multiple-choice quiz using LLM.
+     */
+    private QuizResponse generateAiGapFillingQuiz(List<Vocab> words) {
+        StringBuilder wordList = new StringBuilder();
+        for (Vocab v : words) {
+            wordList.append(String.format(
+                    "- %s: %s (status: %s)\n",
+                    v.getWord(),
+                    v.getDefinition() != null ? v.getDefinition() : v.getMeaning(),
+                    v.getStatus().name()));
+        }
+
+        String prompt =
+                """
+				You are an IELTS vocabulary quiz generator. Create a gap-filling multiple-choice quiz.
+
+				## Words to test:
+				%s
+
+				## Instructions:
+				- Create ONE question for EACH word listed above.
+				- Each question should be a sentence with a blank (______) where the target word should go.
+				- Provide 4 options for each question (the correct word + 3 distractors from the same list).
+				- The sentence should provide enough context to determine the correct answer.
+				- Keep sentences at IELTS B1-C1 level.
+
+				## Response format (JSON array only, no other text):
+				```json
+				[
+				{
+					"word": "address",
+					"vocabStatus": "DRAFT",
+					"sentence": "The president will ______ the nation tonight about the new policy.",
+					"options": ["address", "assess", "achieve", "arrange"],
+					"correctIndex": 0
+				}
+				]
+				```
+				IMPORTANT: Return ONLY the JSON array, no markdown fences, no explanation.
+				"""
+                        .formatted(wordList.toString());
+
+        ChatClient chatClient = chatClientBuilder.build();
+        String response = chatClient.prompt().user(prompt).call().content();
+
+        if (response == null || response.isBlank()) {
+            return null;
+        }
+
+        return parseAiQuizResponse(response, words);
+    }
+
+    private QuizResponse parseAiQuizResponse(String raw, List<Vocab> sourceWords) {
+        try {
+            String json = raw.trim();
+            // Strip markdown fences if present
+            if (json.contains("```")) {
+                int start = json.indexOf("[");
+                int end = json.lastIndexOf("]");
+                if (start >= 0 && end > start) {
+                    json = json.substring(start, end + 1);
+                }
+            }
+
+            List<Map<String, Object>> items = objectMapper.readValue(json, new TypeReference<>() {});
+            List<QuizQuestion> questions = new ArrayList<>();
+
+            // Build a map for quick status lookup
+            Map<String, String> wordStatusMap = new java.util.HashMap<>();
+            for (Vocab v : sourceWords) {
+                wordStatusMap.put(v.getWord().toLowerCase(), v.getStatus().name());
+            }
+
+            int id = 1;
+            for (Map<String, Object> item : items) {
+                String word = (String) item.getOrDefault("word", "");
+                String sentence = (String) item.getOrDefault("sentence", "");
+                List<String> options = item.get("options") instanceof List<?> list
+                        ? list.stream().map(Object::toString).toList()
+                        : List.of();
+                int correctIdx = item.get("correctIndex") instanceof Number n ? n.intValue() : 0;
+                String status = wordStatusMap.getOrDefault(
+                        word.toLowerCase(), (String) item.getOrDefault("vocabStatus", "DRAFT"));
+
+                if (!sentence.isBlank() && options.size() >= 2) {
+                    questions.add(QuizQuestion.builder()
+                            .id(id++)
+                            .type("fillblank")
+                            .prompt(sentence)
+                            .options(options)
+                            .correctIndex(correctIdx)
+                            .word(word)
+                            .explanation(status.equals("DRAFT") ? "Sổ biết tuốt" : "Sổ nhắc lại")
+                            .vocabStatus(status)
+                            .build());
+                }
+            }
+
+            return QuizResponse.builder()
+                    .questions(questions)
+                    .source("roadmap_ai")
+                    .build();
+        } catch (Exception e) {
+            log.error("[VocabQuiz] Failed to parse AI response: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Fallback: standard multiple-choice quiz from vocab list (no AI).
+     */
+    private QuizResponse generateStandardQuizFromVocab(List<Vocab> words) {
+        // Build a map for status lookup
+        Map<String, String> wordStatusMap = new java.util.HashMap<>();
+        for (Vocab v : words) {
+            wordStatusMap.put(v.getWord(), v.getStatus().name());
+        }
+
+        List<WordEntry> pool = words.stream()
+                .map(v -> new WordEntry(v.getWord(), v.getDefinition(), v.getMeaning(), v.getExample()))
+                .toList();
+
+        QuizResponse quiz = generateQuizFromPool(pool, "roadmap", "random", 15);
+
+        // Enrich with vocabStatus
+        for (QuizQuestion q : quiz.getQuestions()) {
+            q.setVocabStatus(wordStatusMap.getOrDefault(q.getWord(), "DRAFT"));
+        }
+
+        return quiz;
     }
 
     public QuizResponse generateQuiz(
