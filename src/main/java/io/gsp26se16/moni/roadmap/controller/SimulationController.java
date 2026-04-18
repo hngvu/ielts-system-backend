@@ -122,6 +122,40 @@ public class SimulationController {
     }
 
     /**
+     * Skip 1 day in the simulation.
+     * Brings future slots into "today" by subtracting 1 day from all current plan dates.
+     */
+    @PostMapping("/skip-day/{userId}")
+    @Operation(summary = "[Simulation] Bỏ qua 1 ngày (đưa lịch ngày mai về hôm nay)")
+    @Transactional
+    public ResponseEntity<ApiResponse<Map<String, Object>>> skipOneDay(@PathVariable String userId) {
+        Users user = resolveUser(userId);
+        WeeklyPlan currentPlan = getActivePlan(user);
+
+        // Shift weekly plan dates back by 1
+        currentPlan.setWeekStartDate(currentPlan.getWeekStartDate().minusDays(1));
+        currentPlan.setWeekEndDate(currentPlan.getWeekEndDate().minusDays(1));
+        weeklyPlanRepository.save(currentPlan);
+
+        // Shift all slot dates back by 1
+        List<DailySlot> slots = dailySlotRepository.findByWeeklyPlanOrderByDayOfWeekAscIdAsc(currentPlan);
+        int shifted = 0;
+        for (DailySlot slot : slots) {
+            slot.setSlotDate(slot.getSlotDate().minusDays(1));
+            dailySlotRepository.save(slot);
+            shifted++;
+        }
+
+        log.info("[Simulation] Skipped 1 day for user {}, shifted {} slots", userId, shifted);
+
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
+                .code(1000)
+                .message("Đã skip 1 ngày thành công!")
+                .result(Map.of("success", true, "shiftedSlots", shifted))
+                .build());
+    }
+
+    /**
      * Evaluate the current week AND generate next week.
      * This is the key "time-skip" — it closes the current week and creates a new one.
      */
