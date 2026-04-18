@@ -44,4 +44,7 @@ public interface DailySlotRepository extends JpaRepository<DailySlot, Integer> {
             @Param("user") Users user, @Param("stimulusId") Integer stimulusId, @Param("date") LocalDate date);
 
     int deleteByWeeklyPlan(WeeklyPlan plan);
+
+    Optional<DailySlot> findFirstByWeeklyPlanUserAndSkillAndTaskTypeAndStatusOrderByCompletedAtDesc(
+            Users user, io.gsp26se16.moni.common.enumeration.Skill skill, String taskType, String status);
 }

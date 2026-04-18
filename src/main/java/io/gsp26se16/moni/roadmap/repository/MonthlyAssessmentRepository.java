@@ -19,4 +19,6 @@ public interface MonthlyAssessmentRepository extends JpaRepository<MonthlyAssess
     Optional<MonthlyAssessment> findTopByUserOrderByMonthCycleDesc(Users user);
 
     List<MonthlyAssessment> findByUser(Users user);
+
+    Optional<MonthlyAssessment> findTopByUserAndStatusOrderByCompletedAtDesc(Users user, String status);
 }

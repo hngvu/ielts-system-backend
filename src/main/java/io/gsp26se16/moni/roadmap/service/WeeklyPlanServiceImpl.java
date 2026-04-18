@@ -765,25 +765,31 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     }
 
     @Override
-    public double getCurrentBandForSkill(Users user, Skill skill, WeeklyPlan previousPlan) {
-        // Priority 1: If creating Week 1 of Month (WeekInMonth == 1 and WeekNumber >
-        // 1), use Monthly Assessment
-        if (previousPlan != null && previousPlan.getWeekInMonth() == 4) {
-            Optional<MonthlyAssessment> monthlyAss =
-                    monthlyAssessmentRepository.findTopByUserAndStatusOrderByIdDesc(user, "COMPLETED");
-            if (monthlyAss.isPresent()) {
-                Double band = getBandFromMonthlyAssessment(monthlyAss.get(), skill);
-                if (band != null) return band;
-            }
-        }
+    public double getCurrentBandForSkill(Users user, Skill skill, WeeklyPlan activePlan) {
+        // Priority 1: Find the latest COMPLETED MonthlyAssessment
+        Optional<MonthlyAssessment> latestMonthlyAss =
+                monthlyAssessmentRepository.findTopByUserAndStatusOrderByCompletedAtDesc(user, "COMPLETED");
 
-        // Priority 2: Use Week Assessment from previous plan (Day 7)
-        if (previousPlan != null) {
-            Optional<DailySlot> weekAssessment =
-                    dailySlotRepository.findByWeeklyPlanAndDayOfWeekAndSkill(previousPlan, 7, skill);
-            if (weekAssessment.isPresent() && "DONE".equals(weekAssessment.get().getStatus())) {
-                return calculateBandFromSlot(weekAssessment.get());
+        // Priority 2: Find the latest DONE weekly assessment slot
+        Optional<DailySlot> latestWeeklyAss =
+                dailySlotRepository.findFirstByWeeklyPlanUserAndSkillAndTaskTypeAndStatusOrderByCompletedAtDesc(
+                        user, skill, "ASSESSMENT", "DONE");
+
+        // Compare which one is more recent if both exist
+        if (latestMonthlyAss.isPresent() && latestWeeklyAss.isPresent()) {
+            LocalDateTime maTime = latestMonthlyAss.get().getCompletedAt();
+            LocalDateTime waTime = latestWeeklyAss.get().getCompletedAt();
+            if (waTime != null && maTime != null && waTime.isAfter(maTime)) {
+                return calculateBandFromSlot(latestWeeklyAss.get());
+            } else {
+                Double mBand = getBandFromMonthlyAssessment(latestMonthlyAss.get(), skill);
+                if (mBand != null) return mBand;
             }
+        } else if (latestWeeklyAss.isPresent()) {
+            return calculateBandFromSlot(latestWeeklyAss.get());
+        } else if (latestMonthlyAss.isPresent()) {
+            Double mBand = getBandFromMonthlyAssessment(latestMonthlyAss.get(), skill);
+            if (mBand != null) return mBand;
         }
 
         // Priority 3: Placement Result
