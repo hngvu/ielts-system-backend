@@ -18,6 +18,7 @@ public class GeminiVisionClient {
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper;
+    private final PromptLoader promptLoader;
 
     @Value("${GEMINI_API_KEY:}")
     private String apiKey;
@@ -32,17 +33,7 @@ public class GeminiVisionClient {
      * @return Chart analysis in JSON format
      */
     public Map<String, Object> analyzeChart(String imageBase64) {
-        String prompt =
-                """
-				You are an IELTS Writing Task 1 examiner.
-				Analyze the image and return VALID JSON ONLY with keys:
-				title, chartType, keyTrends, values.
-
-				If the image is a process diagram, set chartType="process"
-				and describe steps in values as ordered list.
-
-				Do not hallucinate. Use only information visible in the image.
-				""";
+        String prompt = promptLoader.loadPrompt("vision/analyze_chart.txt");
 
         try {
             String url = String.format(

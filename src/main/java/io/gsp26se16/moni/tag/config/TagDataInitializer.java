@@ -56,10 +56,6 @@ public class TagDataInitializer implements CommandLineRunner {
         createTagIfNotExists("Gap Filling", "QT_GAP_FILLING", TagType.QUESTION_TYPE, "Điền từ vào chỗ trống");
         createTagIfNotExists("Short Answer", "QT_SHORT_ANSWER", TagType.QUESTION_TYPE, "Trả lời câu hỏi ngắn");
 
-        // Writing Task
-        createTagIfNotExists("Task 1: Line Graph", "QT_W_TASK1_LINE", TagType.QUESTION_TYPE, "Biểu đồ đường");
-        createTagIfNotExists("Task 2: Essay", "QT_W_TASK2_ESSAY", TagType.QUESTION_TYPE, "Bài luận xã hội");
-
         // 4. Tạo TOPIC Tags (Chủ đề thường gặp)
         createTagIfNotExists("Environment", "TOPIC_ENV", TagType.TOPIC, "Môi trường, Khí hậu, Tái chế");
         createTagIfNotExists("Education", "TOPIC_EDU", TagType.TOPIC, "Giáo dục, Trường học");
@@ -68,6 +64,23 @@ public class TagDataInitializer implements CommandLineRunner {
         createTagIfNotExists("Travel", "TOPIC_TRAVEL", TagType.TOPIC, "Du lịch, Văn hóa");
 
         // 5. Tạo WRITING_TYPE Tags (Các dạng bài Writing cụ thể)
+        createTagIfNotExists(
+                "Advantages and Disadvantages", "WT_ADV_DISADV", TagType.WRITING_TYPE, "Task 2 - Lợi ích và Tác hại");
+        createTagIfNotExists(
+                "Agree or Disagree", "WT_AGREE_DISAGREE", TagType.WRITING_TYPE, "Task 2 - Đồng ý hay Không đồng ý");
+        createTagIfNotExists(
+                "Causes, Problems and Solutions",
+                "WT_CAUSES_SOLUTIONS",
+                TagType.WRITING_TYPE,
+                "Task 2 - Nguyên nhân và Giải pháp");
+        createTagIfNotExists("Discussion", "WT_DISCUSSION", TagType.WRITING_TYPE, "Task 2 - Thảo luận 2 quan điểm");
+        createTagIfNotExists(
+                "Positive or Negative Development",
+                "WT_POS_NEG",
+                TagType.WRITING_TYPE,
+                "Task 2 - Sự phát triển tích cực hay tiêu cực");
+        createTagIfNotExists("Two-Part Question", "WT_TWO_PART", TagType.WRITING_TYPE, "Task 2 - Câu hỏi gồm 2 phần");
+
         createTagIfNotExists("Line graph", "WT_LINE", TagType.WRITING_TYPE, "Biểu đồ đường - Task 1");
         createTagIfNotExists("Bar chart", "WT_BAR", TagType.WRITING_TYPE, "Biểu đồ cột - Task 1");
         createTagIfNotExists("Pie chart", "WT_PIE", TagType.WRITING_TYPE, "Biểu đồ tròn - Task 1");
@@ -75,6 +88,7 @@ public class TagDataInitializer implements CommandLineRunner {
         createTagIfNotExists("Map", "WT_MAP", TagType.WRITING_TYPE, "Bản đồ - Task 1");
         createTagIfNotExists("Process", "WT_PROCESS", TagType.WRITING_TYPE, "Quy trình - Task 1");
         createTagIfNotExists("Multiple charts", "WT_MULTI", TagType.WRITING_TYPE, "Biểu đồ kết hợp - Task 1");
+        createTagIfNotExists("Task 2: Essay", "WT_ESSAY", TagType.WRITING_TYPE, "Bài luận xã hội - Task 2");
 
         log.info("Tags data initialization complete.");
     }

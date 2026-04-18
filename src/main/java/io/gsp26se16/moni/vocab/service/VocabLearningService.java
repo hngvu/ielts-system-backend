@@ -44,6 +44,7 @@ public class VocabLearningService {
     private final VocabAuthHelper authHelper;
     private final ChatClient.Builder chatClientBuilder;
     private final ObjectMapper objectMapper;
+    private final io.gsp26se16.moni.ai.writing.service.PromptLoader promptLoader;
 
     @Transactional(readOnly = true)
     public List<VocabResponse> getDueReview(String credentialId, int limit) {
@@ -337,35 +338,7 @@ public class VocabLearningService {
                     v.getStatus().name()));
         }
 
-        String prompt =
-                """
-				You are an IELTS vocabulary quiz generator. Create a gap-filling multiple-choice quiz.
-
-				## Words to test:
-				%s
-
-				## Instructions:
-				- Create ONE question for EACH word listed above.
-				- Each question should be a sentence with a blank (______) where the target word should go.
-				- Provide 4 options for each question (the correct word + 3 distractors from the same list).
-				- The sentence should provide enough context to determine the correct answer.
-				- Keep sentences at IELTS B1-C1 level.
-
-				## Response format (JSON array only, no other text):
-				```json
-				[
-				{
-					"word": "address",
-					"vocabStatus": "DRAFT",
-					"sentence": "The president will ______ the nation tonight about the new policy.",
-					"options": ["address", "assess", "achieve", "arrange"],
-					"correctIndex": 0
-				}
-				]
-				```
-				IMPORTANT: Return ONLY the JSON array, no markdown fences, no explanation.
-				"""
-                        .formatted(wordList.toString());
+        String prompt = promptLoader.loadPrompt("vocab/quiz_generation.txt", Map.of("wordList", wordList.toString()));
 
         ChatClient chatClient = chatClientBuilder.build();
         String response = chatClient.prompt().user(prompt).call().content();

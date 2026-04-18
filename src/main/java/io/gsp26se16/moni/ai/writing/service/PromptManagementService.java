@@ -37,7 +37,7 @@ public class PromptManagementService {
     private final ObjectMapper objectMapper;
 
     /** Supported skills */
-    private static final List<String> SKILLS = List.of("writing", "speaking");
+    private static final List<String> SKILLS = List.of("writing", "speaking", "vision", "vocab");
 
     /** Known prompt files per skill */
     private static final Map<String, List<String>> KNOWN_FILES = Map.of(
@@ -53,12 +53,9 @@ public class PromptManagementService {
                             "phase7_feedback.txt",
                             "phase7_feedback_task2.txt"),
             "speaking",
-                    List.of(
-                            "phase1_fc.txt",
-                            "phase2_lr.txt",
-                            "phase3_gra.txt",
-                            "phase4_pr.txt",
-                            "phase5_feedback.txt"));
+                    List.of("phase1_fc.txt", "phase2_lr.txt", "phase3_gra.txt", "phase4_pr.txt", "phase5_feedback.txt"),
+            "vision", List.of("analyze_chart.txt"),
+            "vocab", List.of("quiz_generation.txt"));
 
     // ─── Public API ───────────────────────────────────────────────────────────
 
