@@ -189,31 +189,30 @@ public class WritingSubmissionController {
                         .flatMap(session -> expertEvaluationRepository.findByScoringSession_Id(session.getId()));
                 if (expertEval.isPresent()) {
                     var ex = expertEval.get();
-                    java.util.Map<String, Object> analysis = java.util.Map.of(
-                            "criteria",
-                            java.util.Map.of(
-                                    "TR",
-                                            java.util.Map.of(
-                                                    "adjusted_band",
-                                                    ex.getTaskResponse() != null ? ex.getTaskResponse() : 0.0),
-                                    "CC",
-                                            java.util.Map.of(
-                                                    "adjusted_band",
-                                                    ex.getCoherence() != null ? ex.getCoherence() : 0.0),
-                                    "LR",
-                                            java.util.Map.of(
-                                                    "adjusted_band",
-                                                    ex.getLexicalResource() != null ? ex.getLexicalResource() : 0.0),
-                                    "GRA",
-                                            java.util.Map.of(
-                                                    "adjusted_band",
-                                                    ex.getGrammaticalRange() != null
-                                                            ? ex.getGrammaticalRange()
-                                                            : 0.0)));
+
+                    // Parse compiled feedback into general summary + per-criterion justifications
+                    ExpertFeedbackParsed parsed = parseExpertFeedback(ex.getFeedback());
+
+                    java.util.Map<String, Object> criteriaMap = new java.util.LinkedHashMap<>();
+                    criteriaMap.put("TR", buildCriterionEntry(ex.getTaskResponse(), parsed.trJustification));
+                    criteriaMap.put("CC", buildCriterionEntry(ex.getCoherence(), parsed.ccJustification));
+                    criteriaMap.put("LR", buildCriterionEntry(ex.getLexicalResource(), parsed.lrJustification));
+                    criteriaMap.put("GRA", buildCriterionEntry(ex.getGrammaticalRange(), parsed.graJustification));
+
+                    java.util.Map<String, Object> analysis = new java.util.LinkedHashMap<>();
+                    analysis.put("criteria", criteriaMap);
+
                     java.util.Map<String, Object> feedback = new java.util.LinkedHashMap<>();
-                    if (ex.getFeedback() != null) feedback.put("summary", ex.getFeedback());
-                    if (ex.getStrengths() != null) feedback.put("strengths", ex.getStrengths());
-                    if (ex.getAreasForImprovement() != null) feedback.put("improvements", ex.getAreasForImprovement());
+                    if (parsed.generalSummary != null && !parsed.generalSummary.isBlank()) {
+                        feedback.put("summary", parsed.generalSummary);
+                    }
+                    if (ex.getStrengths() != null && !ex.getStrengths().isBlank()) {
+                        feedback.put("strengths", ex.getStrengths());
+                    }
+                    if (ex.getAreasForImprovement() != null
+                            && !ex.getAreasForImprovement().isBlank()) {
+                        feedback.put("improvements", ex.getAreasForImprovement());
+                    }
                     evaluationDetail = new WritingEvaluationDetail(ex.getOverallScore(), analysis, feedback);
                 }
             }
@@ -238,6 +237,77 @@ public class WritingSubmissionController {
     }
 
     // --- Helpers ---
+
+    /** Build một entry criterion gồm band điểm và justification (nếu có) */
+    private java.util.Map<String, Object> buildCriterionEntry(Double band, String justification) {
+        java.util.Map<String, Object> entry = new java.util.LinkedHashMap<>();
+        entry.put("adjusted_band", band != null ? band : 0.0);
+        if (justification != null && !justification.isBlank()) {
+            entry.put("justification", justification);
+        }
+        return entry;
+    }
+
+    /** Holder cho kết quả parse compiled feedback của chuyên gia */
+    private static class ExpertFeedbackParsed {
+        String generalSummary;
+        String trJustification;
+        String ccJustification;
+        String lrJustification;
+        String graJustification;
+    }
+
+    /**
+     * Parse compiled feedback từ expert:
+     *   [NHẬN XÉT CHUNG]\n...\n\n[ĐÁNH GIÁ CHI TIẾT]\n- Task Response (TR) (6):\n...
+     * Nếu không khớp format, toàn bộ xem như general summary.
+     */
+    private ExpertFeedbackParsed parseExpertFeedback(String raw) {
+        ExpertFeedbackParsed out = new ExpertFeedbackParsed();
+        if (raw == null || raw.isBlank()) return out;
+
+        String generalMarker = "[NHẬN XÉT CHUNG]";
+        String detailMarker = "[ĐÁNH GIÁ CHI TIẾT]";
+
+        int generalIdx = raw.indexOf(generalMarker);
+        int detailIdx = raw.indexOf(detailMarker);
+
+        if (generalIdx == -1 && detailIdx == -1) {
+            out.generalSummary = raw.trim();
+            return out;
+        }
+
+        if (generalIdx != -1) {
+            int endGeneral = detailIdx != -1 ? detailIdx : raw.length();
+            String g = raw.substring(generalIdx + generalMarker.length(), endGeneral)
+                    .trim();
+            out.generalSummary = g.isBlank() ? null : g;
+        }
+
+        if (detailIdx != -1) {
+            String detailSection =
+                    raw.substring(detailIdx + detailMarker.length()).trim();
+            out.trJustification = extractCriterionBlock(detailSection, "Task Response (TR)");
+            out.ccJustification = extractCriterionBlock(detailSection, "Coherence & Cohesion (CC)");
+            out.lrJustification = extractCriterionBlock(detailSection, "Lexical Resource (LR)");
+            out.graJustification = extractCriterionBlock(detailSection, "Grammatical Range (GRA)");
+        }
+        return out;
+    }
+
+    /** Trích nội dung sau "- <label> (score):" đến trước "\n- " kế tiếp hoặc hết chuỗi. */
+    private String extractCriterionBlock(String detailSection, String label) {
+        String escaped = java.util.regex.Pattern.quote(label);
+        java.util.regex.Pattern p =
+                java.util.regex.Pattern.compile("- " + escaped + " \\([^)]*\\):\\s*\\n([\\s\\S]*?)(?=\\n- |$)");
+        java.util.regex.Matcher m = p.matcher(detailSection);
+        if (m.find()) {
+            String content = m.group(1).trim();
+            if (content.isBlank() || "Không có nhận xét thêm".equals(content)) return null;
+            return content;
+        }
+        return null;
+    }
 
     private Users getCurrentUser() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
