@@ -57,4 +57,8 @@ public interface WeeklyPlanService {
 
     /** Generate a quiz for a vocabulary test slot */
     QuizResponse getVocabQuiz(Integer slotId);
+
+    /** Assign assessment stimulus for a specific slot (JIT) */
+    void assignAssessmentForSlot(
+            io.gsp26se16.moni.roadmap.entity.DailySlot slot, Users user, java.util.Set<Integer> doneStimulusIds);
 }

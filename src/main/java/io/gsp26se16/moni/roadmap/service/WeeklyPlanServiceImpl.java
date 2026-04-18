@@ -1235,6 +1235,16 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         return s;
     }
 
+    @Override
+    public void assignAssessmentForSlot(DailySlot slot, Users user, Set<Integer> doneStimulusIds) {
+        if (slot.getStimulus() == null && slot.getTest() == null && "TODO".equals(slot.getStatus())) {
+            Stimulus assessmentStimulus = selectAssessmentStimulus(slot.getSkill(), user, doneStimulusIds);
+            slot.setStimulus(assessmentStimulus);
+            slot.setTest(findTestForStimulus(assessmentStimulus));
+            dailySlotRepository.save(slot);
+        }
+    }
+
     private Users getCurrentUser() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {

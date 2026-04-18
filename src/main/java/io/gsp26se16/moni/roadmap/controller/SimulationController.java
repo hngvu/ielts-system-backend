@@ -363,6 +363,7 @@ public class SimulationController {
 
     /**
      * Diagnostic: Check if adaptive selection for Day 7 matches user's current weaknesses.
+     * Auto-bootstraps metrics if empty. Auto-triggers JIT assignment if not yet assigned.
      */
     @GetMapping("/verify-assessment/{userId}")
     @Operation(summary = "[Simulation] Kiểm tra logic AI chọn bài test (Weakness vs. Selection)")
@@ -370,54 +371,86 @@ public class SimulationController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> verifyAssessmentSelection(@PathVariable String userId) {
         Users user = resolveUser(userId);
 
-        // 1. Fetch current top weaknesses
-        List<LearnerMetric> weakMetrics = learnerMetricRepository.findByUserOrderByMasteryLevelAsc(user).stream()
-                .filter(m -> m.getMasteryLevel() != null && m.getMasteryLevel() < 0.6)
-                .limit(10)
-                .toList();
-
-        List<Map<String, Object>> weakInfo = new ArrayList<>();
-        for (LearnerMetric m : weakMetrics) {
-            Map<String, Object> map = new HashMap<>();
-            map.put("tagName", m.getTag().getName());
-            map.put("tagType", m.getTag().getType());
-            map.put("mastery", Math.round(m.getMasteryLevel() * 100) + "%");
-            weakInfo.add(map);
+        // 0. Bootstrap metrics if empty (user's first time or after reset)
+        List<LearnerMetric> allMetrics = learnerMetricRepository.findByUserOrderByMasteryLevelAsc(user);
+        boolean metricsBootstrapped = false;
+        if (allMetrics.isEmpty()) {
+            simulateMetricProgress(user, new Random());
+            allMetrics = learnerMetricRepository.findByUserOrderByMasteryLevelAsc(user);
+            metricsBootstrapped = true;
         }
 
-        // 2. Fetch Day 7 Slots for current active plan
+        // 1. Show ALL metrics sorted by mastery (weakest first)
+        List<Map<String, Object>> allMetricInfo = new ArrayList<>();
+        for (LearnerMetric m : allMetrics) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("tagName", m.getTag().getName());
+            map.put("tagType", String.valueOf(m.getTag().getType()));
+            map.put("mastery", Math.round((m.getMasteryLevel() != null ? m.getMasteryLevel() : 0) * 100) + "%");
+            map.put(
+                    "confidence",
+                    Math.round((m.getConfidenceScore() != null ? m.getConfidenceScore() : 0) * 100) + "%");
+            map.put("isWeak", m.getMasteryLevel() != null && m.getMasteryLevel() < 0.5);
+            allMetricInfo.add(map);
+        }
+
+        // Separate weak tags for matching
+        List<String> weakTagNames = allMetrics.stream()
+                .filter(m -> m.getMasteryLevel() != null && m.getMasteryLevel() < 0.5)
+                .map(m -> m.getTag().getName())
+                .toList();
+
+        // 2. Fetch Day 7 Assessment Slots & trigger JIT assignment if needed
         WeeklyPlan plan = getActivePlan(user);
         List<DailySlot> allSlots = dailySlotRepository.findByWeeklyPlanOrderByDayOfWeekAscIdAsc(plan);
         List<DailySlot> assessmentSlots = allSlots.stream()
                 .filter(s -> "ASSESSMENT".equals(s.getTaskType()))
                 .toList();
 
+        // Collect IDs of already-done stimuli to avoid duplication
+        Set<Integer> doneStimulusIds = new HashSet<>(dailySlotRepository.findDoneStimulusIdsByUser(user));
+
         List<Map<String, Object>> assignments = new ArrayList<>();
         for (DailySlot slot : assessmentSlots) {
+            // Auto-trigger JIT assignment if stimulus is null
+            if (slot.getStimulus() == null && slot.getTest() == null && "TODO".equals(slot.getStatus())) {
+                log.info("[Diagnostic] Auto-assigning assessment for skill={} via JIT", slot.getSkill());
+                weeklyPlanService.assignAssessmentForSlot(slot, user, doneStimulusIds);
+                // Reload from DB to get the assigned stimulus
+                slot = dailySlotRepository.findById(slot.getId()).orElse(slot);
+            }
+
             Map<String, Object> info = new HashMap<>();
-            info.put("skill", slot.getSkill());
+            info.put("skill", String.valueOf(slot.getSkill()));
 
             if (slot.getStimulus() != null) {
                 info.put("assignedStimulus", slot.getStimulus().getTitle());
-                List<String> sTags =
-                        slot.getStimulus().getTags().stream().map(Tag::getName).toList();
+                List<String> sTags = new ArrayList<>();
+                if (slot.getStimulus().getTags() != null) {
+                    sTags = slot.getStimulus().getTags().stream()
+                            .map(Tag::getName)
+                            .toList();
+                }
                 info.put("stimulusTags", sTags);
 
-                // Find intersections with user's specific weak tags
-                List<String> matches = sTags.stream()
-                        .filter(st ->
-                                weakInfo.stream().anyMatch(w -> w.get("tagName").equals(st)))
-                        .toList();
+                // Find intersections with user's weak tags
+                List<String> finalSTags = sTags;
+                List<String> matches =
+                        weakTagNames.stream().filter(finalSTags::contains).toList();
                 info.put("matchedWeaknesses", matches);
                 info.put("isMatchFound", !matches.isEmpty());
             } else {
-                info.put("assignedStimulus", "CHƯA GÁN (Bấm vào ngày Sunday trên UI để kích hoạt JIT assignment)");
+                info.put("assignedStimulus", "KHÔNG TÌM THẤY BÀI PHÙ HỢP (Kho bài có thể trống cho kỹ năng này)");
             }
             assignments.add(info);
         }
+
         Map<String, Object> result = new HashMap<>();
         result.put("user", user.getFull_name());
-        result.put("userWeaknesses", weakInfo);
+        result.put("metricsBootstrapped", metricsBootstrapped);
+        result.put("totalMetrics", allMetrics.size());
+        result.put("weakTagCount", weakTagNames.size());
+        result.put("allMetrics", allMetricInfo);
         result.put("sundayAssignments", assignments);
 
         return ResponseEntity.ok(
