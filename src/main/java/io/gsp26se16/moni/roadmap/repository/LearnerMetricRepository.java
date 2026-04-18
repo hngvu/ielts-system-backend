@@ -18,6 +18,10 @@ public interface LearnerMetricRepository extends JpaRepository<LearnerMetric, In
 
     List<LearnerMetric> findTop5ByUserOrderByMasteryLevelDesc(Users user);
 
+    List<LearnerMetric> findByUserOrderByMasteryLevelAsc(Users user);
+
+    List<LearnerMetric> findByUserOrderByMasteryLevelDesc(Users user);
+
     List<LearnerMetric> findByUserOrderByUpdatedAtDesc(Users user);
 
     List<LearnerMetric> findByUser(Users user);

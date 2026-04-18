@@ -254,12 +254,12 @@ public class GoalServiceImpl implements GoalService {
         }
 
         List<LearnerRoadmapInsightsResponse.TagMetricResponse> weakest =
-                learnerMetricRepository.findTop8ByUserOrderByMasteryLevelAsc(learner).stream()
+                learnerMetricRepository.findByUserOrderByMasteryLevelAsc(learner).stream()
                         .map(this::toTagMetric)
                         .toList();
 
         List<LearnerRoadmapInsightsResponse.TagMetricResponse> strongest =
-                learnerMetricRepository.findTop5ByUserOrderByMasteryLevelDesc(learner).stream()
+                learnerMetricRepository.findByUserOrderByMasteryLevelDesc(learner).stream()
                         .map(this::toTagMetric)
                         .toList();
 
