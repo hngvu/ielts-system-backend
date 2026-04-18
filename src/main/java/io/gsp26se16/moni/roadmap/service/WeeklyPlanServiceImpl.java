@@ -448,10 +448,16 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                             response.setIsHistory(true);
                             return response;
                         } catch (Exception e) {
-                            return vocabLearningService.generateRoadmapQuiz(user);
+                            return QuizResponse.builder()
+                                    .questions(List.of())
+                                    .isHistory(true)
+                                    .build();
                         }
                     })
-                    .orElseGet(() -> vocabLearningService.generateRoadmapQuiz(user));
+                    .orElseGet(() -> QuizResponse.builder()
+                            .questions(List.of())
+                            .isHistory(true)
+                            .build());
         }
 
         return vocabLearningService.generateRoadmapQuiz(user);
