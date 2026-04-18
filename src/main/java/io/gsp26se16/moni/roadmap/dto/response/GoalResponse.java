@@ -15,7 +15,4 @@ public class GoalResponse {
     private Double targetBand;
     private LocalDate deadline;
     private String status;
-
-    private Integer activeRoadmapId;
-    private Integer activeRoadmapVersion;
 }
