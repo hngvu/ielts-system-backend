@@ -27,6 +27,7 @@ import io.gsp26se16.moni.roadmap.entity.*;
 import io.gsp26se16.moni.roadmap.repository.*;
 import io.gsp26se16.moni.tag.entity.Tag;
 import io.gsp26se16.moni.tag.entity.TagType;
+import io.gsp26se16.moni.tag.repository.TagRepository;
 import io.gsp26se16.moni.vocab.dto.QuizResponse;
 import io.gsp26se16.moni.vocab.dto.VocabResponse;
 import io.gsp26se16.moni.vocab.service.VocabLearningService;
@@ -48,6 +49,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     private final UserCredentialsRepository userCredentialsRepository;
     private final GoalRepository goalRepository;
     private final TestRepository testRepository;
+    private final TagRepository tagRepository;
     private final VocabLearningService vocabLearningService;
     private final io.gsp26se16.moni.vocab.repository.VocabQuizHistoryRepository vocabQuizHistoryRepository;
 
@@ -1008,12 +1010,29 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     }
 
     private List<Tag> getWeakTags(List<LearnerMetric> metrics, TagType type, int limit) {
-        return metrics.stream()
+        // Find all tags of this type in system
+        List<Tag> allTagsOfType = tagRepository.findByType(type);
+
+        // Identify which ones the user hasn't attempted yet
+        Set<Integer> attemptedTagIds =
+                metrics.stream().map(m -> m.getTag().getId()).collect(java.util.stream.Collectors.toSet());
+
+        List<Tag> unattemptedTags = allTagsOfType.stream()
+                .filter(t -> !attemptedTagIds.contains(t.getId()))
+                .toList();
+
+        // Get known weak tags
+        List<Tag> knownWeakTags = metrics.stream()
                 .filter(m -> m.getTag().getType() == type)
                 .sorted(Comparator.comparingDouble(this::weakAreaScore))
                 .map(LearnerMetric::getTag)
-                .limit(limit)
                 .toList();
+
+        // Combine: Prioritize unattempted so they get tested and gather data!
+        List<Tag> result = new ArrayList<>(unattemptedTags);
+        result.addAll(knownWeakTags);
+
+        return result.stream().limit(limit).toList();
     }
 
     private double scoreStimulusV4(Stimulus s, double targetDifficulty, List<Tag> weakStructs, List<Tag> weakSubTypes) {
