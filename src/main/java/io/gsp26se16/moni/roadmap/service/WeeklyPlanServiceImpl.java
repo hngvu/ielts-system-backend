@@ -296,7 +296,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
             Integer totalQuestions,
             List<String> correctWords,
             List<String> incorrectWords,
-            String quizDataStr) {
+            java.util.Map<String, Object> quizData) {
         Users user = getCurrentUser();
 
         DailySlot slot =
@@ -321,14 +321,14 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                     correctWords != null ? correctWords : List.of(),
                     incorrectWords != null ? incorrectWords : List.of());
 
-            if (quizDataStr != null && !quizDataStr.isBlank()) {
+            if (quizData != null && !quizData.isEmpty()) {
                 io.gsp26se16.moni.vocab.entity.VocabQuizHistory history =
                         io.gsp26se16.moni.vocab.entity.VocabQuizHistory.builder()
                                 .user(user)
                                 .slot(slot)
                                 .score(score)
                                 .totalQuestions(totalQuestions)
-                                .quizData(quizDataStr)
+                                .quizData(quizData)
                                 .build();
                 vocabQuizHistoryRepository.save(history);
             }
@@ -446,7 +446,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                         try {
                             com.fasterxml.jackson.databind.ObjectMapper mapper =
                                     new com.fasterxml.jackson.databind.ObjectMapper();
-                            QuizResponse response = mapper.readValue(history.getQuizData(), QuizResponse.class);
+                            QuizResponse response = mapper.convertValue(history.getQuizData(), QuizResponse.class);
                             response.setIsHistory(true);
                             response.setScore(history.getScore());
                             return response;

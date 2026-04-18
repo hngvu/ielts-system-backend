@@ -35,7 +35,7 @@ public class VocabQuizHistory {
 
     @Column(name = "quiz_data", columnDefinition = "jsonb")
     @Type(JsonBinaryType.class)
-    private String quizData;
+    private java.util.Map<String, Object> quizData;
 
     @Column(name = "score")
     private Integer score;

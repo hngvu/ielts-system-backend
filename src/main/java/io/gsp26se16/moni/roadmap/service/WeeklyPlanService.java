@@ -32,7 +32,7 @@ public interface WeeklyPlanService {
             Integer totalQuestions,
             List<String> correctWords,
             List<String> incorrectWords,
-            String quizData);
+            java.util.Map<String, Object> quizData);
 
     /** Auto-detect and complete slot based on stimulus + user + date */
     void autoCompleteSlot(Users user, Integer stimulusId, Integer score, Integer totalQuestions);

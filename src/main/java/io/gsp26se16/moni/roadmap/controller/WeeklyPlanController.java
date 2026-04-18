@@ -74,16 +74,17 @@ public class WeeklyPlanController {
             incorrectWords = (List<String>) body.get("incorrectWords");
         }
 
-        String quizDataStr = null;
+        java.util.Map<String, Object> quizData = null;
         if (body.containsKey("quizData")) {
             try {
-                quizDataStr = objectMapper.writeValueAsString(body.get("quizData"));
+                // Extracts the JSON map as is
+                quizData = (java.util.Map<String, Object>) body.get("quizData");
             } catch (Exception e) {
                 // ignore
             }
         }
 
-        weeklyPlanService.completeSlot(slotId, score, totalQuestions, correctWords, incorrectWords, quizDataStr);
+        weeklyPlanService.completeSlot(slotId, score, totalQuestions, correctWords, incorrectWords, quizData);
 
         return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .code(1000)
