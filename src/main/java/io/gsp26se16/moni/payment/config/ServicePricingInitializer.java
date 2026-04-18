@@ -19,29 +19,45 @@ public class ServicePricingInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        seedIfAbsent("AI_WRITING_SCORE", "Chấm Writing bằng AI", "Chấm bài Writing Task 1/2 tự động bằng AI", 30);
-        seedIfAbsent("AI_SPEAKING_SCORE", "Chấm Speaking bằng AI", "Chấm bài Speaking tự động bằng AI", 30);
-        seedIfAbsent(
+        seedOrHeal("AI_WRITING_SCORE", "Chấm Writing bằng AI", "Chấm bài Writing Task 1/2 tự động bằng AI", 30);
+        seedOrHeal("AI_SPEAKING_SCORE", "Chấm Speaking bằng AI", "Chấm bài Speaking tự động bằng AI", 30);
+        seedOrHeal(
                 "EXPERT_WRITING_SCORE",
                 "Chấm Writing với Giảng viên",
                 "Chấm bài Writing trực tiếp với giảng viên qua video call",
                 100);
-        seedIfAbsent(
+        seedOrHeal(
                 "EXPERT_SPEAKING_SCORE",
                 "Chấm Speaking với Giảng viên",
                 "Chấm bài Speaking trực tiếp với giảng viên qua video call",
                 120);
     }
 
-    private void seedIfAbsent(String code, String name, String description, int cost) {
-        if (!repository.existsByServiceCode(code)) {
-            ServicePricing sp = new ServicePricing();
-            sp.setServiceCode(code);
-            sp.setName(name);
-            sp.setDescription(description);
-            sp.setCreditCost(cost);
-            repository.save(sp);
-            log.info("ServicePricing seeded: {} = {} credits", code, cost);
-        }
+    /**
+     * Tạo mới nếu chưa có. Nếu đã có nhưng creditCost ≤ 0 (data bị lỗi), tự heal về default.
+     * Không ghi đè creditCost khi giá trị đã > 0 để tránh mất tinh chỉnh của admin.
+     */
+    private void seedOrHeal(String code, String name, String description, int cost) {
+        repository
+                .findByServiceCode(code)
+                .ifPresentOrElse(
+                        existing -> {
+                            if (existing.getCreditCost() <= 0) {
+                                existing.setName(name);
+                                existing.setDescription(description);
+                                existing.setCreditCost(cost);
+                                repository.save(existing);
+                                log.info("ServicePricing healed: {} reset to {} credits", code, cost);
+                            }
+                        },
+                        () -> {
+                            ServicePricing sp = new ServicePricing();
+                            sp.setServiceCode(code);
+                            sp.setName(name);
+                            sp.setDescription(description);
+                            sp.setCreditCost(cost);
+                            repository.save(sp);
+                            log.info("ServicePricing seeded: {} = {} credits", code, cost);
+                        });
     }
 }
