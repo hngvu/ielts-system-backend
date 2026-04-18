@@ -446,6 +446,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                                     new com.fasterxml.jackson.databind.ObjectMapper();
                             QuizResponse response = mapper.readValue(history.getQuizData(), QuizResponse.class);
                             response.setIsHistory(true);
+                            response.setScore(history.getScore());
                             return response;
                         } catch (Exception e) {
                             return QuizResponse.builder()
