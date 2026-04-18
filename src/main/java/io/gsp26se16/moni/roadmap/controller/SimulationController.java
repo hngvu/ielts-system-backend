@@ -353,14 +353,23 @@ public class SimulationController {
             slot.setTotalQuestions(null);
         } else if (slot.getSkill() == io.gsp26se16.moni.common.enumeration.Skill.WRITING
                 || slot.getSkill() == io.gsp26se16.moni.common.enumeration.Skill.SPEAKING) {
-            // Writing and Speaking use band scores (1-9). We map 9 to totalQuestions for frontend logic
-            int band = 4 + rng.nextInt(6); // 4 to 9 band
-            slot.setScore(band);
+            // Writing and Speaking use band scores (1-9). Generate firmer scores (5.0 - 8.5)
+            // band * 10 then divide by 10 to simulate half band if needed
+            double band = 5.0 + rng.nextDouble() * 3.5; // 5.0 to 8.5
+            int roundedBand = (int) (Math.round(band * 2.0)); // In half increments
+            slot.setScore(roundedBand / 2); // Save as integer band for now (as system logic expects)
+            // Wait, does system expect score as integer or can it be double?
+            // DailySlot score is Integer. So half bands might need mapping or just use integers.
+            // Let's stick to integers 5 to 9 for simplicity in simulation.
+            int finalBand = 5 + rng.nextInt(5); // 5, 6, 7, 8, 9
+            slot.setScore(finalBand);
             slot.setTotalQuestions(9);
         } else {
             // Reading, Listening, Vocab Quiz => standard correct / total ratio
+            // Target band 5.5 to 8.5 => Accuracy 0.55 to 0.95
             int totalQ = 10 + rng.nextInt(31); // 10 to 40 questions
-            int score = (int) (totalQ * (0.4 + rng.nextDouble() * 0.5)); // 40% to 90% accuracy
+            double targetAccuracy = 0.55 + rng.nextDouble() * 0.40; // 55% to 95%
+            int score = (int) (totalQ * targetAccuracy);
             slot.setScore(score);
             slot.setTotalQuestions(totalQ);
         }
