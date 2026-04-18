@@ -303,9 +303,12 @@ public class VocabLearningService {
                 .stream()
                 .filter(v -> v.getSourceType() == VocabSourceType.ROADMAP_SYSTEM)
                 .filter(v -> v.getStatus() == VocabStatus.DRAFT || v.getStatus() == VocabStatus.ACTIVE)
-                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
-                .limit(15)
-                .toList();
+                .collect(java.util.stream.Collectors.toList());
+
+        Collections.shuffle(quizWords);
+        if (quizWords.size() > 15) {
+            quizWords = quizWords.subList(0, 15);
+        }
 
         if (quizWords.size() < 4) {
             return QuizResponse.builder().questions(List.of()).source("roadmap").build();
@@ -385,6 +388,11 @@ public class VocabLearningService {
                         word.toLowerCase(), (String) item.getOrDefault("vocabStatus", "DRAFT"));
 
                 if (!sentence.isBlank() && options.size() >= 2) {
+                    String explanation = (String) item.getOrDefault("explanation", "");
+                    String notebookName = status.equals("DRAFT") ? "Sổ biết tuốt" : "Sổ nhắc lại";
+                    String fullExplanation =
+                            explanation.isBlank() ? notebookName : explanation + " (" + notebookName + ")";
+
                     questions.add(QuizQuestion.builder()
                             .id(id++)
                             .type("fillblank")
@@ -392,7 +400,7 @@ public class VocabLearningService {
                             .options(options)
                             .correctIndex(correctIdx)
                             .word(word)
-                            .explanation(status.equals("DRAFT") ? "Sổ biết tuốt" : "Sổ nhắc lại")
+                            .explanation(fullExplanation)
                             .vocabStatus(status)
                             .build());
                 }

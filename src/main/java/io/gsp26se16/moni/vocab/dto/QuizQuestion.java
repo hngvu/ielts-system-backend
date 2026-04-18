@@ -16,4 +16,5 @@ public class QuizQuestion {
     String word;
     String explanation;
     String vocabStatus; // "DRAFT" (Sổ biết tuốt) or "ACTIVE" (Sổ nhắc lại)
+    Integer userSelected; // Populated during history review
 }

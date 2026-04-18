@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 public class WeeklyPlanController {
 
     private final WeeklyPlanService weeklyPlanService;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     @GetMapping
     @Operation(summary = "Lấy plan tuần hiện tại + tất cả slots")
@@ -73,7 +74,16 @@ public class WeeklyPlanController {
             incorrectWords = (List<String>) body.get("incorrectWords");
         }
 
-        weeklyPlanService.completeSlot(slotId, score, totalQuestions, correctWords, incorrectWords);
+        String quizDataStr = null;
+        if (body.containsKey("quizData")) {
+            try {
+                quizDataStr = objectMapper.writeValueAsString(body.get("quizData"));
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+
+        weeklyPlanService.completeSlot(slotId, score, totalQuestions, correctWords, incorrectWords, quizDataStr);
 
         return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .code(1000)

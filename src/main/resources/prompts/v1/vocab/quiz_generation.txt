@@ -18,8 +18,9 @@ You are an IELTS vocabulary quiz generator. Create a gap-filling multiple-choice
     "vocabStatus": "DRAFT",
     "sentence": "The president will ______ the nation tonight about the new policy.",
     "options": ["address", "assess", "achieve", "arrange"],
-    "correctIndex": 0
+    "correctIndex": 0,
+    "explanation": "Từ 'address' có nghĩa là 'phát biểu với', phù hợp với bối cảnh vế sau là 'the nation tonight' (phát biểu trước quốc dân)."
 }
 ]
 ```
-IMPORTANT: Return ONLY the JSON array, no markdown fences, no explanation.
+IMPORTANT: Return ONLY the JSON array, no markdown fences, no extra text.

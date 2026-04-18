@@ -49,6 +49,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     private final GoalRepository goalRepository;
     private final TestRepository testRepository;
     private final VocabLearningService vocabLearningService;
+    private final io.gsp26se16.moni.vocab.repository.VocabQuizHistoryRepository vocabQuizHistoryRepository;
 
     @org.springframework.context.annotation.Lazy
     @org.springframework.beans.factory.annotation.Autowired
@@ -292,7 +293,8 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
             Integer score,
             Integer totalQuestions,
             List<String> correctWords,
-            List<String> incorrectWords) {
+            List<String> incorrectWords,
+            String quizDataStr) {
         Users user = getCurrentUser();
 
         DailySlot slot =
@@ -316,6 +318,18 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                     user,
                     correctWords != null ? correctWords : List.of(),
                     incorrectWords != null ? incorrectWords : List.of());
+
+            if (quizDataStr != null && !quizDataStr.isBlank()) {
+                io.gsp26se16.moni.vocab.entity.VocabQuizHistory history =
+                        io.gsp26se16.moni.vocab.entity.VocabQuizHistory.builder()
+                                .user(user)
+                                .slot(slot)
+                                .score(score)
+                                .totalQuestions(totalQuestions)
+                                .quizData(quizDataStr)
+                                .build();
+                vocabQuizHistoryRepository.save(history);
+            }
         }
 
         dailySlotRepository.save(slot);
@@ -421,6 +435,23 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
 
         if (!"VOCAB_TEST".equals(slot.getTaskType())) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+
+        if ("DONE".equals(slot.getStatus())) {
+            return vocabQuizHistoryRepository
+                    .findTopBySlotAndUserOrderByCreatedAtDesc(slot, user)
+                    .map(history -> {
+                        try {
+                            com.fasterxml.jackson.databind.ObjectMapper mapper =
+                                    new com.fasterxml.jackson.databind.ObjectMapper();
+                            QuizResponse response = mapper.readValue(history.getQuizData(), QuizResponse.class);
+                            response.setIsHistory(true);
+                            return response;
+                        } catch (Exception e) {
+                            return vocabLearningService.generateRoadmapQuiz(user);
+                        }
+                    })
+                    .orElseGet(() -> vocabLearningService.generateRoadmapQuiz(user));
         }
 
         return vocabLearningService.generateRoadmapQuiz(user);

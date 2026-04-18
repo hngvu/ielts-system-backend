@@ -10,4 +10,9 @@ import lombok.Data;
 public class QuizResponse {
     List<QuizQuestion> questions;
     String source;
+
+    @Builder.Default
+    Boolean isHistory = false;
+
+    Integer score;
 }
