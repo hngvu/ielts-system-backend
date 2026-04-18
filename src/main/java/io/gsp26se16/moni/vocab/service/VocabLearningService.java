@@ -313,7 +313,7 @@ public class VocabLearningService {
 
         // Try AI-powered gap-filling quiz first
         try {
-            QuizResponse aiQuiz = generateAiGapFillingQuiz(quizWords);
+            QuizResponse aiQuiz = generateAiGapFillingQuiz(user, quizWords);
             if (aiQuiz != null && !aiQuiz.getQuestions().isEmpty()) {
                 return aiQuiz;
             }
@@ -328,7 +328,7 @@ public class VocabLearningService {
     /**
      * Generate AI gap-filling multiple-choice quiz using LLM.
      */
-    private QuizResponse generateAiGapFillingQuiz(List<Vocab> words) {
+    private QuizResponse generateAiGapFillingQuiz(Users user, List<Vocab> words) {
         StringBuilder wordList = new StringBuilder();
         for (Vocab v : words) {
             wordList.append(String.format(
@@ -338,7 +338,9 @@ public class VocabLearningService {
                     v.getStatus().name()));
         }
 
-        String prompt = promptLoader.loadPrompt("vocab/quiz_generation.txt", Map.of("wordList", wordList.toString()));
+        String userLevel = resolveUserCefrLevel(user);
+        String prompt = promptLoader.loadPrompt(
+                "vocab/quiz_generation.txt", Map.of("wordList", wordList.toString(), "userLevel", userLevel));
 
         ChatClient chatClient = chatClientBuilder.build();
         String response = chatClient.prompt().user(prompt).call().content();
@@ -564,4 +566,19 @@ public class VocabLearningService {
     }
 
     private record WordEntry(String word, String definition, String meaning, String example) {}
+
+    /**
+     * Map user's targetBand to a CEFR level string for use in AI prompts.
+     * Uses the same mapping as WeeklyPlanServiceImpl.formatBandRange.
+     */
+    private String resolveUserCefrLevel(Users user) {
+        Double band = user.getTargetBand();
+        if (band == null) return "B1"; // safe default for users without a target
+        if (band < 4.5) return "A1";
+        if (band < 5.5) return "A2";
+        if (band < 6.5) return "B1";
+        if (band < 7.5) return "B2";
+        if (band >= 8.5) return "C2";
+        return "C1";
+    }
 }
