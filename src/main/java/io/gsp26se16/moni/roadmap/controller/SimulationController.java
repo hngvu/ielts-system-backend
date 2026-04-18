@@ -17,9 +17,7 @@ import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.roadmap.entity.DailySlot;
 import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
 import io.gsp26se16.moni.roadmap.entity.WeeklyPlan;
-import io.gsp26se16.moni.roadmap.repository.DailySlotRepository;
-import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
-import io.gsp26se16.moni.roadmap.repository.WeeklyPlanRepository;
+import io.gsp26se16.moni.roadmap.repository.*;
 import io.gsp26se16.moni.roadmap.service.GoalService;
 import io.gsp26se16.moni.roadmap.service.WeeklyPlanService;
 import io.gsp26se16.moni.tag.entity.Tag;
@@ -45,6 +43,8 @@ public class SimulationController {
     private final UserCredentialsRepository userCredentialsRepository;
     private final LearnerMetricRepository learnerMetricRepository;
     private final TagRepository tagRepository;
+    private final InsightSnapshotRepository insightSnapshotRepository;
+    private final MonthlyAssessmentRepository monthlyAssessmentRepository;
 
     /**
      * Simulate completing a single day's slots with random scores.
@@ -274,8 +274,6 @@ public class SimulationController {
         }
 
         return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
-                .code(1000)
-                .message("Fast-forwarded " + weekResults.size() + " weeks")
                 .result(Map.of("weeksSimulated", weekResults.size(), "details", weekResults))
                 .build());
     }
@@ -284,24 +282,23 @@ public class SimulationController {
      * Reset: delete all weekly plans and regenerate from scratch.
      */
     @PostMapping("/reset/{userId}")
-    @Operation(summary = "[Simulation] Reset toàn bộ weekly plan + sinh lại từ đầu")
+    @Operation(summary = "[Simulation] Reset toàn bộ weekly plan + sinh lại từ đầu (bao gồm cả Tags/Metrics)")
     @Transactional
     public ResponseEntity<ApiResponse<Map<String, Object>>> simulateReset(@PathVariable String userId) {
-
         Users user = resolveUser(userId);
 
-        // Delete all daily slots for this user's plans
-        List<WeeklyPlan> allPlans = weeklyPlanRepository.findByUserOrderByWeekNumberDesc(user);
+        // Delete all planning data
+        List<WeeklyPlan> allPlans = weeklyPlanRepository.findByUser(user);
         int deletedSlots = 0;
-        for (WeeklyPlan plan : allPlans) {
-            List<DailySlot> slots = dailySlotRepository.findByWeeklyPlanOrderByDayOfWeekAscIdAsc(plan);
-            dailySlotRepository.deleteAll(slots);
-            deletedSlots += slots.size();
+        for (WeeklyPlan p : allPlans) {
+            deletedSlots += dailySlotRepository.deleteByWeeklyPlan(p);
         }
         weeklyPlanRepository.deleteAll(allPlans);
 
-        log.info(
-                "[Simulation] Reset: deleted {} plans and {} slots for user {}", allPlans.size(), deletedSlots, userId);
+        // Delete all progress data (Tags/Metrics snapshots)
+        learnerMetricRepository.deleteAll(learnerMetricRepository.findByUser(user));
+        insightSnapshotRepository.deleteAll(insightSnapshotRepository.findByUser(user));
+        monthlyAssessmentRepository.deleteAll(monthlyAssessmentRepository.findByUser(user));
 
         // Regenerate fresh plan
         weeklyPlanService.generateWeeklyPlan(user);
@@ -312,7 +309,7 @@ public class SimulationController {
 
         return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .code(1000)
-                .message("Reset complete. New plan generated.")
+                .message("Reset complete. Tags/Metrics cleared. New plan generated.")
                 .result(Map.of(
                         "deletedPlans",
                         allPlans.size(),
