@@ -14,6 +14,7 @@ import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
+import io.gsp26se16.moni.content.repository.StimulusRepository;
 import io.gsp26se16.moni.roadmap.entity.DailySlot;
 import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
 import io.gsp26se16.moni.roadmap.entity.WeeklyPlan;
@@ -47,6 +48,7 @@ public class SimulationController {
     private final InsightSnapshotRepository insightSnapshotRepository;
     private final MonthlyAssessmentRepository monthlyAssessmentRepository;
     private final VocabQuizHistoryRepository vocabQuizHistoryRepository;
+    private final StimulusRepository stimulusRepository;
 
     /**
      * Simulate completing a single day's slots with random scores.
@@ -356,6 +358,68 @@ public class SimulationController {
                         deletedSlots,
                         "newWeekNumber",
                         newPlan != null ? newPlan.getWeekNumber() : 0))
+                .build());
+    }
+
+    /**
+     * Diagnostic: Check if adaptive selection for Day 7 matches user's current weaknesses.
+     */
+    @GetMapping("/verify-assessment/{userId}")
+    @Operation(summary = "[Simulation] Kiểm tra logic AI chọn bài test (Weakness vs. Selection)")
+    @Transactional
+    public ResponseEntity<ApiResponse<Map<String, Object>>> verifyAssessmentSelection(@PathVariable String userId) {
+        Users user = resolveUser(userId);
+
+        // 1. Fetch current top weaknesses
+        List<LearnerMetric> weakMetrics = learnerMetricRepository.findByUserOrderByMasteryLevelAsc(user).stream()
+                .filter(m -> m.getMasteryLevel() != null && m.getMasteryLevel() < 0.6)
+                .limit(10)
+                .toList();
+
+        List<Map<String, Object>> weakInfo = new ArrayList<>();
+        for (LearnerMetric m : weakMetrics) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("tagName", m.getTag().getName());
+            map.put("tagType", m.getTag().getType());
+            map.put("mastery", Math.round(m.getMasteryLevel() * 100) + "%");
+            weakInfo.add(map);
+        }
+
+        // 2. Fetch Day 7 Slots for current active plan
+        WeeklyPlan plan = getActivePlan(user);
+        List<DailySlot> allSlots = dailySlotRepository.findByWeeklyPlanOrderByDayOfWeekAscIdAsc(plan);
+        List<DailySlot> assessmentSlots = allSlots.stream()
+                .filter(s -> "ASSESSMENT".equals(s.getTaskType()))
+                .toList();
+
+        List<Map<String, Object>> assignments = new ArrayList<>();
+        for (DailySlot slot : assessmentSlots) {
+            Map<String, Object> info = new HashMap<>();
+            info.put("skill", slot.getSkill());
+
+            if (slot.getStimulus() != null) {
+                info.put("assignedStimulus", slot.getStimulus().getTitle());
+                List<String> sTags =
+                        slot.getStimulus().getTags().stream().map(Tag::getName).toList();
+                info.put("stimulusTags", sTags);
+
+                // Find intersections with user's specific weak tags
+                List<String> matches = sTags.stream()
+                        .filter(st ->
+                                weakInfo.stream().anyMatch(w -> w.get("tagName").equals(st)))
+                        .toList();
+                info.put("matchedWeaknesses", matches);
+                info.put("isMatchFound", !matches.isEmpty());
+            } else {
+                info.put("assignedStimulus", "CHƯA GÁN (Bấm vào ngày Sunday trên UI để kích hoạt JIT assignment)");
+            }
+            assignments.add(info);
+        }
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
+                .result(Map.of(
+                        "user", user.getFull_name(),
+                        "userWeaknesses", weakInfo,
+                        "sundayAssignments", assignments))
                 .build());
     }
 
