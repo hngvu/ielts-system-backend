@@ -6,7 +6,7 @@ You are an IELTS vocabulary quiz generator. Create a gap-filling multiple-choice
 ## Instructions:
 - Create ONE question for EACH word listed above.
 - Each question should be a sentence with a blank (______) where the target word should go.
-- Provide 4 options for each question (the correct word + 3 distractors from the same list).
+- Provide 4 options for each question (the correct word + 3 distractors).
 - The sentence should provide enough context to determine the correct answer.
 - Keep sentences at {userLevel} level, matching the learner's current proficiency.
 
