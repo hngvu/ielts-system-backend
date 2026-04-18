@@ -415,12 +415,13 @@ public class SimulationController {
             }
             assignments.add(info);
         }
-        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
-                .result(Map.of(
-                        "user", user.getFull_name(),
-                        "userWeaknesses", weakInfo,
-                        "sundayAssignments", assignments))
-                .build());
+        Map<String, Object> result = new HashMap<>();
+        result.put("user", user.getFull_name());
+        result.put("userWeaknesses", weakInfo);
+        result.put("sundayAssignments", assignments);
+
+        return ResponseEntity.ok(
+                ApiResponse.<Map<String, Object>>builder().result(result).build());
     }
 
     // =====================================================================
