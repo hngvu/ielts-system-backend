@@ -389,9 +389,6 @@ public class VocabLearningService {
 
                 if (!sentence.isBlank() && options.size() >= 2) {
                     String explanation = (String) item.getOrDefault("explanation", "");
-                    String notebookName = status.equals("DRAFT") ? "Sổ biết tuốt" : "Sổ nhắc lại";
-                    String fullExplanation =
-                            explanation.isBlank() ? notebookName : explanation + " (" + notebookName + ")";
 
                     questions.add(QuizQuestion.builder()
                             .id(id++)
@@ -400,7 +397,7 @@ public class VocabLearningService {
                             .options(options)
                             .correctIndex(correctIdx)
                             .word(word)
-                            .explanation(fullExplanation)
+                            .explanation(explanation.isBlank() ? null : explanation)
                             .vocabStatus(status)
                             .build());
                 }
