@@ -125,6 +125,24 @@ public class WritingSubmissionController {
                                 stimulusTitle = s.getStimulus().getTitle();
                             }
 
+                            // Lấy overall band nếu đã chấm (ưu tiên AI, fallback Expert)
+                            Double overallBand = null;
+                            if (s.getEvaluationStatus() == EvaluationStatus.COMPLETED) {
+                                overallBand = aiEvaluationRepository.findBySubmissionId(s.getId()).stream()
+                                        .filter(e -> Skill.WRITING.equals(e.getSkill()))
+                                        .findFirst()
+                                        .map(AiEvaluation::getOverallScore)
+                                        .orElse(null);
+                                if (overallBand == null) {
+                                    overallBand = scoringSessionRepository
+                                            .findByWritingSubmissionId(s.getId())
+                                            .flatMap(sess ->
+                                                    expertEvaluationRepository.findByScoringSession_Id(sess.getId()))
+                                            .map(ex -> ex.getOverallScore())
+                                            .orElse(null);
+                                }
+                            }
+
                             return new WritingSubmissionSummary(
                                     s.getId(),
                                     s.getTestId(),
@@ -134,7 +152,8 @@ public class WritingSubmissionController {
                                     s.getTaskType(),
                                     s.getWordCount(),
                                     s.getEvaluationStatus(),
-                                    s.getSubmittedAt());
+                                    s.getSubmittedAt(),
+                                    overallBand);
                         })
                         .toList();
 
@@ -333,7 +352,7 @@ public class WritingSubmissionController {
     /** Response DTO khi nộp bài thành công */
     public record SubmitWritingResponse(Long submissionId, String evaluationStatus, LocalDateTime submittedAt) {}
 
-    /** DTO tóm tắt cho lịch sử nộp bài */
+    /** DTO tóm tắt cho lịch sử nộp bài — kèm overallBand nếu đã chấm */
     public record WritingSubmissionSummary(
             Long submissionId,
             Integer testId,
@@ -343,7 +362,8 @@ public class WritingSubmissionController {
             WritingTaskType taskType,
             Integer wordCount,
             EvaluationStatus evaluationStatus,
-            LocalDateTime submittedAt) {}
+            LocalDateTime submittedAt,
+            Double overallBand) {}
 
     /** DTO kết quả chấm điểm AI */
     public record WritingEvaluationDetail(
