@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.content.entity.Stimulus;
 import io.gsp26se16.moni.tag.entity.Tag;
@@ -25,6 +26,8 @@ public interface StimulusRepository extends JpaRepository<Stimulus, Integer> {
     List<Stimulus> findSmartStimuli(@Param("skill") Skill skill, @Param("weakTags") List<Tag> weakTags);
 
     List<Stimulus> findBySkill(Skill skill);
+
+    List<Stimulus> findBySkillAndStatus(Skill skill, PublishStatus status);
 
     boolean existsByTagsId(Integer tagId);
 
