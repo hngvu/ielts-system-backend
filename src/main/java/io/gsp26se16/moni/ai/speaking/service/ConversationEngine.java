@@ -582,11 +582,12 @@ public class ConversationEngine {
     private void updateMetricBKT(Users user, Tag tag, boolean isCorrect, double scoreNormalized) {
 
         LearnerMetric metric = learnerMetricRepository
-                .findByUserAndTag(user, tag)
+                .findByUserAndTagAndSkill(user, tag, Skill.SPEAKING)
                 .orElseGet(() -> {
                     LearnerMetric m = new LearnerMetric();
                     m.setUser(user);
                     m.setTag(tag);
+                    m.setSkill(Skill.SPEAKING);
                     m.setMasteryLevel(0.3);
                     m.setConfidenceScore(0.0);
                     m.setAttemptCount(0);

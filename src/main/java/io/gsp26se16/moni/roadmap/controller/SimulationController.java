@@ -570,7 +570,8 @@ public class SimulationController {
             // Skip DIFFICULTY tags — they're metadata, not learnable skills
             if (tag.getType() == TagType.DIFFICULTY) continue;
 
-            Optional<LearnerMetric> existingOpt = learnerMetricRepository.findByUserAndTag(user, tag);
+            Optional<LearnerMetric> existingOpt =
+                    learnerMetricRepository.findByUserAndTagAndSkill(user, tag, slot.getSkill());
             LearnerMetric metric;
 
             if (existingOpt.isPresent()) {
@@ -609,6 +610,7 @@ public class SimulationController {
                 metric = LearnerMetric.builder()
                         .user(user)
                         .tag(tag)
+                        .skill(slot.getSkill())
                         .masteryLevel(accuracy * 0.7 + 0.1) // Map accuracy to initial mastery
                         .confidenceScore(0.15) // Low confidence on first attempt
                         .attemptCount(1)
@@ -639,6 +641,7 @@ public class SimulationController {
             LearnerMetric m = LearnerMetric.builder()
                     .user(user)
                     .tag(allTags.get(i))
+                    .skill(Skill.values()[rng.nextInt(Skill.values().length)]) // Assign a random skill for bootstrap
                     .masteryLevel(0.2 + rng.nextDouble() * 0.3)
                     .confidenceScore(0.1 + rng.nextDouble() * 0.3)
                     .updatedAt(LocalDateTime.now())

@@ -142,13 +142,15 @@ public class PracticeServiceImpl implements PracticeService {
             Set<Tag> questionTags = question.getTags();
 
             if (questionTags != null && !questionTags.isEmpty()) {
+                Skill skillForMetric = test.getSkill() != null ? test.getSkill() : stimulus.getSkill();
                 for (Tag tag : questionTags) {
                     LearnerMetric metric = learnerMetricRepository
-                            .findByUserAndTag(user, tag)
+                            .findByUserAndTagAndSkill(user, tag, skillForMetric)
                             .orElseGet(() -> {
                                 LearnerMetric newMetric = new LearnerMetric();
                                 newMetric.setUser(user);
                                 newMetric.setTag(tag);
+                                newMetric.setSkill(skillForMetric);
 
                                 // BKT initialization
                                 newMetric.setMasteryLevel(0.3); // P(L=1) prior

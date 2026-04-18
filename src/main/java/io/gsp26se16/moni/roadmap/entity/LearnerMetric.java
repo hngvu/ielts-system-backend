@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import jakarta.persistence.*;
 
 import io.gsp26se16.moni.authentication.entity.Users;
+import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.tag.entity.Tag;
 import lombok.*;
 
@@ -27,6 +28,10 @@ public class LearnerMetric {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tag_id")
     private Tag tag; // [cite: 59]
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "skill")
+    private Skill skill;
 
     @Column(name = "mastery_level")
     private Double masteryLevel; // [cite: 60]

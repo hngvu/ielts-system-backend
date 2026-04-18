@@ -309,6 +309,7 @@ public class GoalServiceImpl implements GoalService {
                 .tagName(tag != null ? tag.getName() : null)
                 .tagCode(tag != null ? tag.getCode() : null)
                 .tagType(tag != null && tag.getType() != null ? tag.getType().name() : null)
+                .skill(metric.getSkill() != null ? metric.getSkill().name() : null)
                 .masteryLevel(safe01(metric.getMasteryLevel(), 0.5))
                 .confidenceScore(safe01(metric.getConfidenceScore(), 0.0))
                 .attemptCount(metric.getAttemptCount() != null ? metric.getAttemptCount() : 0)

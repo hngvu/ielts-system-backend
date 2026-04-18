@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import io.gsp26se16.moni.authentication.entity.UserCredentials;
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
+import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestSessionStatus;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
@@ -339,7 +340,8 @@ public class ExamSessionServiceImpl implements ExamSessionService {
             if (isCorrect) correctCount++;
 
             // EMA mastery update
-            updateMastery(session.getUser(), question, isCorrect);
+            Skill testSkill = session.getTest() != null ? session.getTest().getSkill() : null;
+            updateMastery(session.getUser(), testSkill, question, isCorrect);
 
             results.add(buildAnswerResult(question, aa, correctOption, isCorrect));
         }
@@ -387,18 +389,19 @@ public class ExamSessionServiceImpl implements ExamSessionService {
                 .orElse(null);
     }
 
-    private void updateMastery(Users user, Question question, boolean isCorrect) {
+    private void updateMastery(Users user, Skill skill, Question question, boolean isCorrect) {
         double score = isCorrect ? 1.0 : 0.0;
         Set<Tag> tags = question.getTags();
         if (tags == null || tags.isEmpty()) return;
 
         for (Tag tag : tags) {
             LearnerMetric metric = learnerMetricRepository
-                    .findByUserAndTag(user, tag)
+                    .findByUserAndTagAndSkill(user, tag, skill)
                     .orElseGet(() -> {
                         LearnerMetric m = new LearnerMetric();
                         m.setUser(user);
                         m.setTag(tag);
+                        m.setSkill(skill);
                         m.setMasteryLevel(0.5);
                         m.setConfidenceScore(0.0);
                         return m;

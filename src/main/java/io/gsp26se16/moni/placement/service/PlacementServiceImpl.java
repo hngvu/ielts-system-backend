@@ -244,11 +244,12 @@ public class PlacementServiceImpl implements PlacementService {
             if (questionTags != null && !questionTags.isEmpty()) {
                 for (Tag tag : questionTags) {
                     LearnerMetric metric = learnerMetricRepository
-                            .findByUserAndTag(user, tag)
+                            .findByUserAndTagAndSkill(user, tag, skill)
                             .orElseGet(() -> {
                                 LearnerMetric newMetric = new LearnerMetric();
                                 newMetric.setUser(user);
                                 newMetric.setTag(tag);
+                                newMetric.setSkill(skill);
                                 newMetric.setMasteryLevel(0.3); // Prior
                                 newMetric.setConfidenceScore(0.0);
                                 newMetric.setAttemptCount(0);

@@ -68,6 +68,7 @@ public class LearnerRoadmapInsightsResponse {
         String tagName;
         String tagCode;
         String tagType;
+        String skill;
         Double masteryLevel;
         Double confidenceScore;
         LocalDateTime updatedAt;

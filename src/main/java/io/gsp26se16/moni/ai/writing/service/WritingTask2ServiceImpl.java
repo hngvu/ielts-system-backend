@@ -328,11 +328,12 @@ public class WritingTask2ServiceImpl implements WritingTask2Service {
             Users user, io.gsp26se16.moni.tag.entity.Tag tag, boolean isCorrect, double scoreNormalized) {
 
         LearnerMetric metric = learnerMetricRepository
-                .findByUserAndTag(user, tag)
+                .findByUserAndTagAndSkill(user, tag, Skill.WRITING)
                 .orElseGet(() -> {
                     LearnerMetric m = new LearnerMetric();
                     m.setUser(user);
                     m.setTag(tag);
+                    m.setSkill(Skill.WRITING);
                     m.setMasteryLevel(0.3); // BKT prior
                     m.setConfidenceScore(0.0);
                     m.setAttemptCount(0); // [MỚI] Khởi tạo số lần làm bài
