@@ -22,6 +22,7 @@ import io.gsp26se16.moni.roadmap.service.GoalService;
 import io.gsp26se16.moni.roadmap.service.WeeklyPlanService;
 import io.gsp26se16.moni.tag.entity.Tag;
 import io.gsp26se16.moni.tag.repository.TagRepository;
+import io.gsp26se16.moni.vocab.repository.VocabQuizHistoryRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,7 @@ public class SimulationController {
     private final TagRepository tagRepository;
     private final InsightSnapshotRepository insightSnapshotRepository;
     private final MonthlyAssessmentRepository monthlyAssessmentRepository;
+    private final VocabQuizHistoryRepository vocabQuizHistoryRepository;
 
     /**
      * Simulate completing a single day's slots with random scores.
@@ -320,6 +322,9 @@ public class SimulationController {
     @Transactional
     public ResponseEntity<ApiResponse<Map<String, Object>>> simulateReset(@PathVariable String userId) {
         Users user = resolveUser(userId);
+
+        // Delete all vocab quiz history (foreign key constraint with daily_slots)
+        vocabQuizHistoryRepository.deleteByUser(user);
 
         // Delete all planning data
         List<WeeklyPlan> allPlans = weeklyPlanRepository.findByUserOrderByWeekNumberDesc(user);

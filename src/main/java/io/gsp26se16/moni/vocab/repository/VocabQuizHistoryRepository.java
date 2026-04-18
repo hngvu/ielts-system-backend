@@ -12,4 +12,6 @@ import io.gsp26se16.moni.vocab.entity.VocabQuizHistory;
 @Repository
 public interface VocabQuizHistoryRepository extends JpaRepository<VocabQuizHistory, Integer> {
     Optional<VocabQuizHistory> findTopBySlotAndUserOrderByCreatedAtDesc(DailySlot slot, Users user);
+
+    void deleteByUser(Users user);
 }
