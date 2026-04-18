@@ -15,11 +15,15 @@ import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.roadmap.entity.DailySlot;
+import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
 import io.gsp26se16.moni.roadmap.entity.WeeklyPlan;
 import io.gsp26se16.moni.roadmap.repository.DailySlotRepository;
+import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
 import io.gsp26se16.moni.roadmap.repository.WeeklyPlanRepository;
 import io.gsp26se16.moni.roadmap.service.GoalService;
 import io.gsp26se16.moni.roadmap.service.WeeklyPlanService;
+import io.gsp26se16.moni.tag.entity.Tag;
+import io.gsp26se16.moni.tag.repository.TagRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +43,8 @@ public class SimulationController {
     private final WeeklyPlanService weeklyPlanService;
     private final GoalService goalService;
     private final UserCredentialsRepository userCredentialsRepository;
+    private final LearnerMetricRepository learnerMetricRepository;
+    private final TagRepository tagRepository;
 
     /**
      * Simulate completing a single day's slots with random scores.
@@ -58,21 +64,15 @@ public class SimulationController {
 
         for (DailySlot slot : slots) {
             if (slot.getDayOfWeek().equals(dayOfWeek) && "TODO".equals(slot.getStatus())) {
-                int totalQ = 10 + rng.nextInt(31); // 10-40 questions
-                int score = (int) (totalQ * (0.4 + rng.nextDouble() * 0.5)); // 40%-90% accuracy
-                slot.setStatus("DONE");
-                slot.setScore(score);
-                slot.setTotalQuestions(totalQ);
-                slot.setCompletedAt(LocalDateTime.now());
-                dailySlotRepository.save(slot);
+                simulateSlotCompletion(slot, rng);
                 completed++;
                 log.info(
                         "[Simulation] Completed slot {} (day={}, skill={}, score={}/{})",
                         slot.getId(),
                         dayOfWeek,
                         slot.getSkill(),
-                        score,
-                        totalQ);
+                        slot.getScore(),
+                        slot.getTotalQuestions());
             }
         }
 
@@ -103,13 +103,7 @@ public class SimulationController {
 
         for (DailySlot slot : slots) {
             if ("TODO".equals(slot.getStatus())) {
-                int totalQ = 10 + rng.nextInt(31);
-                int score = (int) (totalQ * (0.4 + rng.nextDouble() * 0.5));
-                slot.setStatus("DONE");
-                slot.setScore(score);
-                slot.setTotalQuestions(totalQ);
-                slot.setCompletedAt(LocalDateTime.now());
-                dailySlotRepository.save(slot);
+                simulateSlotCompletion(slot, rng);
                 completed++;
             }
         }
@@ -159,6 +153,9 @@ public class SimulationController {
                 weeklyAccuracy >= 0.7 ? "IMPROVED" : weeklyAccuracy >= 0.5 ? "STABLE" : "DECLINED");
         currentPlan.setStatus("COMPLETED");
         weeklyPlanRepository.save(currentPlan);
+
+        // Fake AI Evaluation progress for Tags
+        simulateMetricProgress(user, new Random());
 
         // Snapshot insights
         try {
@@ -229,13 +226,7 @@ public class SimulationController {
 
             for (DailySlot slot : slots) {
                 if ("TODO".equals(slot.getStatus())) {
-                    int totalQ = 10 + rng.nextInt(31);
-                    int score = (int) (totalQ * (0.4 + rng.nextDouble() * 0.5));
-                    slot.setStatus("DONE");
-                    slot.setScore(score);
-                    slot.setTotalQuestions(totalQ);
-                    slot.setCompletedAt(LocalDateTime.now());
-                    dailySlotRepository.save(slot);
+                    simulateSlotCompletion(slot, rng);
                     completed++;
                 }
             }
@@ -254,6 +245,9 @@ public class SimulationController {
             plan.setPerformanceVerdict(accuracy >= 0.7 ? "IMPROVED" : accuracy >= 0.5 ? "STABLE" : "DECLINED");
             plan.setStatus("COMPLETED");
             weeklyPlanRepository.save(plan);
+
+            // Fake AI Evaluation progress for Tags
+            simulateMetricProgress(user, rng);
 
             try {
                 goalService.snapshotInsightsForWeek(user, plan.getWeekNumber());
@@ -347,5 +341,76 @@ public class SimulationController {
         return weeklyPlanRepository
                 .findFirstByUserAndStatusOrderByWeekNumberDesc(user, "ACTIVE")
                 .orElseThrow(() -> new AppException(ErrorCode.ACTIVE_ROADMAP_NOT_FOUND));
+    }
+
+    private void simulateSlotCompletion(DailySlot slot, Random rng) {
+        slot.setStatus("DONE");
+        slot.setCompletedAt(LocalDateTime.now());
+
+        if ("VOCAB_LEARN".equals(slot.getTaskType())) {
+            // Learning tasks don't have scores
+            slot.setScore(null);
+            slot.setTotalQuestions(null);
+        } else if (slot.getSkill() == io.gsp26se16.moni.common.enumeration.Skill.WRITING
+                || slot.getSkill() == io.gsp26se16.moni.common.enumeration.Skill.SPEAKING) {
+            // Writing and Speaking use band scores (1-9). We map 9 to totalQuestions for frontend logic
+            int band = 4 + rng.nextInt(6); // 4 to 9 band
+            slot.setScore(band);
+            slot.setTotalQuestions(9);
+        } else {
+            // Reading, Listening, Vocab Quiz => standard correct / total ratio
+            int totalQ = 10 + rng.nextInt(31); // 10 to 40 questions
+            int score = (int) (totalQ * (0.4 + rng.nextDouble() * 0.5)); // 40% to 90% accuracy
+            slot.setScore(score);
+            slot.setTotalQuestions(totalQ);
+        }
+
+        dailySlotRepository.save(slot);
+    }
+
+    private void simulateMetricProgress(Users user, Random rng) {
+        List<LearnerMetric> metrics = learnerMetricRepository.findByUserOrderByUpdatedAtDesc(user);
+
+        // If user has no tags at all, let's grab random tags to start tracking
+        if (metrics.isEmpty()) {
+            List<Tag> allTags = tagRepository.findAll();
+            if (!allTags.isEmpty()) {
+                Collections.shuffle(allTags, rng);
+                int count = Math.min(10, allTags.size());
+                for (int i = 0; i < count; i++) {
+                    LearnerMetric m = LearnerMetric.builder()
+                            .user(user)
+                            .tag(allTags.get(i))
+                            .masteryLevel(0.2 + rng.nextDouble() * 0.3) // 20% to 50%
+                            .confidenceScore(0.1 + rng.nextDouble() * 0.3) // 10% to 40%
+                            .updatedAt(LocalDateTime.now())
+                            .attemptCount(1)
+                            .pTransit(0.1)
+                            .pGuess(0.2)
+                            .pSlip(0.1)
+                            .build();
+                    learnerMetricRepository.save(m);
+                }
+            }
+        } else {
+            // Bump existing ones to show progress
+            for (LearnerMetric m : metrics) {
+                // Slight chance to not improve or even drop
+                double masteryDelta = (rng.nextDouble() * 0.15) - 0.02; // -2% to +13%
+                double confDelta = (rng.nextDouble() * 0.20) - 0.05; // -5% to +15%
+
+                double newMastery = Math.min(
+                        1.0, Math.max(0.0, (m.getMasteryLevel() != null ? m.getMasteryLevel() : 0.0) + masteryDelta));
+                double newConf = Math.min(
+                        1.0,
+                        Math.max(0.0, (m.getConfidenceScore() != null ? m.getConfidenceScore() : 0.0) + confDelta));
+
+                m.setMasteryLevel(newMastery);
+                m.setConfidenceScore(newConf);
+                m.setUpdatedAt(LocalDateTime.now());
+                m.setAttemptCount((m.getAttemptCount() != null ? m.getAttemptCount() : 0) + 1);
+                learnerMetricRepository.save(m);
+            }
+        }
     }
 }
