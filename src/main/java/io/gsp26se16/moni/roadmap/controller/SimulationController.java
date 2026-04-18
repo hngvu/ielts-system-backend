@@ -12,8 +12,12 @@ import io.gsp26se16.moni.authentication.entity.UserCredentials;
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 import io.gsp26se16.moni.common.dto.ApiResponse;
+import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
+import io.gsp26se16.moni.content.entity.Question;
+import io.gsp26se16.moni.content.entity.QuestionGroup;
+import io.gsp26se16.moni.content.entity.Stimulus;
 import io.gsp26se16.moni.content.repository.StimulusRepository;
 import io.gsp26se16.moni.roadmap.entity.DailySlot;
 import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
@@ -22,6 +26,7 @@ import io.gsp26se16.moni.roadmap.repository.*;
 import io.gsp26se16.moni.roadmap.service.GoalService;
 import io.gsp26se16.moni.roadmap.service.WeeklyPlanService;
 import io.gsp26se16.moni.tag.entity.Tag;
+import io.gsp26se16.moni.tag.entity.TagType;
 import io.gsp26se16.moni.tag.repository.TagRepository;
 import io.gsp26se16.moni.vocab.repository.VocabQuizHistoryRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -192,8 +197,8 @@ public class SimulationController {
         currentPlan.setStatus("COMPLETED");
         weeklyPlanRepository.save(currentPlan);
 
-        // Fake AI Evaluation progress for Tags
-        simulateMetricProgress(user, new Random());
+        // Metrics are now updated per-slot in simulateSlotCompletion → updateMetricsFromSlot
+        // No need for random metric progress here anymore
 
         // Snapshot insights
         try {
@@ -509,51 +514,140 @@ public class SimulationController {
         }
 
         dailySlotRepository.save(slot);
+
+        // === NEW: Update learner_metric based on actual stimulus tags ===
+        updateMetricsFromSlot(slot, slot.getWeeklyPlan().getUser());
     }
 
-    private void simulateMetricProgress(Users user, Random rng) {
-        List<LearnerMetric> metrics = learnerMetricRepository.findByUserOrderByUpdatedAtDesc(user);
+    /**
+     * Core enhancement: Update learner_metric based on ACTUAL tags from the completed slot's stimulus.
+     * Uses Bayesian Knowledge Tracing (BKT) to update mastery per tag.
+     */
+    private void updateMetricsFromSlot(DailySlot slot, Users user) {
+        if (slot.getStimulus() == null) return; // VOCAB slots have no stimulus
 
-        // If user has no tags at all, let's grab random tags to start tracking
-        if (metrics.isEmpty()) {
-            List<Tag> allTags = tagRepository.findAll();
-            if (!allTags.isEmpty()) {
-                Collections.shuffle(allTags, rng);
-                int count = Math.min(10, allTags.size());
-                for (int i = 0; i < count; i++) {
-                    LearnerMetric m = LearnerMetric.builder()
-                            .user(user)
-                            .tag(allTags.get(i))
-                            .masteryLevel(0.2 + rng.nextDouble() * 0.3) // 20% to 50%
-                            .confidenceScore(0.1 + rng.nextDouble() * 0.3) // 10% to 40%
-                            .updatedAt(LocalDateTime.now())
-                            .attemptCount(1)
-                            .pTransit(0.1)
-                            .pGuess(0.2)
-                            .pSlip(0.1)
-                            .build();
-                    learnerMetricRepository.save(m);
+        Stimulus stimulus = slot.getStimulus();
+
+        // Calculate accuracy from simulated score
+        double accuracy;
+        if (slot.getSkill() == Skill.WRITING || slot.getSkill() == Skill.SPEAKING) {
+            // Band score out of 9
+            accuracy = slot.getScore() != null ? slot.getScore() / 9.0 : 0.5;
+        } else {
+            // Reading/Listening: correct / total
+            accuracy = (slot.getScore() != null && slot.getTotalQuestions() != null && slot.getTotalQuestions() > 0)
+                    ? (double) slot.getScore() / slot.getTotalQuestions()
+                    : 0.5;
+        }
+
+        // Collect ALL tags from stimulus + question groups + individual questions
+        Set<Tag> allTags = new HashSet<>();
+        if (stimulus.getTags() != null) {
+            allTags.addAll(stimulus.getTags());
+        }
+        if (stimulus.getQuestionGroups() != null) {
+            for (QuestionGroup qg : stimulus.getQuestionGroups()) {
+                if (qg.getQuestions() != null) {
+                    for (Question q : qg.getQuestions()) {
+                        if (q.getTags() != null) {
+                            allTags.addAll(q.getTags());
+                        }
+                    }
                 }
             }
-        } else {
-            // Bump existing ones to show progress
-            for (LearnerMetric m : metrics) {
-                // Slight chance to not improve or even drop
-                double masteryDelta = (rng.nextDouble() * 0.15) - 0.02; // -2% to +13%
-                double confDelta = (rng.nextDouble() * 0.20) - 0.05; // -5% to +15%
+        }
 
-                double newMastery = Math.min(
-                        1.0, Math.max(0.0, (m.getMasteryLevel() != null ? m.getMasteryLevel() : 0.0) + masteryDelta));
-                double newConf = Math.min(
-                        1.0,
-                        Math.max(0.0, (m.getConfidenceScore() != null ? m.getConfidenceScore() : 0.0) + confDelta));
+        if (allTags.isEmpty()) {
+            log.debug("[Simulation] Stimulus {} has no tags, skipping metric update", stimulus.getId());
+            return;
+        }
 
-                m.setMasteryLevel(newMastery);
-                m.setConfidenceScore(newConf);
-                m.setUpdatedAt(LocalDateTime.now());
-                m.setAttemptCount((m.getAttemptCount() != null ? m.getAttemptCount() : 0) + 1);
-                learnerMetricRepository.save(m);
+        log.info(
+                "[Simulation] Updating {} tags for slot {} (skill={}, accuracy={}%)",
+                allTags.size(), slot.getId(), slot.getSkill(), Math.round(accuracy * 100));
+
+        for (Tag tag : allTags) {
+            // Skip DIFFICULTY tags — they're metadata, not learnable skills
+            if (tag.getType() == TagType.DIFFICULTY) continue;
+
+            Optional<LearnerMetric> existingOpt = learnerMetricRepository.findByUserAndTag(user, tag);
+            LearnerMetric metric;
+
+            if (existingOpt.isPresent()) {
+                metric = existingOpt.get();
+
+                // BKT posterior update
+                double pKnown = metric.getMasteryLevel() != null ? metric.getMasteryLevel() : 0.3;
+                double pTransit = metric.getPTransit() != null ? metric.getPTransit() : 0.1;
+                double pGuess = metric.getPGuess() != null ? metric.getPGuess() : 0.2;
+                double pSlip = metric.getPSlip() != null ? metric.getPSlip() : 0.1;
+
+                // P(correct) = P(known)*(1-slip) + P(unknown)*guess
+                double pCorrect = pKnown * (1 - pSlip) + (1 - pKnown) * pGuess;
+                double pKnownGivenCorrect = (pKnown * (1 - pSlip)) / Math.max(pCorrect, 0.01);
+                double pKnownGivenIncorrect = (pKnown * pSlip) / Math.max(1 - pCorrect, 0.01);
+
+                // Use accuracy as a soft observation (not binary correct/incorrect)
+                double posterior = accuracy * pKnownGivenCorrect + (1 - accuracy) * pKnownGivenIncorrect;
+                double newMastery = posterior + (1 - posterior) * pTransit;
+                newMastery = Math.max(0.01, Math.min(0.99, newMastery));
+
+                // Confidence grows with attempts; accuracy determines direction
+                double confDelta = accuracy >= 0.6 ? 0.08 : -0.03;
+                double newConf = Math.max(
+                        0.0,
+                        Math.min(
+                                1.0,
+                                (metric.getConfidenceScore() != null ? metric.getConfidenceScore() : 0.0) + confDelta));
+
+                metric.setMasteryLevel(newMastery);
+                metric.setConfidenceScore(newConf);
+                metric.setAttemptCount((metric.getAttemptCount() != null ? metric.getAttemptCount() : 0) + 1);
+                metric.setUpdatedAt(LocalDateTime.now());
+            } else {
+                // First encounter: create new metric from observed accuracy
+                metric = LearnerMetric.builder()
+                        .user(user)
+                        .tag(tag)
+                        .masteryLevel(accuracy * 0.7 + 0.1) // Map accuracy to initial mastery
+                        .confidenceScore(0.15) // Low confidence on first attempt
+                        .attemptCount(1)
+                        .pTransit(0.1)
+                        .pGuess(0.2)
+                        .pSlip(0.1)
+                        .updatedAt(LocalDateTime.now())
+                        .build();
             }
+            learnerMetricRepository.save(metric);
+        }
+    }
+
+    /**
+     * Fallback bootstrap: only used by diagnostic endpoint when metrics table is completely empty.
+     * Creates initial metrics from random tags so the diagnostic has something to show.
+     */
+    private void simulateMetricProgress(Users user, Random rng) {
+        List<LearnerMetric> metrics = learnerMetricRepository.findByUserOrderByUpdatedAtDesc(user);
+        if (!metrics.isEmpty()) return; // Already have real data, do nothing
+
+        List<Tag> allTags = tagRepository.findAll();
+        if (allTags.isEmpty()) return;
+
+        Collections.shuffle(allTags, rng);
+        int count = Math.min(10, allTags.size());
+        for (int i = 0; i < count; i++) {
+            LearnerMetric m = LearnerMetric.builder()
+                    .user(user)
+                    .tag(allTags.get(i))
+                    .masteryLevel(0.2 + rng.nextDouble() * 0.3)
+                    .confidenceScore(0.1 + rng.nextDouble() * 0.3)
+                    .updatedAt(LocalDateTime.now())
+                    .attemptCount(1)
+                    .pTransit(0.1)
+                    .pGuess(0.2)
+                    .pSlip(0.1)
+                    .build();
+            learnerMetricRepository.save(m);
         }
     }
 }
