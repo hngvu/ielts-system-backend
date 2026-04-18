@@ -151,9 +151,9 @@ public class VocabLearningService {
         // Query words matching target CEFR levels (1-2 levels above user)
         List<io.gsp26se16.moni.vocab.entity.CuratedWord> candidates;
         if (topic != null) {
-            candidates = curatedWordRepository
+            candidates = new ArrayList<>(curatedWordRepository
                     .findByFilters(targetLevels.get(0), topic, null, null, Pageable.ofSize(100))
-                    .getContent();
+                    .getContent());
             if (candidates.size() < count && targetLevels.size() > 1) {
                 // Add words from the second target level
                 candidates.addAll(curatedWordRepository
@@ -162,14 +162,14 @@ public class VocabLearningService {
             }
             if (candidates.size() < count) {
                 // Fallback: ignore topic, use multiple bands
-                candidates = curatedWordRepository
+                candidates = new ArrayList<>(curatedWordRepository
                         .findByBands(targetLevels, Pageable.ofSize(100))
-                        .getContent();
+                        .getContent());
             }
         } else {
-            candidates = curatedWordRepository
+            candidates = new ArrayList<>(curatedWordRepository
                     .findByBands(targetLevels, Pageable.ofSize(100))
-                    .getContent();
+                    .getContent());
         }
 
         // Filter out words user already has
