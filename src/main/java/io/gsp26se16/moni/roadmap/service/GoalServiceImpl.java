@@ -253,15 +253,21 @@ public class GoalServiceImpl implements GoalService {
                     "Mục tiêu hiện tại có thể hơi quá tầm so với thời gian còn lại. Hãy tăng cường tần suất luyện tập hoặc điều chỉnh lại kỳ vọng.";
         }
 
-        List<LearnerRoadmapInsightsResponse.TagMetricResponse> weakest =
-                learnerMetricRepository.findByUserOrderByMasteryLevelAsc(learner).stream()
-                        .map(this::toTagMetric)
-                        .toList();
+        // Split metrics into weak (mastery < 0.5) and strong (mastery >= 0.5)
+        List<LearnerMetric> allTagMetrics = learnerMetricRepository.findByUserOrderByMasteryLevelAsc(learner);
 
-        List<LearnerRoadmapInsightsResponse.TagMetricResponse> strongest =
-                learnerMetricRepository.findByUserOrderByMasteryLevelDesc(learner).stream()
-                        .map(this::toTagMetric)
-                        .toList();
+        List<LearnerRoadmapInsightsResponse.TagMetricResponse> weakest = allTagMetrics.stream()
+                .filter(m -> m.getMasteryLevel() != null && m.getMasteryLevel() < 0.5)
+                .map(this::toTagMetric)
+                .toList();
+
+        List<LearnerRoadmapInsightsResponse.TagMetricResponse> strongest = allTagMetrics.stream()
+                .filter(m -> m.getMasteryLevel() == null || m.getMasteryLevel() >= 0.5)
+                .sorted((a, b) -> Double.compare(
+                        b.getMasteryLevel() != null ? b.getMasteryLevel() : 0,
+                        a.getMasteryLevel() != null ? a.getMasteryLevel() : 0))
+                .map(this::toTagMetric)
+                .toList();
 
         return LearnerRoadmapInsightsResponse.builder()
                 .examDate(examDate)
