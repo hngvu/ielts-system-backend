@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -43,6 +44,7 @@ public class ExpertController {
     }
 
     @GetMapping("/me")
+    @PreAuthorize("hasRole('EXPERT')")
     public ResponseEntity<ApiResponse<ExpertProfileResponse>> getMyProfile() {
         return ResponseEntity.ok(ApiResponse.<ExpertProfileResponse>builder()
                 .result(expertService.getMyProfile(getCurrentUserId()))
@@ -50,6 +52,7 @@ public class ExpertController {
     }
 
     @PutMapping("/me")
+    @PreAuthorize("hasRole('EXPERT')")
     public ResponseEntity<ApiResponse<ExpertProfileResponse>> updateMyProfile(
             @RequestBody UpdateExpertRequest request) {
         return ResponseEntity.ok(ApiResponse.<ExpertProfileResponse>builder()
@@ -66,6 +69,7 @@ public class ExpertController {
     }
 
     @PatchMapping("/me/status")
+    @PreAuthorize("hasRole('EXPERT')")
     public ResponseEntity<ApiResponse<ExpertProfileResponse>> updateMyStatus(
             @RequestBody UpdateExpertStatusRequest request) {
         String userId = getCurrentUserId();

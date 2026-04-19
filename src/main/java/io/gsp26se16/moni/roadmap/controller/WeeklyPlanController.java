@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import io.gsp26se16.moni.common.dto.ApiResponse;
@@ -16,6 +17,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 
 @RestController
+@PreAuthorize("hasRole('LEARNER')")
 @RequestMapping("/api/v1/learner/weekly-plan")
 @RequiredArgsConstructor
 public class WeeklyPlanController {

@@ -8,6 +8,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -50,12 +51,14 @@ public class PaymentController {
     }
 
     @PostMapping("/init")
+    @PreAuthorize("hasRole('LEARNER')")
     public ResponseEntity<PaymentInitResponse> initPayment(@RequestBody PaymentInitRequest paymentInitRequest) {
         PaymentInitResponse response = paymentService.initPayment(paymentInitRequest);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<PaymentResponse>> searchPayments(
             @RequestParam(required = false) Integer userId,
             @RequestParam(required = false) String status,

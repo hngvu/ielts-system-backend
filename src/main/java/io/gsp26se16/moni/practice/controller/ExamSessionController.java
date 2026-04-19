@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import io.gsp26se16.moni.common.dto.ApiResponse;
@@ -20,6 +21,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @RestController
+@PreAuthorize("hasRole('LEARNER')")
 @RequestMapping("/api/v1/practice/exam")
 @RequiredArgsConstructor
 @Tag(name = "Exam Session", description = "Quản lý phiên thi thử - start, save, submit, resume")

@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import io.gsp26se16.moni.common.dto.ApiResponse;
@@ -21,6 +22,7 @@ import io.gsp26se16.moni.content.service.StimulusService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
+@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("/api/v1/admin/stimuli")
 @RequiredArgsConstructor
 public class StimulusController {

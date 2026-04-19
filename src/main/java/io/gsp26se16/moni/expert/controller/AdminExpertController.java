@@ -3,6 +3,7 @@ package io.gsp26se16.moni.expert.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import io.gsp26se16.moni.common.dto.ApiResponse;
@@ -15,6 +16,7 @@ import io.gsp26se16.moni.expert.service.ExpertService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
+@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("/api/v1/admin/experts")
 @RequiredArgsConstructor
 public class AdminExpertController {

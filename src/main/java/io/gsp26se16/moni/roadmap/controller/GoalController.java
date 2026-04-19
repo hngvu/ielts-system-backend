@@ -3,6 +3,7 @@ package io.gsp26se16.moni.roadmap.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import io.gsp26se16.moni.common.dto.ApiResponse;
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 
 @RestController
+@PreAuthorize("hasRole('LEARNER')")
 @RequestMapping("/api/v1/learner/goals")
 @RequiredArgsConstructor
 public class GoalController {

@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import io.gsp26se16.moni.payment.dto.request.PackagePricingCreateRequest;
@@ -47,6 +48,7 @@ public class PackagePricingController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PackagePricingResponse> createPackagePricing(
             @Valid @RequestBody PackagePricingCreateRequest request) {
         log.info("POST /packages - Creating new package pricing");
@@ -55,6 +57,7 @@ public class PackagePricingController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PackagePricingResponse> updatePackagePricing(
             @PathVariable Integer id, @Valid @RequestBody PackagePricingUpdateRequest request) {
         log.info("PUT /packages/{} - Updating package pricing", id);
@@ -63,6 +66,7 @@ public class PackagePricingController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deletePackagePricing(@PathVariable Integer id) {
         log.info("DELETE /packages/{} - Deleting package pricing", id);
         packagePricingService.deletePackagePricing(id);

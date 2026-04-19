@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +43,7 @@ import lombok.RequiredArgsConstructor;
  * Phase 2: Nộp bài không chấm điểm ngay — status = PENDING.
  */
 @RestController
+@PreAuthorize("hasRole('LEARNER')")
 @RequestMapping("/api/v1/writing")
 @RequiredArgsConstructor
 @Tag(name = "Writing", description = "IELTS Writing - Nộp bài và xem lịch sử")

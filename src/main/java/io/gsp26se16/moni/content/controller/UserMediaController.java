@@ -2,6 +2,7 @@ package io.gsp26se16.moni.content.controller;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -12,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @RestController
+@PreAuthorize("hasRole('LEARNER')")
 @RequestMapping("/api/v1/user/media")
 @RequiredArgsConstructor
 @Tag(name = "User Media Management", description = "Upload file Audio/Image for regular users")

@@ -3,6 +3,7 @@ package io.gsp26se16.moni.expert.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import io.gsp26se16.moni.expert.service.ScoringSessionService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
+@PreAuthorize("hasAnyRole('EXPERT', 'ADMIN')")
 @RequestMapping("/api/v1/expert/sessions")
 @RequiredArgsConstructor
 public class ExpertSessionController {

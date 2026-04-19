@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +25,7 @@ public class ScoringSessionController {
     private final ScoringSessionService sessionService;
 
     @PostMapping
+    @PreAuthorize("hasRole('LEARNER')")
     public ResponseEntity<ApiResponse<ScoringSessionResponse>> createSession(
             @RequestBody CreateSessionRequest request) {
         String credentialId = getCurrentUserId();
@@ -39,6 +41,7 @@ public class ScoringSessionController {
     }
 
     @PatchMapping("/{id}/cancel")
+    @PreAuthorize("hasRole('LEARNER')")
     public ResponseEntity<ApiResponse<ScoringSessionResponse>> cancelSession(@PathVariable Integer id) {
         String credentialId = getCurrentUserId();
         ScoringSessionResponse cancelled = sessionService.cancelSession(id, credentialId);
@@ -47,6 +50,7 @@ public class ScoringSessionController {
     }
 
     @GetMapping("/{id}/queue-position")
+    @PreAuthorize("hasRole('LEARNER')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getQueuePosition(@PathVariable Integer id) {
         var info = sessionService.getQueuePositionWithStatus(id);
         return ResponseEntity.ok(
@@ -54,6 +58,7 @@ public class ScoringSessionController {
     }
 
     @PostMapping("/{id}/rate")
+    @PreAuthorize("hasRole('LEARNER')")
     public ResponseEntity<ApiResponse<ScoringSessionResponse>> rateSession(
             @PathVariable Integer id, @RequestBody Map<String, Object> body) {
         int rating = ((Number) body.get("rating")).intValue();
@@ -68,6 +73,7 @@ public class ScoringSessionController {
     // Allow user to attach their recording AFTER rating (fire-and-forget upload pattern).
     // Called by client once the audio upload finishes, if the user already submitted rating.
     @PatchMapping("/{id}/recording")
+    @PreAuthorize("hasRole('LEARNER')")
     public ResponseEntity<ApiResponse<ScoringSessionResponse>> attachRecording(
             @PathVariable Integer id, @RequestBody Map<String, Object> body) {
         String recordingUrl = (String) body.get("recordingUrl");
@@ -78,6 +84,7 @@ public class ScoringSessionController {
     }
 
     @GetMapping("/admin/all")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<ScoringSessionResponse>>> allSessions() {
         return ResponseEntity.ok(ApiResponse.<List<ScoringSessionResponse>>builder()
                 .result(sessionService.getAllSessions())
@@ -85,6 +92,7 @@ public class ScoringSessionController {
     }
 
     @GetMapping("/my")
+    @PreAuthorize("hasRole('LEARNER')")
     public ResponseEntity<ApiResponse<List<ScoringSessionResponse>>> mySessions() {
         String credentialId = getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.<List<ScoringSessionResponse>>builder()
@@ -93,6 +101,7 @@ public class ScoringSessionController {
     }
 
     @GetMapping("/{id}/evaluation")
+    @PreAuthorize("hasRole('LEARNER')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getEvaluation(@PathVariable Integer id) {
         String credentialId = getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()

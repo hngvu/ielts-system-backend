@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import io.gsp26se16.moni.common.dto.ApiResponse;
@@ -25,6 +26,7 @@ public class TagController {
     private final TagService tagService;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<TagResponse>> createTag(@RequestBody @Valid TagRequest request) {
         ApiResponse<TagResponse> apiResponse = ApiResponse.<TagResponse>builder()
                 .result(tagService.createTag(request))
@@ -53,6 +55,7 @@ public class TagController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<TagResponse>> updateTag(
             @PathVariable Integer id, @RequestBody @Valid TagRequest request) {
         ApiResponse<TagResponse> apiResponse = ApiResponse.<TagResponse>builder()
@@ -63,6 +66,7 @@ public class TagController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteTag(@PathVariable Integer id) {
         tagService.deleteTag(id);
 
@@ -74,6 +78,7 @@ public class TagController {
     }
 
     @PostMapping("/questions/{questionId}/tags")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> assignToQuestion(
             @PathVariable Integer questionId, @RequestBody @Valid TagAssignRequest request) {
 
@@ -87,6 +92,7 @@ public class TagController {
     }
 
     @PostMapping("/stimulus/{stimulusId}/tags")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> assignToStimulus(
             @PathVariable Integer stimulusId, @RequestBody @Valid TagAssignRequest request) {
 
@@ -100,6 +106,7 @@ public class TagController {
     }
 
     @PostMapping("/tests/{testId}/tags")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> assignToTest(
             @PathVariable Integer testId, @RequestBody @Valid TagAssignRequest request) {
 

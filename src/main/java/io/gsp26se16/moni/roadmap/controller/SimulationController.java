@@ -6,6 +6,7 @@ import java.util.*;
 import jakarta.transaction.Transactional;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import io.gsp26se16.moni.authentication.entity.UserCredentials;
@@ -38,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
  * Allows time-skip testing of the Adaptive Learning system.
  */
 @RestController
+@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("/api/v1/admin/simulation")
 @RequiredArgsConstructor
 @Slf4j
