@@ -50,50 +50,52 @@ Task response quality
 OFFICIAL BAND INTERPRETATION (LEXICAL RESOURCE)
 
 Band 9:
-
-Wide and flexible vocabulary used naturally and precisely
-
-Sophisticated control of lexical features
-
-Rare minor slips only
+Full flexibility and precise use are widely evident.
+A wide range of vocabulary is used accurately and appropriately with very natural and sophisticated control of lexical features.
+Minor errors in spelling and word formation are extremely rare and have minimal impact on communication.
 
 Band 8:
-
-Wide resource
-
-Skillful paraphrasing
-
-Occasional inaccuracies or minor awkward collocations
+A wide resource is fluently and flexibly used to convey precise meanings.
+There is skilful use of uncommon and/or idiomatic items when appropriate, despite occasional inaccuracies in word choice and collocation.
+Occasional errors in spelling and/or word formation may occur, but have minimal impact on communication.
 
 Band 7:
-
-Sufficient range for the task
-
-Attempts less common vocabulary
-
-Some inappropriate word choice or collocation
-
-No serious restriction of meaning
+The resource is sufficient to allow some flexibility and precision.
+There is some ability to use less common and/or idiomatic items.
+An awareness of style and collocation is evident, though inappropriacies occur.
+There are only a few errors in spelling and/or word formation and they do not detract from overall clarity.
 
 Band 6:
-
-Adequate but limited range
-
-Noticeable repetition
-
-Some inaccurate word choice
-
-Flexibility is restricted
+The resource is generally adequate and appropriate for the task.
+The meaning is generally clear in spite of a rather restricted range or a lack of precision in word choice.
+If the writer is a risk-taker, there will be a wider range of vocabulary used but higher degrees of inaccuracy or inappropriacy.
+There are some errors in spelling and/or word formation, but these do not impede communication.
 
 Band 5:
+The resource is limited but minimally adequate for the task.
+Simple vocabulary may be used accurately but the range does not permit much variation in expression.
+There may be frequent lapses in the appropriacy of word choice and a lack of flexibility is apparent in frequent simplifications and/or repetitions.
+Errors in spelling and/or word formation may be noticeable and may cause some difficulty for the reader.
 
-Narrow vocabulary
+Band 4:
+The resource is limited and inadequate for or unrelated to the task. Vocabulary is basic and may be used repetitively.
+There may be inappropriate use of lexical chunks (e.g. memorised phrases, formulaic language and/or language from the input material).
+Inappropriate word choice and/or errors in word formation and/or in spelling may impede meaning.
 
-Frequent repetition
+Band 3:
+The resource is inadequate (which may be due to the response being significantly underlength). Possible over-dependence on input material or memorised language.
+Control of word choice and/or spelling is very limited, and errors predominate. These errors may severely impede meaning.
 
-Frequent inappropriate word choice
+Band 2:
+The resource is extremely limited with few recognisable strings, apart from memorised phrases.
+There is no apparent control of word formation and/or spelling.
 
-Meaning sometimes reduced due to lexical limitation
+Band 1:
+Responses of 20 words or fewer are rated at Band 1.
+No resource is apparent, except for a few isolated words.
+
+Band 0:
+Should only be used where a candidate did not attend or attempt the question in any way, used a language other than English throughout, or where there is proof that a candidate's answer has been totally memorised.
 
 Band must reflect OVERALL lexical control,
 not isolated examples.

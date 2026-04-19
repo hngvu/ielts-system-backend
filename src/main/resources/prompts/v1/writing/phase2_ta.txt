@@ -135,42 +135,51 @@ BAND GATING LOGIC (Task 1 — Task Achievement)
 ==================================================
 
 Band 9:
-- All key features accurately selected and described
-- Clear, accurate overview present
-- All data reported correctly
-- NO violations active
+All the requirements of the task are fully and appropriately satisfied.
 
 Band 8:
-- Key features well selected and described
-- Overview present
-- Data mostly accurate
-- At most 1 minor violation
+The response covers all the requirements of the task appropriately, relevantly and sufficiently.
+(Academic) Key features are skilfully selected, and clearly presented, highlighted and illustrated.
+There may be occasional omissions or lapses in content.
 
 Band 7:
-- Covers key features with reasonable accuracy
-- Overview present
-- Minor data inaccuracies acceptable (≤1)
-- No "moderate" or "major" violations
+The response covers the requirements of the task.
+The content is relevant and accurate – there may be a few omissions or lapses. The format is appropriate.
+(Academic) Key features which are selected are covered and clearly highlighted but could be more fully or more appropriately illustrated or extended.
+(Academic) It presents a clear overview, the data are appropriately categorised, and main trends or differences are identified.
 
 Band 6:
-- Covers main features but may miss some
-- Overview may be unclear
-- Some data inaccuracies (≤2)
-- No "major" violations
+The response focuses on the requirements of the task and an appropriate format is used.
+(Academic) Key features which are selected are covered and adequately highlighted. A relevant overview is attempted. Information is appropriately selected and supported using figures/data.
+Some irrelevant, inappropriate or inaccurate information may occur in areas of detail or when illustrating or extending the main points.
+Some details may be missing (or excessive) and further extension or illustration may be needed.
 
 Band 5:
-- Incomplete coverage OR noticeable inaccuracies
-- Overview missing or very weak
-- moderate inaccurate_data_reporting OR missing_key_features
+The response generally addresses the requirements of the task. The format may be inappropriate in places.
+(Academic) Key features which are selected are not adequately covered. The recounting of detail is mainly mechanical. There may be no data to support the description.
+There may be a tendency to focus on details (without referring to the bigger picture).
+The inclusion of irrelevant, inappropriate or inaccurate material in key areas detracts from the task achievement.
+There is limited detail when extending and illustrating the main points.
 
-Band 4 or below:
-- Major data inaccuracies
-- Fundamental misreading of chart
-- Most key features missing
+Band 4:
+The response is an attempt to address the task.
+(Academic) Few key features have been selected.
+The format may be inappropriate.
+Key features/bullet points which are presented may be irrelevant, repetitive, inaccurate or inappropriate.
 
-Band 1 or 2:
-- Completely off topic, gibberish, or spam (e.g., repeating the same word, nonsensical phrases).
-- Answers completely unrelated to the task.
+Band 3:
+The response does not address the requirements of the task (possibly because of misunderstanding of the data/diagram/situation).
+Key features/bullet points which are presented may be largely irrelevant.
+Limited information is presented, and this may be used repetitively.
+
+Band 2:
+The content barely relates to the task.
+
+Band 1:
+The content is wholly unrelated to the task.
+
+Band 0:
+Should only be used where a candidate did not attend or attempt the question in any way, used a language other than English throughout, or where there is proof that a candidate's answer has been totally memorised.
 
 Always assign the highest band NOT blocked by violations.
 Use increments of 0.5 only.

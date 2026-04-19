@@ -213,57 +213,56 @@ BAND DETERMINATION RULES
 
 You must assign band using these deterministic anchors:
 
-Band 8–9
+Band 9:
+The prompt is appropriately addressed and explored in depth.
+A clear and fully developed position is presented which directly answers the question/s.
+Ideas are relevant, fully extended and well supported.
+Any lapses in content or support are extremely rare.
 
-No major violations
+Band 8:
+The prompt is appropriately and sufficiently addressed.
+A clear and well-developed position is presented in response to the question/s.
+Ideas are relevant, well extended and supported.
+There may be occasional omissions or lapses in content.
 
-All parts fully addressed
+Band 7:
+The main parts of the prompt are appropriately addressed.
+A clear and developed position is presented.
+Main ideas are extended and supported but there may be a tendency to over-generalise or there may be a lack of focus and precision in supporting ideas/material.
 
-Clear position throughout
+Band 6:
+The main parts of the prompt are addressed (though some may be more fully covered than others). An appropriate format is used.
+A position is presented that is directly relevant to the prompt, although the conclusions drawn may be unclear, unjustified or repetitive.
+Main ideas are relevant, but some may be insufficiently developed or may lack clarity, while some supporting arguments and evidence may be less relevant or inadequate.
 
-Well developed ideas
+Band 5:
+The main parts of the prompt are incompletely addressed. The format may be inappropriate in places.
+The writer expresses a position, but the development is not always clear.
+Some main ideas are put forward, but they are limited and are not sufficiently developed and/or there may be irrelevant detail.
+There may be some repetition.
 
-Band 7
+Band 4:
+The prompt is tackled in a minimal way, or the answer is tangential, possibly due to some misunderstanding of the prompt. The format may be inappropriate.
+A position is discernible, but the reader has to read carefully to find it.
+Main ideas are difficult to identify and such ideas that are identifiable may lack relevance, clarity and/or support.
+Large parts of the response may be repetitive.
 
-Addresses all parts
+Band 3:
+No part of the prompt is adequately addressed, or the prompt has been misunderstood.
+No relevant position can be identified, and/or there is little direct response to the question/s.
+There are few ideas, and these may be irrelevant or insufficiently developed.
 
-Minor development weakness possible
+Band 2:
+The content is barely related to the prompt.
+No position can be identified.
+There may be glimpses of one or two ideas without development.
 
-Position clear
+Band 1:
+Responses of 20 words or fewer are rated at Band 1.
+The content is wholly unrelated to the prompt.
 
-Band 6
-
-Addresses task but with:
-
-Partial development OR
-
-Some imbalance OR
-
-Minor clarity issues
-
-Band 5
-
-Partial task response
-
-Missing clarity in position
-
-Underdeveloped ideas
-
-OR no_position_throughout triggered (cap)
-
-Band 4 or below
-
-largely off-topic
-
-Serious misunderstanding
-
-Minimal development
-
-Band 1–2
-
-Completely off topic, gibberish, or spam (e.g., repeating the same word, nonsensical phrases).
-
-Answers completely unrelated to the task.
+Band 0:
+Should only be used where a candidate did not attend or attempt the question in any way, used a language other than English throughout, or where there is proof that a candidate's answer has been totally memorised.
 
 Band must reflect violation severity logically.
 

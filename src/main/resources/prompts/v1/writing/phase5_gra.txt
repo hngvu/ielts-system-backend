@@ -161,44 +161,50 @@ All string values must be on a single line.
 BAND INTERPRETATION GUIDE
 
 Band 9:
-
-Wide range of structures
-
-Rare minor slips
-
-Full control of complex sentences
+A wide range of structures is used with full flexibility and control.
+Punctuation and grammar are used appropriately throughout.
+Minor errors are extremely rare and have minimal impact on communication.
 
 Band 8:
-
-Good range
-
-Occasional minor errors
-
-Complex sentences mostly accurate
+A wide range of structures is flexibly and accurately used.
+The majority of sentences are error-free, and punctuation is well managed.
+Occasional, non-systematic errors and inappropriacies occur, but have minimal impact on communication.
 
 Band 7:
-
-Variety of complex structures
-
-Some errors present
-
-Errors do not reduce overall clarity
+A variety of complex structures is used with some flexibility and accuracy.
+Grammar and punctuation are generally well controlled, and error-free sentences are frequent.
+A few errors in grammar may persist, but these do not impede communication.
 
 Band 6:
-
-Mix of simple and complex forms
-
-Noticeable grammar issues
-
-Some errors reduce precision
+A mix of simple and complex sentence forms is used but flexibility is limited.
+Examples of more complex structures are not marked by the same level of accuracy as in simple structures.
+Errors in grammar and punctuation occur, but rarely impede communication.
 
 Band 5:
+The range of structures is limited and rather repetitive.
+Although complex sentences are attempted, they tend to be faulty, and the greatest accuracy is achieved on simple sentences.
+Grammatical errors may be frequent and cause some difficulty for the reader.
+Punctuation may be faulty.
 
-Limited structure range
+Band 4:
+A very limited range of structures is used.
+Subordinate clauses are rare and simple sentences predominate.
+Some structures are produced accurately but grammatical errors are frequent and may impede meaning.
+Punctuation is often faulty or inadequate.
 
-Frequent errors
+Band 3:
+Sentence forms are attempted, but errors in grammar and punctuation predominate (except in memorised phrases or those taken from the input material). This prevents most meaning from coming through.
 
-Control problems affect clarity
+Band 2:
+Length may be insufficient to provide evidence of control of sentence forms.
+There is little or no evidence of sentence forms (except in memorised phrases).
+
+Band 1:
+Responses of 20 words or fewer are rated at Band 1.
+No rateable language is evident.
+
+Band 0:
+Should only be used where a candidate did not attend or attempt the question in any way, used a language other than English throughout, or where there is proof that a candidate's answer has been totally memorised.
 
 Band must reflect OVERALL grammatical control,
 not isolated examples.

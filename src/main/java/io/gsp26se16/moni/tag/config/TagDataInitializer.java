@@ -56,6 +56,23 @@ public class TagDataInitializer implements CommandLineRunner {
         createTagIfNotExists("Gap Filling", "QT_GAP_FILLING", TagType.QUESTION_TYPE, "Điền từ vào chỗ trống");
         createTagIfNotExists("Short Answer", "QT_SHORT_ANSWER", TagType.QUESTION_TYPE, "Trả lời câu hỏi ngắn");
 
+        // Listening-specific question types (mapped from ContentDataInitializer codes)
+        createTagIfNotExists("Multiple Choice (Listening)", "QT_MCQ_L", TagType.QUESTION_TYPE, "Trắc nghiệm Listening");
+        createTagIfNotExists("Map Labeling", "QT_MAP_LABELING", TagType.QUESTION_TYPE, "Dán nhãn bản đồ Listening");
+        createTagIfNotExists("Form Completion", "QT_FORM_COMPLETION", TagType.QUESTION_TYPE, "Hoàn thành biểu mẫu");
+        createTagIfNotExists("Note Completion", "QT_NOTE_COMPLETION", TagType.QUESTION_TYPE, "Hoàn thành ghi chú");
+        createTagIfNotExists("Table Completion", "QT_TABLE_COMPLETION", TagType.QUESTION_TYPE, "Hoàn thành bảng");
+        createTagIfNotExists(
+                "Gap Filling (Listening)",
+                "QT_GAP_FILLING_L",
+                TagType.QUESTION_TYPE,
+                "Điền từ vào chỗ trống Listening");
+
+        // Reading-specific question types missing from original list
+        createTagIfNotExists("Sentence Completion", "QT_SENTENCE_COMPLETION", TagType.QUESTION_TYPE, "Hoàn thành câu");
+        createTagIfNotExists("Fill in the Blank", "QT_FILL_IN_THE_BLANK", TagType.QUESTION_TYPE, "Điền vào chỗ trống");
+        createTagIfNotExists("Matching", "QT_MATCHING", TagType.QUESTION_TYPE, "Nối thông tin");
+
         // 4. Tạo TOPIC Tags (Chủ đề thường gặp)
         createTagIfNotExists("Environment", "TOPIC_ENV", TagType.TOPIC, "Môi trường, Khí hậu, Tái chế");
         createTagIfNotExists("Education", "TOPIC_EDU", TagType.TOPIC, "Giáo dục, Trường học");
