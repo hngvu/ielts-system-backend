@@ -123,6 +123,24 @@ public class SpeakingSubmissionController {
                         ? submission.getSubmittedAt().toString()
                         : null);
         dto.put("audioTranscript", submission.getAudioTranscript());
+        dto.put("audioUrl", submission.getAudioUrl()); // JSON array of per-question audio URLs
+
+        // Include test info
+        Map<String, Object> testInfo = null;
+        if (submission.getTest() != null) {
+            try {
+                testInfo = Map.of(
+                        "id",
+                        submission.getTest().getId(),
+                        "title",
+                        submission.getTest().getTitle() != null
+                                ? submission.getTest().getTitle()
+                                : "Speaking Test");
+            } catch (Exception e) {
+                log.debug("Failed to load test info for submission {}", submission.getId());
+            }
+        }
+        dto.put("test", testInfo);
 
         if (eval != null) {
             dto.put(
