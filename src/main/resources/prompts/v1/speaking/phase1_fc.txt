@@ -33,26 +33,51 @@ Assess ONLY:
 OFFICIAL BAND INTERPRETATION (FLUENCY & COHERENCE)
 
 Band 9:
-- Speaks fluently with only rare repetition or self-correction.
-- Any hesitation is content-related rather than to find words or grammar.
-- Speaks coherently with fully appropriate cohesive features.
+Fluent with only very occasional repetition or self-correction.
+Any hesitation that occurs is used only to prepare the content of the next utterance and not to find words or grammar.
+Speech is situationally appropriate and cohesive features are fully acceptable.
+Topic development is fully coherent and appropriately extended.
 
 Band 8:
-- Speaks fluently with only occasional repetition or self-correction.
-- Hesitation is usually content-related and only rarely to search for language.
+Fluent with only very occasional repetition or self-correction.
+Hesitation may occasionally be used to find words or grammar, but most will be content related.
+Topic development is coherent, appropriate and relevant.
 
 Band 7:
-- Speaks at length without noticeable effort or loss of coherence.
-- May demonstrate language-related hesitation at times.
-- Uses a range of connectives and discourse markers with some flexibility.
+Able to keep going and readily produce long turns without noticeable effort.
+Some hesitation, repetition and/or self-correction may occur, often mid-sentence and indicate problems with accessing appropriate language. However, these will not affect coherence.
+Flexible use of spoken discourse markers, connectives and cohesive features.
 
 Band 6:
-- Is willing to speak at length, though may lose coherence at times due to occasional repetition, self-correction or hesitation.
-- Uses a range of connectives and discourse markers but not always appropriately.
+Able to keep going and demonstrates a willingness to produce long turns.
+Coherence may be lost at times as a result of hesitation, repetition and/or self-correction.
+Uses a range of spoken discourse markers, connectives and cohesive features though not always appropriately.
 
 Band 5:
-- Usually maintains flow of speech but uses repetition, self-correction and/or slow speech to keep going.
-- May over-use certain connectives and discourse markers.
+Usually able to keep going, but relies on repetition and self-correction to do so and/or on slow speech.
+Hesitations are often associated with mid-sentence searches for fairly basic lexis and grammar.
+Overuse of certain discourse markers, connectives and other cohesive features.
+More complex speech usually causes disfluency but simpler language may be produced fluently.
+
+Band 4:
+Unable to keep going without noticeable pauses. Speech may be slow with frequent repetition.
+Often self-corrects.
+Can link simple sentences but often with repetitious use of connectives.
+Some breakdowns in coherence.
+
+Band 3:
+Frequent, sometimes long, pauses occur while candidate searches for words.
+Limited ability to link simple sentences and go beyond simple responses to questions.
+
+Band 2:
+Lengthy pauses before nearly every word.
+Isolated words may be recognisable but speech is of virtually no communicative significance.
+
+Band 1:
+Essentially none. Speech is totally incoherent. No communication possible.
+
+Band 0:
+Does not attend.
 
 ==================================================
 VIOLATION KEYS (USE ONLY THESE)
