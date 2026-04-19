@@ -489,10 +489,34 @@ public class ConversationEngine {
                 updateMetricsFromSpeakingEval(submission, finalBand, assessment);
                 log.info("Speaking metrics updated for user={}, finalBand={}", user.getId(), finalBand);
 
-                // [NEW] Auto-complete weekly plan test slot
+                // [NEW] Auto-complete weekly plan slot
+                boolean slotCompleted = false;
+                // Try 1: Match by test ID
                 if (submission.getTest() != null) {
-                    weeklyPlanService.autoCompleteTestSlot(
-                            user, submission.getTest().getId(), (int) finalBand, 9);
+                    try {
+                        weeklyPlanService.autoCompleteTestSlot(
+                                user, submission.getTest().getId(), (int) finalBand, 9);
+                        slotCompleted = true;
+                    } catch (Exception ex) {
+                        log.warn("autoCompleteTestSlot failed: {}", ex.getMessage());
+                    }
+                }
+                // Try 2: Match by stimulus (find via test→stimulus relationship)
+                if (!slotCompleted && submission.getTest() != null) {
+                    try {
+                        List<TestStructure> structures = testStructureRepository.findByTestId(
+                                submission.getTest().getId());
+                        for (TestStructure ts : structures) {
+                            if (ts.getStimulus() != null) {
+                                weeklyPlanService.autoCompleteSlot(
+                                        user, ts.getStimulus().getId(), (int) finalBand, 9);
+                                slotCompleted = true;
+                                break;
+                            }
+                        }
+                    } catch (Exception ex) {
+                        log.warn("autoCompleteSlot via stimulus failed: {}", ex.getMessage());
+                    }
                 }
             }
         } catch (Exception e) {
