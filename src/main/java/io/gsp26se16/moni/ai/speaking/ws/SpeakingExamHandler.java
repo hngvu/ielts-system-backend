@@ -90,7 +90,7 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
 
     private void handleStartExam(WebSocketSession ws, Map<String, Object> payload) throws IOException {
         String userId = (String) ws.getAttributes().get("userId");
-        Integer testId = (Integer) payload.get("testId");
+        Integer testId = payload.get("testId") instanceof Number n ? n.intValue() : null;
 
         if (testId == null) {
             sendError(ws, "testId is required");
