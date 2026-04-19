@@ -44,6 +44,7 @@ import io.gsp26se16.moni.practice.service.ExamSessionService;
 import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
 import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
 import io.gsp26se16.moni.tag.entity.Tag;
+import io.gsp26se16.moni.tag.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,6 +63,7 @@ public class ExamSessionServiceImpl implements ExamSessionService {
     private final QuestionOptionRepository questionOptionRepository;
     private final UserCredentialsRepository userCredentialsRepository;
     private final LearnerMetricRepository learnerMetricRepository;
+    private final TagRepository tagRepository;
 
     private static final double EMA_ALPHA = 0.7;
 
@@ -391,8 +393,19 @@ public class ExamSessionServiceImpl implements ExamSessionService {
 
     private void updateMastery(Users user, Skill skill, Question question, boolean isCorrect) {
         double score = isCorrect ? 1.0 : 0.0;
-        Set<Tag> tags = question.getTags();
-        if (tags == null || tags.isEmpty()) return;
+        Set<Tag> tags = new java.util.HashSet<>();
+        if (question.getTags() != null) {
+            tags.addAll(question.getTags());
+        }
+
+        if (question.getQuestionGroup() != null && question.getQuestionGroup().getQuestionType() != null) {
+            String typeCode = question.getQuestionGroup().getQuestionType().getCode();
+            if (typeCode != null) {
+                tagRepository.findByCode(typeCode).ifPresent(tags::add);
+            }
+        }
+
+        if (tags.isEmpty()) return;
 
         for (Tag tag : tags) {
             LearnerMetric metric = learnerMetricRepository

@@ -547,6 +547,9 @@ public class SimulationController {
         }
         if (stimulus.getQuestionGroups() != null) {
             for (QuestionGroup qg : stimulus.getQuestionGroups()) {
+                if (qg.getQuestionType() != null && qg.getQuestionType().getCode() != null) {
+                    tagRepository.findByCode(qg.getQuestionType().getCode()).ifPresent(allTags::add);
+                }
                 if (qg.getQuestions() != null) {
                     for (Question q : qg.getQuestions()) {
                         if (q.getTags() != null) {

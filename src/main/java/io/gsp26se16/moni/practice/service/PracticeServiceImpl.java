@@ -39,6 +39,7 @@ import io.gsp26se16.moni.practice.repository.TestSessionRepository;
 import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
 import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
 import io.gsp26se16.moni.tag.entity.Tag;
+import io.gsp26se16.moni.tag.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -57,6 +58,7 @@ public class PracticeServiceImpl implements PracticeService {
     private final QuestionOptionRepository questionOptionRepository;
     private final UserCredentialsRepository userCredentialsRepository;
     private final LearnerMetricRepository learnerMetricRepository;
+    private final TagRepository tagRepository;
     private final io.gsp26se16.moni.roadmap.service.WeeklyPlanService weeklyPlanService;
 
     @Override
@@ -139,9 +141,21 @@ public class PracticeServiceImpl implements PracticeService {
             double S = isCorrect ? 1.0 : 0.0; // S: Điểm của câu hỏi này
 
             // Lấy tất cả các Tag đang gắn vào câu hỏi này (Ví dụ: TFNG, BAND_6.0)
-            Set<Tag> questionTags = question.getTags();
+            Set<Tag> questionTags = new java.util.HashSet<>();
+            if (question.getTags() != null) {
+                questionTags.addAll(question.getTags());
+            }
 
-            if (questionTags != null && !questionTags.isEmpty()) {
+            // Auto-fallback: If question has no tags, map QuestionGroup's questionType to Tag
+            if (question.getQuestionGroup() != null
+                    && question.getQuestionGroup().getQuestionType() != null) {
+                String typeCode = question.getQuestionGroup().getQuestionType().getCode();
+                if (typeCode != null) {
+                    tagRepository.findByCode(typeCode).ifPresent(questionTags::add);
+                }
+            }
+
+            if (!questionTags.isEmpty()) {
                 Skill skillForMetric = test.getSkill() != null ? test.getSkill() : stimulus.getSkill();
                 for (Tag tag : questionTags) {
                     LearnerMetric metric = learnerMetricRepository
