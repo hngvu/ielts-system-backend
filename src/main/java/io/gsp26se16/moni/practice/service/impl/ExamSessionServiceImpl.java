@@ -392,7 +392,6 @@ public class ExamSessionServiceImpl implements ExamSessionService {
     }
 
     private void updateMastery(Users user, Skill skill, Question question, boolean isCorrect) {
-        double score = isCorrect ? 1.0 : 0.0;
         Set<Tag> tags = new java.util.HashSet<>();
         if (question.getTags() != null) {
             tags.addAll(question.getTags());
@@ -407,6 +406,8 @@ public class ExamSessionServiceImpl implements ExamSessionService {
 
         if (tags.isEmpty()) return;
 
+        LocalDateTime now = LocalDateTime.now();
+
         for (Tag tag : tags) {
             LearnerMetric metric = learnerMetricRepository
                     .findByUserAndTagAndSkill(user, tag, skill)
@@ -415,16 +416,55 @@ public class ExamSessionServiceImpl implements ExamSessionService {
                         m.setUser(user);
                         m.setTag(tag);
                         m.setSkill(skill);
-                        m.setMasteryLevel(0.5);
+                        m.setMasteryLevel(0.3); // P(L=1) prior
                         m.setConfidenceScore(0.0);
+                        m.setAttemptCount(0);
+
+                        if (skill == Skill.READING || skill == Skill.LISTENING) {
+                            m.setPGuess(0.25);
+                            m.setPSlip(0.10);
+                        } else {
+                            m.setPGuess(0.05);
+                            m.setPSlip(0.15);
+                        }
+                        m.setPTransit(0.1);
                         return m;
                     });
 
-            double newMastery =
-                    Math.max(0.0, Math.min(1.0, (metric.getMasteryLevel() * EMA_ALPHA) + (score * (1.0 - EMA_ALPHA))));
-            metric.setMasteryLevel(newMastery);
-            metric.setConfidenceScore(Math.min(1.0, metric.getConfidenceScore() + 0.05));
+            double pL = metric.getMasteryLevel() != null ? metric.getMasteryLevel() : 0.3;
+            double pGuess = metric.getPGuess() != null
+                    ? metric.getPGuess()
+                    : (skill == Skill.READING || skill == Skill.LISTENING ? 0.25 : 0.05);
+            double pSlip = metric.getPSlip() != null
+                    ? metric.getPSlip()
+                    : (skill == Skill.READING || skill == Skill.LISTENING ? 0.10 : 0.15);
+            double pTransit = metric.getPTransit() != null ? metric.getPTransit() : 0.1;
+
+            double pLnew;
+            if (isCorrect) {
+                double pCorrectGivenL = 1.0 - pSlip;
+                double pCorrectGivenNotL = pGuess;
+                double pCorrect = (pL * pCorrectGivenL) + ((1.0 - pL) * pCorrectGivenNotL);
+                pLnew = (pL * pCorrectGivenL) / Math.max(pCorrect, 0.01);
+            } else {
+                double pIncorrectGivenL = pSlip;
+                double pIncorrectGivenNotL = 1.0 - pGuess;
+                double pIncorrect = (pL * pIncorrectGivenL) + ((1.0 - pL) * pIncorrectGivenNotL);
+                pLnew = (pL * pIncorrectGivenL) / Math.max(pIncorrect, 0.01);
+            }
+
+            double pLfinal = pLnew + ((1.0 - pLnew) * pTransit);
+            pLfinal = Math.max(0.0, Math.min(1.0, pLfinal));
+
+            metric.setMasteryLevel(pLfinal);
+            metric.setAttemptCount(metric.getAttemptCount() == null ? 1 : metric.getAttemptCount() + 1);
+
+            double calculatedConfidence = 1.0 - (1.0 / (metric.getAttemptCount() + 1.0));
+            metric.setConfidenceScore(calculatedConfidence);
+            metric.setUpdatedAt(now);
+
             learnerMetricRepository.save(metric);
+            log.debug("[ExamSession BKT] Tag={}, Attempt={}, pL={}", tag.getName(), metric.getAttemptCount(), pLfinal);
         }
     }
 
