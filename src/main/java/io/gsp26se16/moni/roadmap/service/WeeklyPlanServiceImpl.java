@@ -368,6 +368,24 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
 
     @Override
     @Transactional
+    public void autoCompleteTestSlot(Users user, Integer testId, Integer score, Integer totalQuestions) {
+        LocalDate today = LocalDate.now();
+        List<DailySlot> matchingSlots = dailySlotRepository.findMatchingTestSlots(user, testId, today);
+
+        if (!matchingSlots.isEmpty()) {
+            DailySlot slot = matchingSlots.get(0);
+            slot.setStatus("DONE");
+            slot.setScore(score);
+            slot.setTotalQuestions(totalQuestions);
+            slot.setCompletedAt(LocalDateTime.now());
+            dailySlotRepository.save(slot);
+
+            log.info("[WeeklyPlan Auto] Completed slot {} for user {} (test {})", slot.getId(), user.getId(), testId);
+        }
+    }
+
+    @Override
+    @Transactional
     public List<VocabResponse> startVocabLearning(Integer slotId) {
         Users user = getCurrentUser();
         DailySlot slot =

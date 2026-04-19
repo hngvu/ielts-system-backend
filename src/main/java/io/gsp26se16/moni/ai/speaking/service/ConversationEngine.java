@@ -34,6 +34,7 @@ import io.gsp26se16.moni.content.entity.TestStructure;
 import io.gsp26se16.moni.content.repository.TestStructureRepository;
 import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
 import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
+import io.gsp26se16.moni.roadmap.service.WeeklyPlanService;
 import io.gsp26se16.moni.tag.entity.Tag;
 import io.gsp26se16.moni.tag.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
@@ -71,6 +72,7 @@ public class ConversationEngine {
     private final Executor aiExecutor;
     private final io.gsp26se16.moni.content.repository.TestRepository testRepository;
     private final TestStructureRepository testStructureRepository;
+    private final WeeklyPlanService weeklyPlanService;
 
     // ─────────────────────────────── Public API ───────────────────────────────
 
@@ -474,17 +476,27 @@ public class ConversationEngine {
         // [NEW] Update LearnerMetric with Speaking evaluation scores
         // ============================================================
         try {
-            String userIdStr = submission.getUser().getId();
-            if (userIdStr != null) {
-                UserCredentials credentials =
-                        userCredentialsRepository.findById(userIdStr).orElse(null);
-                if (credentials != null && credentials.getUser() != null) {
-                    updateMetricsFromSpeakingEval(submission, finalBand, assessment);
-                    log.info("Speaking metrics updated for user={}, finalBand={}", userIdStr, finalBand);
+            Users user = submission.getUser();
+            if (user == null) {
+                String userIdStr = submission.getUser().getId();
+                if (userIdStr != null) {
+                    UserCredentials credentials =
+                            userCredentialsRepository.findById(userIdStr).orElse(null);
+                    if (credentials != null) user = credentials.getUser();
+                }
+            }
+            if (user != null) {
+                updateMetricsFromSpeakingEval(submission, finalBand, assessment);
+                log.info("Speaking metrics updated for user={}, finalBand={}", user.getId(), finalBand);
+
+                // [NEW] Auto-complete weekly plan test slot
+                if (submission.getTest() != null) {
+                    weeklyPlanService.autoCompleteTestSlot(
+                            user, submission.getTest().getId(), (int) finalBand, 9);
                 }
             }
         } catch (Exception e) {
-            log.error("Failed to update speaking metrics: {}", e.getMessage(), e);
+            log.error("Failed to update speaking metrics or weekly plan: {}", e.getMessage(), e);
             // Don't fail the whole evaluation if metric update fails
         }
     }

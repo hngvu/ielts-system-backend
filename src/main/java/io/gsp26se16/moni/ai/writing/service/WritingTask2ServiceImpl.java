@@ -27,6 +27,7 @@ import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.WritingTaskType;
 import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
 import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
+import io.gsp26se16.moni.roadmap.service.WeeklyPlanService;
 import io.gsp26se16.moni.tag.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,7 @@ public class WritingTask2ServiceImpl implements WritingTask2Service {
     private final UsersRepository usersRepository;
     private final LearnerMetricRepository learnerMetricRepository;
     private final TagRepository tagRepository;
+    private final WeeklyPlanService weeklyPlanService;
 
     @Qualifier("aiExecutor")
     private final Executor aiExecutor;
@@ -239,9 +241,14 @@ public class WritingTask2ServiceImpl implements WritingTask2Service {
             if (user != null) {
                 updateMetricsFromWritingEval(submission, finalBand, analysisResult);
                 log.info("Writing metrics updated for user={}, finalBand={}", user.getId(), finalBand);
+
+                // [NEW] Auto-complete weekly plan test slot
+                if (submission.getTestId() != null) {
+                    weeklyPlanService.autoCompleteTestSlot(user, submission.getTestId(), (int) finalBand, 9);
+                }
             }
         } catch (Exception e) {
-            log.error("Failed to update writing metrics: {}", e.getMessage(), e);
+            log.error("Failed to update writing metrics or weekly plan: {}", e.getMessage(), e);
             // Don't fail the whole evaluation if metric update fails
         }
     }

@@ -11,4 +11,6 @@ public enum TagType {
     SECTION, // Listening Section 1, 2, 3, 4
     TASK, // Writing Task 1, 2
     PART, // Speaking Part 1, 2, 3
+    SPEAKING_CRITERIA, // Speaking/Writing Criteria
+    WRITING_CRITERIA // Speaking/Writing Criteria
 }

@@ -14,6 +14,8 @@ public interface SpeakingSubmissionRepository extends JpaRepository<SpeakingSubm
     /** Lấy tất cả bài Speaking của một user */
     List<SpeakingSubmission> findByUserId(String userId);
 
+    List<SpeakingSubmission> findByUserIdOrderByCreatedAtDesc(String userId);
+
     /** Lấy bài Speaking theo WebSocket speakingSession */
     Optional<SpeakingSubmission> findBySpeakingSessionId(String speakingSessionId);
 

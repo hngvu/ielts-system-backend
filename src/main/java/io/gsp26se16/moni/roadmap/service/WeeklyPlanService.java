@@ -37,6 +37,9 @@ public interface WeeklyPlanService {
     /** Auto-detect and complete slot based on stimulus + user + date */
     void autoCompleteSlot(Users user, Integer stimulusId, Integer score, Integer totalQuestions);
 
+    /** Auto-detect and complete slot based on test + user + date */
+    void autoCompleteTestSlot(Users user, Integer testId, Integer score, Integer totalQuestions);
+
     /** Evaluate the current week's performance, close it, and generate next */
     WeeklyPlanDetailResponse evaluateWeekAndGenerateNext();
 

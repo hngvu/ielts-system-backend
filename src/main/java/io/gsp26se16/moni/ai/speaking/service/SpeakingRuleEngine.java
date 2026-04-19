@@ -12,15 +12,18 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Speaking-specific rule engine.
  *
- * <p>Adapts the existing {@link RuleEngine} for the four IELTS speaking criteria:
+ * <p>
+ * Adapts the existing {@link RuleEngine} for the four IELTS speaking criteria:
  * <ul>
- *   <li><strong>FC</strong> — Fluency &amp; Coherence</li>
- *   <li><strong>LR</strong> — Lexical Resource</li>
- *   <li><strong>GRA</strong> — Grammatical Range &amp; Accuracy</li>
- *   <li><strong>PR</strong> — Pronunciation</li>
+ * <li><strong>FC</strong> — Fluency &amp; Coherence</li>
+ * <li><strong>LR</strong> — Lexical Resource</li>
+ * <li><strong>GRA</strong> — Grammatical Range &amp; Accuracy</li>
+ * <li><strong>PR</strong> — Pronunciation</li>
  * </ul>
  *
- * <p>Speaking hard caps and soft penalties are defined here. Final band calculation
+ * <p>
+ * Speaking hard caps and soft penalties are defined here. Final band
+ * calculation
  * and IELTS rounding are delegated to the shared {@link RuleEngine}.
  */
 @Slf4j
@@ -41,11 +44,11 @@ public class SpeakingRuleEngine {
 
             // LR only
             "insufficient_vocabulary",
-            new SpeakingHardRule(Map.of("LR", 3.0), 3.0),
+            new SpeakingHardRule(Map.of("LR", 1.0), 1.0),
 
             // GRA only
             "pervasive_grammar_errors",
-            new SpeakingHardRule(Map.of("GRA", 3.0), 3.0),
+            new SpeakingHardRule(Map.of("GRA", 2.0), 2.0),
 
             // PR only
             "unintelligible_pronunciation",
@@ -86,7 +89,8 @@ public class SpeakingRuleEngine {
      * @param lr  Lexical Resource phase output
      * @param gra Grammatical Range &amp; Accuracy phase output
      * @param pr  Pronunciation phase output
-     * @return structured result: final_band, overall_cap, applied_hard_rules, criteria
+     * @return structured result: final_band, overall_cap, applied_hard_rules,
+     *         criteria
      */
     public Map<String, Object> calculateBands(
             Map<String, Object> fc, Map<String, Object> lr, Map<String, Object> gra, Map<String, Object> pr) {
