@@ -925,22 +925,45 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     }
 
     private double calculateBandFromSlot(DailySlot slot) {
-        if (slot.getSkill() == Skill.WRITING || slot.getSkill() == Skill.SPEAKING) {
-            return slot.getScore() != null ? slot.getScore() / 9.0 * 9.0 : 4.0; // Ensure logic handles raw band
-        } else {
-            if (slot.getTotalQuestions() == null || slot.getTotalQuestions() == 0) return 4.0;
-            double accuracy = (double) slot.getScore() / slot.getTotalQuestions();
-            return convertAccuracyToBand(accuracy);
+        if (slot.getScore() == null) return 0.0;
+        int score = slot.getScore();
+        int total = slot.getTotalQuestions() != null ? slot.getTotalQuestions() : 0;
+
+        if (slot.getSkill() == Skill.WRITING) {
+            // Writing stores band*10 in score, totalQuestions=90
+            if (total == 90) return score / 10.0;
+            // Legacy: raw band in score, totalQuestions=9
+            if (total == 9) return (double) score;
+            return score > 0 ? (double) score : 0.0;
         }
+        if (slot.getSkill() == Skill.SPEAKING) {
+            // Speaking stores raw band in score, totalQuestions=9
+            if (total == 9) return (double) score;
+            return score > 0 ? (double) score : 0.0;
+        }
+
+        // Reading/Listening: convert raw score to IELTS band using official scale
+        if (total == 0) return 0.0;
+        return convertRawScoreToIeltsBand(score, total, slot.getSkill());
     }
 
-    private double convertAccuracyToBand(double accuracy) {
-        if (accuracy >= 0.875) return 8.0; // ~35/40
-        if (accuracy >= 0.75) return 7.0; // ~30/40
-        if (accuracy >= 0.625) return 6.0; // ~25/40
-        if (accuracy >= 0.40) return 5.0; // ~16/40
-        if (accuracy >= 0.25) return 4.0; // ~10/40
-        return 3.0;
+    private static final double[] READING_BANDS = {
+        0, 0, 0, 0, 0, 0, 2.5, 3, 3, 3.5, 3.5, 4, 4, 4, 4.5, 4.5,
+        5, 5, 5, 5.5, 5.5, 5.5, 6, 6, 6.5, 6.5, 6.5, 7, 7, 7, 7.5, 7.5,
+        8, 8, 8.5, 8.5, 9, 9, 9, 9, 9
+    };
+
+    private static final double[] LISTENING_BANDS = {
+        0, 0, 0, 0, 0, 0, 2.5, 3, 3, 3.5, 3.5, 4, 4, 4, 4.5, 4.5, 5, 5, 5, 5.5, 5.5, 5.5, 6, 6, 6, 6.5, 6.5, 7, 7, 7.5,
+        7.5, 8, 8, 8, 8.5, 8.5, 9, 9, 9, 9, 9
+    };
+
+    private double convertRawScoreToIeltsBand(int score, int total, Skill skill) {
+        // Scale to 40-question equivalent
+        int scaledTo40 = (int) Math.round((double) score / total * 40);
+        scaledTo40 = Math.max(0, Math.min(scaledTo40, 40));
+        double[] bands = (skill == Skill.LISTENING) ? LISTENING_BANDS : READING_BANDS;
+        return bands[scaledTo40];
     }
 
     private List<Skill[]> distributeTasksIntoDays(List<Skill> taskPool, int slotsPerDay) {
