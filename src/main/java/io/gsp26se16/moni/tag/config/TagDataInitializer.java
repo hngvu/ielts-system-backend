@@ -114,12 +114,12 @@ public class TagDataInitializer implements CommandLineRunner {
                 "Grammatical Range and Accuracy", "GRA", TagType.SPEAKING_CRITERIA, "Grammatical Range and Accuracy");
         createTagIfNotExists("Pronunciation", "PR", TagType.SPEAKING_CRITERIA, "Pronunciation");
 
-        // 7. Tạo WRITING CRITERIA Tags
-        createTagIfNotExists("Task Achievement", "TA", TagType.WRITING_CRITERIA, "Task Achievement / Task Response");
-        createTagIfNotExists("Coherence and Cohesion", "CC", TagType.WRITING_CRITERIA, "Coherence and Cohesion");
-        createTagIfNotExists("Lexical Resource", "LR", TagType.WRITING_CRITERIA, "Lexical Resource");
+        // 7. Tạo WRITING CRITERIA Tags (prefix W_ to avoid code collision with SPEAKING_CRITERIA)
+        createTagIfNotExists("Task Achievement", "W_TA", TagType.WRITING_CRITERIA, "Task Achievement / Task Response");
+        createTagIfNotExists("Coherence and Cohesion", "W_CC", TagType.WRITING_CRITERIA, "Coherence and Cohesion");
+        createTagIfNotExists("Lexical Resource", "W_LR", TagType.WRITING_CRITERIA, "Lexical Resource");
         createTagIfNotExists(
-                "Grammatical Range and Accuracy", "GRA", TagType.WRITING_CRITERIA, "Grammatical Range and Accuracy");
+                "Grammatical Range and Accuracy", "W_GRA", TagType.WRITING_CRITERIA, "Grammatical Range and Accuracy");
 
         log.info("Tags data initialization complete.");
     }

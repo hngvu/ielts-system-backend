@@ -292,16 +292,21 @@ public class WritingTask2ServiceImpl implements WritingTask2Service {
             }
         }
 
+        // Map AI criterion keys to writing tag codes (W_ prefix to avoid collision with speaking tags)
+        Map<String, String> criterionToTagCode =
+                Map.of("TA", "W_TA", "TR", "W_TA", "CC", "W_CC", "LR", "W_LR", "GRA", "W_GRA");
+
         // Update metric for each criterion
         for (Map.Entry<String, Double> entry : criterionBands.entrySet()) {
             String criterion = entry.getKey();
             Double band = entry.getValue();
 
             // Find or create tag for this criterion
+            String tagCode = criterionToTagCode.getOrDefault(criterion, criterion);
             io.gsp26se16.moni.tag.entity.Tag tag =
-                    tagRepository.findByCode(criterion).orElse(null);
+                    tagRepository.findByCode(tagCode).orElse(null);
             if (tag == null) {
-                log.debug("Tag not found for criterion={}, skipping metric update", criterion);
+                log.debug("Tag not found for criterion={} (tagCode={}), skipping metric update", criterion, tagCode);
                 continue;
             }
 
