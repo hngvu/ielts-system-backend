@@ -350,6 +350,16 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         LocalDate today = LocalDate.now();
         List<DailySlot> matchingSlots = dailySlotRepository.findMatchingSlots(user, stimulusId, today);
 
+        // Fallback: search entire active plan if today-specific query finds nothing
+        if (matchingSlots.isEmpty()) {
+            matchingSlots = dailySlotRepository.findMatchingSlotsInActivePlan(user, stimulusId);
+            if (!matchingSlots.isEmpty()) {
+                log.info(
+                        "[WeeklyPlan Auto] Date-specific match failed, found slot in active plan for stimulus {}",
+                        stimulusId);
+            }
+        }
+
         if (!matchingSlots.isEmpty()) {
             DailySlot slot = matchingSlots.get(0);
             slot.setStatus("DONE");
@@ -363,6 +373,8 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                     slot.getId(),
                     user.getId(),
                     stimulusId);
+        } else {
+            log.warn("[WeeklyPlan Auto] No matching TODO slot found for user {} stimulus {}", user.getId(), stimulusId);
         }
     }
 
@@ -371,6 +383,14 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     public void autoCompleteTestSlot(Users user, Integer testId, Integer score, Integer totalQuestions) {
         LocalDate today = LocalDate.now();
         List<DailySlot> matchingSlots = dailySlotRepository.findMatchingTestSlots(user, testId, today);
+
+        // Fallback: search entire active plan if today-specific query finds nothing
+        if (matchingSlots.isEmpty()) {
+            matchingSlots = dailySlotRepository.findMatchingTestSlotsInActivePlan(user, testId);
+            if (!matchingSlots.isEmpty()) {
+                log.info("[WeeklyPlan Auto] Date-specific match failed, found slot in active plan for test {}", testId);
+            }
+        }
 
         if (!matchingSlots.isEmpty()) {
             DailySlot slot = matchingSlots.get(0);
@@ -381,6 +401,8 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
             dailySlotRepository.save(slot);
 
             log.info("[WeeklyPlan Auto] Completed slot {} for user {} (test {})", slot.getId(), user.getId(), testId);
+        } else {
+            log.warn("[WeeklyPlan Auto] No matching TODO slot found for user {} test {}", user.getId(), testId);
         }
     }
 
