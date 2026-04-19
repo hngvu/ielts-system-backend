@@ -151,7 +151,7 @@ public class PracticeServiceImpl implements PracticeService {
                     && question.getQuestionGroup().getQuestionType() != null) {
                 String typeCode = question.getQuestionGroup().getQuestionType().getCode();
                 if (typeCode != null) {
-                    tagRepository.findByCode(typeCode).ifPresent(questionTags::add);
+                    tagRepository.findByCode("QT_" + typeCode.toUpperCase()).ifPresent(questionTags::add);
                 }
             }
 

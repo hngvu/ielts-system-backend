@@ -401,7 +401,7 @@ public class ExamSessionServiceImpl implements ExamSessionService {
         if (question.getQuestionGroup() != null && question.getQuestionGroup().getQuestionType() != null) {
             String typeCode = question.getQuestionGroup().getQuestionType().getCode();
             if (typeCode != null) {
-                tagRepository.findByCode(typeCode).ifPresent(tags::add);
+                tagRepository.findByCode("QT_" + typeCode.toUpperCase()).ifPresent(tags::add);
             }
         }
 
