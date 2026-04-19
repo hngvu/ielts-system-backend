@@ -39,7 +39,7 @@ public class SpeakingSubmissionController {
                             .build());
         }
 
-        List<SpeakingSubmission> submissions = speakingSubmissionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        List<SpeakingSubmission> submissions = speakingSubmissionRepository.findByUserIdOrderBySubmittedAtDesc(userId);
         return ResponseEntity.ok(ApiResponse.<List<SpeakingSubmission>>builder()
                 .result(submissions)
                 .build());
