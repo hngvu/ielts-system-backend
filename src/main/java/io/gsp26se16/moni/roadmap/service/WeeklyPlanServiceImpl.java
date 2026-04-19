@@ -541,7 +541,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
             WeeklyPlan plan = latestCompleted.get();
             if (plan.getWeeklyAccuracy() != null && plan.getWeeklyAccuracy() > 0) {
                 // Convert accuracy to approximate band
-                return convertAccuracyToBand(plan.getWeeklyAccuracy());
+                return convertRawScoreToIeltsBand((int) Math.round(plan.getWeeklyAccuracy() * 40), 40, Skill.READING);
             }
         }
 
