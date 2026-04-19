@@ -60,6 +60,14 @@ public interface DailySlotRepository extends JpaRepository<DailySlot, Integer> {
             + "AND ds.status = 'TODO'")
     List<DailySlot> findMatchingTestSlotsInActivePlan(@Param("user") Users user, @Param("testId") Integer testId);
 
+    /** Find DONE slots matching test + user in active plan (to update score after grading) */
+    @Query("SELECT ds FROM DailySlot ds "
+            + "WHERE ds.weeklyPlan.user = :user "
+            + "AND ds.test.id = :testId "
+            + "AND ds.weeklyPlan.status = 'ACTIVE' "
+            + "AND ds.status = 'DONE'")
+    List<DailySlot> findDoneTestSlotsInActivePlan(@Param("user") Users user, @Param("testId") Integer testId);
+
     /** Fallback: find slots matching stimulus + user in active plan (no date filter) */
     @Query("SELECT ds FROM DailySlot ds "
             + "WHERE ds.weeklyPlan.user = :user "

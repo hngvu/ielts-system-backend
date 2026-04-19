@@ -381,16 +381,8 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     @Override
     @Transactional
     public void autoCompleteTestSlot(Users user, Integer testId, Integer score, Integer totalQuestions) {
-        LocalDate today = LocalDate.now();
-        List<DailySlot> matchingSlots = dailySlotRepository.findMatchingTestSlots(user, testId, today);
-
-        // Fallback: search entire active plan if today-specific query finds nothing
-        if (matchingSlots.isEmpty()) {
-            matchingSlots = dailySlotRepository.findMatchingTestSlotsInActivePlan(user, testId);
-            if (!matchingSlots.isEmpty()) {
-                log.info("[WeeklyPlan Auto] Date-specific match failed, found slot in active plan for test {}", testId);
-            }
-        }
+        // First try: find TODO slot (not yet completed)
+        List<DailySlot> matchingSlots = dailySlotRepository.findMatchingTestSlotsInActivePlan(user, testId);
 
         if (!matchingSlots.isEmpty()) {
             DailySlot slot = matchingSlots.get(0);
@@ -399,10 +391,20 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
             slot.setTotalQuestions(totalQuestions);
             slot.setCompletedAt(LocalDateTime.now());
             dailySlotRepository.save(slot);
-
             log.info("[WeeklyPlan Auto] Completed slot {} for user {} (test {})", slot.getId(), user.getId(), testId);
+            return;
+        }
+
+        // Fallback: find already-DONE slot to update score (frontend may have marked DONE without score)
+        List<DailySlot> doneSlots = dailySlotRepository.findDoneTestSlotsInActivePlan(user, testId);
+        if (!doneSlots.isEmpty()) {
+            DailySlot slot = doneSlots.get(0);
+            slot.setScore(score);
+            slot.setTotalQuestions(totalQuestions);
+            dailySlotRepository.save(slot);
+            log.info("[WeeklyPlan Auto] Updated score for done slot {} (test {})", slot.getId(), testId);
         } else {
-            log.warn("[WeeklyPlan Auto] No matching TODO slot found for user {} test {}", user.getId(), testId);
+            log.warn("[WeeklyPlan Auto] No matching slot found for user {} test {}", user.getId(), testId);
         }
     }
 
