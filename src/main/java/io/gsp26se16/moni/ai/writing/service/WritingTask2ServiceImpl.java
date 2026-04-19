@@ -312,12 +312,9 @@ public class WritingTask2ServiceImpl implements WritingTask2Service {
                 continue;
             }
 
-            // Convert band (0-9) to observation for BKT (0-1)
-            double S = band / 9.0;
-            boolean isCorrect = S >= 0.6; // Band >= 5.4 counts as "correct"
-
-            // Update with BKT algorithm
-            updateMetricBKT(user, tag, isCorrect, S);
+            // For writing criteria, use band directly as mastery (not binary BKT)
+            double mastery = band / 9.0;
+            updateCriterionMetric(user, tag, mastery);
         }
 
         // Update metric for tags specifically attached to the Stimulus (like WRITING_TYPE or TOPIC)
@@ -335,8 +332,38 @@ public class WritingTask2ServiceImpl implements WritingTask2Service {
     }
 
     /**
-     * Update single metric using BKT formula.
-     * Integrated from MasteryService for inline use.
+     * Update criterion metric using band score directly as mastery level.
+     * Writing criteria have continuous band scores (0-9), so binary BKT is not appropriate.
+     */
+    private void updateCriterionMetric(Users user, io.gsp26se16.moni.tag.entity.Tag tag, double mastery) {
+        LearnerMetric metric = learnerMetricRepository
+                .findByUserAndTagAndSkill(user, tag, Skill.WRITING)
+                .orElseGet(() -> {
+                    LearnerMetric m = new LearnerMetric();
+                    m.setUser(user);
+                    m.setTag(tag);
+                    m.setSkill(Skill.WRITING);
+                    m.setMasteryLevel(0.0);
+                    m.setConfidenceScore(0.0);
+                    m.setAttemptCount(0);
+                    m.setPGuess(0.05);
+                    m.setPSlip(0.15);
+                    m.setPTransit(0.1);
+                    return m;
+                });
+
+        metric.setMasteryLevel(Math.max(0.0, Math.min(1.0, mastery)));
+        metric.setAttemptCount(metric.getAttemptCount() == null ? 1 : metric.getAttemptCount() + 1);
+        double calculatedConfidence = 1.0 - (1.0 / (metric.getAttemptCount() + 1.0));
+        metric.setConfidenceScore(calculatedConfidence);
+        metric.setUpdatedAt(LocalDateTime.now());
+
+        learnerMetricRepository.save(metric);
+        log.debug("[Writing-Criterion] tag={}, mastery={}, conf={}", tag.getName(), mastery, calculatedConfidence);
+    }
+
+    /**
+     * Update single metric using BKT formula (for non-criteria tags like WRITING_TYPE, TOPIC).
      */
     private void updateMetricBKT(
             Users user, io.gsp26se16.moni.tag.entity.Tag tag, boolean isCorrect, double scoreNormalized) {
@@ -348,13 +375,11 @@ public class WritingTask2ServiceImpl implements WritingTask2Service {
                     m.setUser(user);
                     m.setTag(tag);
                     m.setSkill(Skill.WRITING);
-                    m.setMasteryLevel(0.3); // BKT prior
+                    m.setMasteryLevel(0.3);
                     m.setConfidenceScore(0.0);
-                    m.setAttemptCount(0); // [MỚI] Khởi tạo số lần làm bài
-
-                    // [MỚI] Thiết lập thông số cá nhân hóa cho SPEAKING
-                    m.setPGuess(0.05); // Speaking: Rất khó "đoán lụi" trúng phát âm/ngữ pháp
-                    m.setPSlip(0.15); // Speaking: Dễ lỡ miệng, nói vấp do áp lực thời gian
+                    m.setAttemptCount(0);
+                    m.setPGuess(0.05);
+                    m.setPSlip(0.15);
                     m.setPTransit(0.1);
                     return m;
                 });
@@ -364,7 +389,6 @@ public class WritingTask2ServiceImpl implements WritingTask2Service {
         double pSlip = metric.getPSlip();
         double pTransit = metric.getPTransit();
 
-        // Bayesian update
         double pLnew;
         if (isCorrect) {
             double pCorrectGivenL = 1.0 - pSlip;
@@ -378,31 +402,16 @@ public class WritingTask2ServiceImpl implements WritingTask2Service {
             pLnew = (pL * pIncorrectGivenL) / pIncorrect;
         }
 
-        // Apply transition
         double pLfinal = pLnew + ((1.0 - pLnew) * pTransit);
         pLfinal = Math.max(0.0, Math.min(1.0, pLfinal));
 
-        // ============================================================
-        // [MỚI] Cập nhật Metric với attemptCount và tính toán Confidence
-        // ============================================================
         metric.setMasteryLevel(pLfinal);
-
-        // Tăng số lần luyện tập Speaking lên 1
         metric.setAttemptCount(metric.getAttemptCount() == null ? 1 : metric.getAttemptCount() + 1);
-
-        // Tính độ tự tin theo đường cong (1 lần -> 50%, 4 lần -> 80%, ...)
         double calculatedConfidence = 1.0 - (1.0 / (metric.getAttemptCount() + 1.0));
         metric.setConfidenceScore(calculatedConfidence);
-
         metric.setUpdatedAt(LocalDateTime.now());
 
         learnerMetricRepository.save(metric);
-        log.debug(
-                "[Speaking-BKT] tag={}, Attempt={}, pL(final)={}, Conf={}",
-                tag.getName(),
-                metric.getAttemptCount(),
-                pLfinal,
-                calculatedConfidence);
     }
 
     // =========================================================================

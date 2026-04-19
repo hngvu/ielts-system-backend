@@ -366,12 +366,9 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
                 continue;
             }
 
-            // Convert band (0-9) to observation for BKT (0-1)
-            double S = band / 9.0;
-            boolean isCorrect = S >= 0.6; // Band >= 5.4 counts as "correct"
-
-            // Update with BKT algorithm
-            updateMetricBKT(user, tag, isCorrect, S);
+            // For writing criteria, use band directly as mastery (not binary BKT)
+            double mastery = band / 9.0;
+            updateCriterionMetric(user, tag, mastery);
         }
 
         // Update metric for tags specifically attached to the Stimulus (like WRITING_TYPE or TOPIC)
@@ -389,8 +386,37 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
     }
 
     /**
-     * Update single metric using BKT formula.
-     * Integrated from MasteryService for inline use.
+     * Update criterion metric using band score directly as mastery level.
+     */
+    private void updateCriterionMetric(Users user, io.gsp26se16.moni.tag.entity.Tag tag, double mastery) {
+        LearnerMetric metric = learnerMetricRepository
+                .findByUserAndTagAndSkill(user, tag, Skill.WRITING)
+                .orElseGet(() -> {
+                    LearnerMetric m = new LearnerMetric();
+                    m.setUser(user);
+                    m.setTag(tag);
+                    m.setSkill(Skill.WRITING);
+                    m.setMasteryLevel(0.0);
+                    m.setConfidenceScore(0.0);
+                    m.setAttemptCount(0);
+                    m.setPGuess(0.05);
+                    m.setPSlip(0.15);
+                    m.setPTransit(0.1);
+                    return m;
+                });
+
+        metric.setMasteryLevel(Math.max(0.0, Math.min(1.0, mastery)));
+        metric.setAttemptCount(metric.getAttemptCount() == null ? 1 : metric.getAttemptCount() + 1);
+        double calculatedConfidence = 1.0 - (1.0 / (metric.getAttemptCount() + 1.0));
+        metric.setConfidenceScore(calculatedConfidence);
+        metric.setUpdatedAt(LocalDateTime.now());
+
+        learnerMetricRepository.save(metric);
+        log.debug("[Writing-Criterion] tag={}, mastery={}, conf={}", tag.getName(), mastery, calculatedConfidence);
+    }
+
+    /**
+     * Update single metric using BKT formula (for non-criteria tags).
      */
     private void updateMetricBKT(
             Users user, io.gsp26se16.moni.tag.entity.Tag tag, boolean isCorrect, double scoreNormalized) {
@@ -416,7 +442,6 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
         double pSlip = metric.getPSlip();
         double pTransit = metric.getPTransit();
 
-        // Bayesian update
         double pLnew;
         if (isCorrect) {
             double pCorrectGivenL = 1.0 - pSlip;
@@ -430,7 +455,6 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
             pLnew = (pL * pIncorrectGivenL) / pIncorrect;
         }
 
-        // Apply transition
         double pLfinal = pLnew + ((1.0 - pLnew) * pTransit);
         pLfinal = Math.max(0.0, Math.min(1.0, pLfinal));
 
