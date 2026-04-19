@@ -298,7 +298,9 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
 
                 // [NEW] Auto-complete weekly plan test slot
                 if (submission.getTestId() != null) {
-                    weeklyPlanService.autoCompleteTestSlot(user, submission.getTestId(), (int) finalBand, 9);
+                    // Store band*10 in score to preserve decimal (e.g. 7.5 → 75, totalQuestions=90)
+                    weeklyPlanService.autoCompleteTestSlot(
+                            user, submission.getTestId(), (int) Math.round(finalBand * 10), 90);
                 }
             }
         } catch (Exception e) {
