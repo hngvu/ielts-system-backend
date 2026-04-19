@@ -20,6 +20,8 @@ import io.gsp26se16.moni.authentication.entity.UserCredentials;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.common.enumeration.Skill;
+import io.gsp26se16.moni.content.entity.TestStructure;
+import io.gsp26se16.moni.content.repository.TestStructureRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,6 +34,42 @@ public class SpeakingSubmissionController {
     private final SpeakingSubmissionRepository speakingSubmissionRepository;
     private final AiEvaluationRepository aiEvaluationRepository;
     private final UserCredentialsRepository userCredentialsRepository;
+    private final TestStructureRepository testStructureRepository;
+
+    /**
+     * Resolve the best available title for a submission.
+     * Priority: Test title → first Stimulus title → fallback "Speaking Test"
+     */
+    private Map<String, Object> resolveTestInfo(SpeakingSubmission sub) {
+        try {
+            if (sub.getTest() != null) {
+                String title = sub.getTest().getTitle();
+
+                // If test title is generic, try to get stimulus title instead
+                if (title == null || title.isBlank() || "Speaking Test".equals(title)) {
+                    List<TestStructure> structures =
+                            testStructureRepository.findByTestId(sub.getTest().getId());
+                    for (TestStructure ts : structures) {
+                        if (ts.getStimulus() != null
+                                && ts.getStimulus().getTitle() != null
+                                && !ts.getStimulus().getTitle().isBlank()) {
+                            title = ts.getStimulus().getTitle();
+                            break;
+                        }
+                    }
+                }
+
+                return Map.of(
+                        "id",
+                        sub.getTest().getId(),
+                        "title",
+                        title != null && !title.isBlank() ? title : "Speaking Test");
+            }
+        } catch (Exception e) {
+            log.debug("Failed to load test info for submission {}", sub.getId());
+        }
+        return null;
+    }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getMySubmissions() {
@@ -64,18 +102,7 @@ public class SpeakingSubmissionController {
                     .findBySubmissionIdAndSkill(sub.getId(), Skill.SPEAKING)
                     .orElse(null);
 
-            Map<String, Object> testInfo = null;
-            if (sub.getTest() != null) {
-                try {
-                    testInfo = Map.of(
-                            "id",
-                            sub.getTest().getId(),
-                            "title",
-                            sub.getTest().getTitle() != null ? sub.getTest().getTitle() : "Speaking Test");
-                } catch (Exception e) {
-                    log.debug("Failed to load test info for submission {}", sub.getId());
-                }
-            }
+            Map<String, Object> testInfo = resolveTestInfo(sub);
 
             Map<String, Object> evalInfo = null;
             if (eval != null) {
@@ -124,23 +151,7 @@ public class SpeakingSubmissionController {
                         : null);
         dto.put("audioTranscript", submission.getAudioTranscript());
         dto.put("audioUrl", submission.getAudioUrl()); // JSON array of per-question audio URLs
-
-        // Include test info
-        Map<String, Object> testInfo = null;
-        if (submission.getTest() != null) {
-            try {
-                testInfo = Map.of(
-                        "id",
-                        submission.getTest().getId(),
-                        "title",
-                        submission.getTest().getTitle() != null
-                                ? submission.getTest().getTitle()
-                                : "Speaking Test");
-            } catch (Exception e) {
-                log.debug("Failed to load test info for submission {}", submission.getId());
-            }
-        }
-        dto.put("test", testInfo);
+        dto.put("test", resolveTestInfo(submission));
 
         if (eval != null) {
             dto.put(
