@@ -316,6 +316,13 @@ public class RuleEngine {
     // =====================================================
 
     public double calculateFinalBand(Map<String, Double> adjustedBands, Double overallCap) {
+        // If TA/TR is extremely low (off-topic/irrelevant), cap the entire score
+        // In real IELTS, a completely off-topic essay cannot score higher than ~2.0
+        Double taBand = adjustedBands.getOrDefault("TA", adjustedBands.get("TR"));
+        if (taBand != null && taBand <= 1.0) {
+            return ieltsRounding(Math.max(taBand, 0.0));
+        }
+
         double average = adjustedBands.values().stream()
                 .mapToDouble(Double::doubleValue)
                 .average()
