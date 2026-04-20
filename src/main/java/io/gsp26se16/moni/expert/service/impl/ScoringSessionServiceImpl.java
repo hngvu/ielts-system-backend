@@ -60,24 +60,25 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
 
         ExpertProfile expert;
         if (expertId == null) {
-            // "Gửi ngẫu nhiên" — pick 1 expert AVAILABLE bất kỳ. Ưu tiên ít queue nhất.
+            // "Gửi ngẫu nhiên" — ưu tiên expert AVAILABLE. Nếu không có thì pick từ
+            // tất cả expert (kể cả OFFLINE) — bài sẽ chấm khi expert online trở lại.
             java.util.List<ExpertProfile> availableExperts =
                     expertProfileRepository.findByStatus(io.gsp26se16.moni.expert.enumeration.ExpertStatus.AVAILABLE);
-            if (availableExperts.isEmpty()) {
+            java.util.List<ExpertProfile> pool =
+                    availableExperts.isEmpty() ? expertProfileRepository.findAll() : availableExperts;
+            if (pool.isEmpty()) {
                 throw new AppException(ErrorCode.EXPERT_NOT_AVAILABLE);
             }
-            expert = availableExperts.stream()
+            expert = pool.stream()
                     .min(java.util.Comparator.comparingInt(
                             e -> sessionRepository.countByExpertAndStatus(e, SessionStatus.QUEUED)))
                     .get();
         } else {
+            // Cho phép book expert OFFLINE (FE đã cảnh báo user). Session vào queue,
+            // expert khi online sẽ thấy và nhận chấm.
             expert = expertProfileRepository
                     .findById(expertId)
                     .orElseThrow(() -> new AppException(ErrorCode.EXPERT_NOT_FOUND));
-
-            if (expert.getStatus() == io.gsp26se16.moni.expert.enumeration.ExpertStatus.OFFLINE) {
-                throw new AppException(ErrorCode.EXPERT_NOT_AVAILABLE);
-            }
         }
 
         String serviceCode = "SPEAKING".equalsIgnoreCase(skill) ? "EXPERT_SPEAKING_SCORE" : "EXPERT_WRITING_SCORE";
