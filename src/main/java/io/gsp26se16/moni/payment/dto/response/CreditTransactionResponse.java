@@ -19,4 +19,7 @@ public record CreditTransactionResponse(
         String userFullName,
         Integer serviceId,
         Integer paymentId,
-        String remark) {}
+        String remark,
+        String quotaType,
+        Integer quotaBefore,
+        Integer quotaAfter) {}

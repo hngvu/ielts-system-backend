@@ -43,4 +43,11 @@ public class CreditTransaction {
     Payment payment;
 
     String remark;
+
+    // Quota tracking cho CONSUME khi dùng gói subscription (delta=0, balance VND không đổi).
+    // quotaType = "AI" hoặc "EXPERT". quotaBefore/After = số lượt còn trước/sau lần dùng.
+    // Null nếu giao dịch không liên quan quota (nạp tiền, trừ VND).
+    String quotaType;
+    Integer quotaBefore;
+    Integer quotaAfter;
 }

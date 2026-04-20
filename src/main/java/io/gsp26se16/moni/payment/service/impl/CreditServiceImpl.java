@@ -64,8 +64,8 @@ public class CreditServiceImpl implements CreditService {
             }
         }
 
-        // Quota-first: ưu tiên trừ quota sub active. Hết quota → fallback ví VND.
-        // Không tạo CreditTransaction khi trừ từ sub vì balance VND không đổi.
+        // Quota-first: ưu tiên trừ quota sub active. Log CreditTransaction với delta=0 +
+        // quotaType/Before/After để user xem được lịch sử dùng lượt.
         if (creditCost > 0) {
             var activeSubOpt =
                     userSubscriptionRepository.findFirstByUser_IdAndIsActiveTrueAndEndAtAfterOrderByEndAtDesc(
@@ -73,13 +73,25 @@ public class CreditServiceImpl implements CreditService {
             if (activeSubOpt.isPresent()) {
                 UserSubscription sub = activeSubOpt.get();
                 if (isAi && canDeductAiFromSub(sub)) {
+                    int before = sub.getPlan().getQuotaAi() == -1 ? -1 : sub.getRemainAi();
                     deductAiFromSub(sub);
+                    int after = sub.getPlan().getQuotaAi() == -1 ? -1 : sub.getRemainAi();
+                    logQuotaConsume(
+                            user, pricing, "AI", before, after, sub.getPlan().getName());
                     return;
                 }
                 if (isExpert && sub.getRemainExpert() > 0) {
-                    sub.setRemainExpert(sub.getRemainExpert() - 1);
+                    int before = sub.getRemainExpert();
+                    sub.setRemainExpert(before - 1);
                     sub.setUsedExpert(sub.getUsedExpert() + 1);
                     userSubscriptionRepository.save(sub);
+                    logQuotaConsume(
+                            user,
+                            pricing,
+                            "EXPERT",
+                            before,
+                            sub.getRemainExpert(),
+                            sub.getPlan().getName());
                     return;
                 }
             }
@@ -105,6 +117,26 @@ public class CreditServiceImpl implements CreditService {
                 .servicePricing(pricing)
                 .build();
 
+        creditTransactionRepository.save(tx);
+    }
+
+    /** Log CreditTransaction cho 1 lần dùng quota sub. delta=0, balance VND không đổi. */
+    private void logQuotaConsume(
+            Users user, ServicePricing pricing, String quotaType, int before, int after, String planName) {
+        int currentBal = user.getCredit() != null ? user.getCredit().intValue() : 0;
+        CreditTransaction tx = CreditTransaction.builder()
+                .delta(0)
+                .balanceBefore(currentBal)
+                .balanceAfter(currentBal)
+                .paymentType(PaymentType.CONSUME)
+                .createdAt(LocalDateTime.now())
+                .user(user)
+                .servicePricing(pricing)
+                .quotaType(quotaType)
+                .quotaBefore(before)
+                .quotaAfter(after)
+                .remark(pricing.getName() + " (gói " + planName + ")")
+                .build();
         creditTransactionRepository.save(tx);
     }
 

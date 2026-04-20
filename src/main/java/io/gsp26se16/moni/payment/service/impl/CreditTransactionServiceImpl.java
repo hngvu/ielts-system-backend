@@ -154,6 +154,9 @@ public class CreditTransactionServiceImpl implements CreditTransactionService {
                                 ? creditTransaction.getPayment().getId()
                                 : null)
                 .remark(creditTransaction.getRemark())
+                .quotaType(creditTransaction.getQuotaType())
+                .quotaBefore(creditTransaction.getQuotaBefore())
+                .quotaAfter(creditTransaction.getQuotaAfter())
                 .build();
     }
 }
