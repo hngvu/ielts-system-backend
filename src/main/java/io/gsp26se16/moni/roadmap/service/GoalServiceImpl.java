@@ -196,7 +196,7 @@ public class GoalServiceImpl implements GoalService {
 
         List<LearnerMetric> allMetrics = learnerMetricRepository.findByUserOrderByUpdatedAtDesc(learner);
         double masteryIndex = computeAvg(
-                allMetrics.stream().map(LearnerMetric::getMasteryLevel).toList(), 0.5);
+                allMetrics.stream().map(LearnerMetric::getMasteryLevel).toList(), 0.0);
         double confidenceIndex = computeAvg(
                 allMetrics.stream().map(LearnerMetric::getConfidenceScore).toList(), 0.0);
         var lastMetricUpdatedAt =
