@@ -13,10 +13,10 @@ import io.gsp26se16.moni.payment.entity.UserSubscription;
 public interface UserSubscriptionRepository extends JpaRepository<UserSubscription, Integer> {
     /** Gói đang active của user (endAt > now, isActive=true). Tại 1 thời điểm chỉ nên có 1. */
     Optional<UserSubscription> findFirstByUser_IdAndIsActiveTrueAndEndAtAfterOrderByEndAtDesc(
-            Integer userId, LocalDateTime now);
+            String userId, LocalDateTime now);
 
     /** Dùng cho scheduler expire — tìm các sub đã quá hạn nhưng vẫn isActive=true. */
     List<UserSubscription> findByIsActiveTrueAndEndAtBefore(LocalDateTime now);
 
-    List<UserSubscription> findByUser_IdOrderByStartAtDesc(Integer userId);
+    List<UserSubscription> findByUser_IdOrderByStartAtDesc(String userId);
 }
