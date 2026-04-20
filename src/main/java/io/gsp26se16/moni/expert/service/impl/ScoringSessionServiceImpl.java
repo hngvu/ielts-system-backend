@@ -528,6 +528,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                 .recordingUrl(s.getRecordingUrl())
                 .expertRecordingUrl(s.getExpertRecordingUrl())
                 .userRating(s.getUserRating())
+                .userComment(s.getUserComment())
                 .build();
     }
 

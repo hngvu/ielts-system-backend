@@ -34,4 +34,5 @@ public class ScoringSessionResponse {
     String recordingUrl;
     String expertRecordingUrl;
     Integer userRating;
+    String userComment;
 }
