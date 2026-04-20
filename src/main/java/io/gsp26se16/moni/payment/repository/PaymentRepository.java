@@ -18,6 +18,8 @@ import io.gsp26se16.moni.payment.enumeration.PaymentStatus;
 public interface PaymentRepository extends JpaRepository<Payment, Integer>, JpaSpecificationExecutor<Payment> {
     boolean existsByTxnCode(String txnCode);
 
+    boolean existsByPackagePricing_Id(Integer packagePricingId);
+
     List<Payment> findByStatusAndExpiredAtBefore(PaymentStatus status, LocalDateTime now);
 
     @EntityGraph(attributePaths = {"user", "packagePricing"})

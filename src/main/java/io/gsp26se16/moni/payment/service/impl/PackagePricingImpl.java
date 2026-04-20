@@ -11,6 +11,7 @@ import io.gsp26se16.moni.payment.dto.request.PackagePricingUpdateRequest;
 import io.gsp26se16.moni.payment.dto.response.PackagePricingResponse;
 import io.gsp26se16.moni.payment.entity.PackagePricing;
 import io.gsp26se16.moni.payment.repository.PackagePricingRepository;
+import io.gsp26se16.moni.payment.repository.PaymentRepository;
 import io.gsp26se16.moni.payment.service.PackagePricingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PackagePricingImpl implements PackagePricingService {
 
     private final PackagePricingRepository packagePricingRepository;
+    private final PaymentRepository paymentRepository;
 
     @Override
     public List<PackagePricingResponse> searchPackagePricings(
@@ -174,12 +176,21 @@ public class PackagePricingImpl implements PackagePricingService {
     public void deletePackagePricing(Integer id) {
         log.info("Deleting package pricing with id: {}", id);
 
-        if (!packagePricingRepository.existsById(id)) {
-            throw new AppException(ErrorCode.PACKAGE_PRICING_NOT_FOUND);
+        PackagePricing packagePricing = packagePricingRepository
+                .findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.PACKAGE_PRICING_NOT_FOUND));
+
+        // Gói đã có payment tham chiếu (FK) → không hard delete được → soft delete (isActive=false)
+        // để giữ lịch sử giao dịch. Trang user /payment đã filter isActive=true nên tự ẩn.
+        if (paymentRepository.existsByPackagePricing_Id(id)) {
+            packagePricing.setActive(false);
+            packagePricingRepository.save(packagePricing);
+            log.info("Soft-deleted package pricing id={} (has linked payments)", id);
+            return;
         }
 
         packagePricingRepository.deleteById(id);
-        log.info("Successfully deleted package pricing with id: {}", id);
+        log.info("Hard-deleted package pricing id={}", id);
     }
 
     private PackagePricingResponse convertToResponse(PackagePricing packagePricing) {
