@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.payment.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -56,4 +57,18 @@ public interface CreditTransactionRepository
             @Param("serviceCode") String serviceCode,
             @Param("startDate") java.time.LocalDateTime startDate,
             @Param("endDate") java.time.LocalDateTime endDate);
+
+    /**
+     * Lấy CONSUME transaction gần nhất của user cho 1 service cụ thể.
+     * Dùng khi refund: đọc quotaType để biết đã trừ quota hay tiền → hoàn đúng hình thức.
+     */
+    @Query("SELECT ct FROM CreditTransaction ct "
+            + "WHERE ct.user.id = :userId "
+            + "AND ct.servicePricing.serviceCode = :serviceCode "
+            + "AND ct.paymentType = :paymentType "
+            + "ORDER BY ct.createdAt DESC LIMIT 1")
+    Optional<CreditTransaction> findLatestByUserAndServiceAndPaymentType(
+            @Param("userId") String userId,
+            @Param("serviceCode") String serviceCode,
+            @Param("paymentType") PaymentType paymentType);
 }

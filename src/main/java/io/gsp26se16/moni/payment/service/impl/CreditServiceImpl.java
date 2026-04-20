@@ -169,6 +169,63 @@ public class CreditServiceImpl implements CreditService {
                 .findByServiceCode(serviceCode)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_KEY));
 
+        // Xem lần trừ gần nhất dùng quota (subscription) hay tiền (VND) → hoàn cùng hình thức
+        var lastConsume = creditTransactionRepository.findLatestByUserAndServiceAndPaymentType(
+                user.getId(), serviceCode, PaymentType.CONSUME);
+
+        if (lastConsume.isPresent() && lastConsume.get().getQuotaType() != null) {
+            refundToSubscription(user, pricing, lastConsume.get().getQuotaType());
+        } else {
+            refundVnd(user, pricing);
+        }
+    }
+
+    /** Hoàn 1 lượt vào subscription active (quotaType = "AI" hoặc "EXPERT"). */
+    private void refundToSubscription(Users user, ServicePricing pricing, String quotaType) {
+        var activeSubOpt = userSubscriptionRepository.findFirstByUser_IdAndIsActiveTrueAndEndAtAfterOrderByEndAtDesc(
+                user.getId(), LocalDateTime.now());
+        // Nếu sub đã hết hạn giữa lúc chấm và lúc huỷ → fallback refund tiền
+        if (activeSubOpt.isEmpty()) {
+            refundVnd(user, pricing);
+            return;
+        }
+        UserSubscription sub = activeSubOpt.get();
+        int before;
+        int after;
+        if ("AI".equals(quotaType)) {
+            before = sub.getPlan().getQuotaAi() == -1 ? -1 : sub.getRemainAi();
+            if (sub.getPlan().getQuotaAi() != -1) {
+                sub.setRemainAi(sub.getRemainAi() + 1);
+            }
+            sub.setUsedAi(Math.max(0, sub.getUsedAi() - 1));
+            after = sub.getPlan().getQuotaAi() == -1 ? -1 : sub.getRemainAi();
+        } else {
+            before = sub.getRemainExpert();
+            sub.setRemainExpert(before + 1);
+            sub.setUsedExpert(Math.max(0, sub.getUsedExpert() - 1));
+            after = sub.getRemainExpert();
+        }
+        userSubscriptionRepository.save(sub);
+
+        int currentBal = user.getCredit() != null ? user.getCredit().intValue() : 0;
+        CreditTransaction tx = CreditTransaction.builder()
+                .delta(0)
+                .balanceBefore(currentBal)
+                .balanceAfter(currentBal)
+                .paymentType(PaymentType.REFUND)
+                .createdAt(LocalDateTime.now())
+                .user(user)
+                .servicePricing(pricing)
+                .quotaType(quotaType)
+                .quotaBefore(before)
+                .quotaAfter(after)
+                .remark("Hoàn " + pricing.getName() + " (gói " + sub.getPlan().getName() + ")")
+                .build();
+        creditTransactionRepository.save(tx);
+    }
+
+    /** Hoàn tiền VND vào ví. */
+    private void refundVnd(Users user, ServicePricing pricing) {
         int creditCost = pricing.getCreditCost();
         int balanceBefore = user.getCredit() != null ? user.getCredit().intValue() : 0;
         int balanceAfter = balanceBefore + creditCost;
