@@ -91,6 +91,10 @@ public class AiController {
             return ResponseEntity.badRequest().body(Map.of("code", 1086, "message", "Thiếu câu hỏi."));
         }
 
+        if (userId != null) {
+            creditService.checkAndDeduct(userId, "AI_SPEAKING_SCORE");
+        }
+
         try {
             // Step 1: Transcribe audio via AssemblyAI
             log.info(
@@ -118,11 +122,6 @@ public class AiController {
 
             // Step 2: Evaluate with AI
             Map<String, Object> result = conversationEngine.evaluatePractice(userId, question, transcript);
-
-            // Step 3: Deduct credit AFTER successful evaluation
-            if (userId != null) {
-                creditService.checkAndDeduct(userId, "AI_SPEAKING_SCORE");
-            }
 
             return ResponseEntity.ok(result);
         } catch (Exception e) {
