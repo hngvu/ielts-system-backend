@@ -118,6 +118,17 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
 
         session.setStatus(SessionStatus.CANCELLED);
 
+        // Reset linked WritingSubmission back to PENDING — nếu không, /scoring-history
+        // vẫn hiện "Đang chấm..." dù session đã huỷ (vì FE đọc evaluationStatus=PROCESSING).
+        if (session.getWritingSubmissionId() != null) {
+            writingSubmissionRepository
+                    .findById(session.getWritingSubmissionId())
+                    .ifPresent(sub -> {
+                        sub.setEvaluationStatus(io.gsp26se16.moni.common.enumeration.EvaluationStatus.PENDING);
+                        writingSubmissionRepository.save(sub);
+                    });
+        }
+
         // Hoàn credit cho người dùng đã tạo session
         String serviceCode =
                 "SPEAKING".equalsIgnoreCase(session.getSkill()) ? "EXPERT_SPEAKING_SCORE" : "EXPERT_WRITING_SCORE";

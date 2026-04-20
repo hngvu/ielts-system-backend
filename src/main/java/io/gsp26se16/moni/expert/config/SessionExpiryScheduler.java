@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.gsp26se16.moni.ai.writing.repository.WritingSubmissionRepository;
 import io.gsp26se16.moni.authentication.entity.UserCredentials;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 import io.gsp26se16.moni.expert.entity.ScoringSession;
@@ -37,6 +38,7 @@ public class SessionExpiryScheduler {
     private final ScoringSessionRepository sessionRepository;
     private final CreditService creditService;
     private final UserCredentialsRepository userCredentialsRepository;
+    private final WritingSubmissionRepository writingSubmissionRepository;
 
     @Scheduled(fixedRate = 300_000) // every 5 minutes
     @Transactional
@@ -85,6 +87,17 @@ public class SessionExpiryScheduler {
         session.setStatus(SessionStatus.CANCELLED);
         session.setEndedAt(now);
         sessionRepository.save(session);
+
+        // Reset linked WritingSubmission về PENDING để learner không thấy "Đang chấm..."
+        // sau khi session đã auto-cancel. Dùng FQ name để tránh spotless xóa import.
+        if (session.getWritingSubmissionId() != null) {
+            writingSubmissionRepository
+                    .findById(session.getWritingSubmissionId())
+                    .ifPresent(sub -> {
+                        sub.setEvaluationStatus(io.gsp26se16.moni.common.enumeration.EvaluationStatus.PENDING);
+                        writingSubmissionRepository.save(sub);
+                    });
+        }
 
         if (session.getUser() == null) {
             log.warn("Session #{} has no user, skip refund", session.getId());
