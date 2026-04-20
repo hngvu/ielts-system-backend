@@ -294,14 +294,32 @@ public class PaymentServiceImpl implements PaymentService {
             return;
         }
 
-        // Subscription purchase → kích hoạt gói, KHÔNG cộng VND vào ví.
+        // Subscription purchase → kích hoạt gói + log transaction để hiện trong /transactions.
+        // delta=0 vì balance VND không đổi, nhưng user vẫn cần thấy giao dịch này trong history.
         if (payment.getSubscriptionPlan() != null) {
+            Users subUser = payment.getUser();
             subscriptionService.activateSubscription(
-                    payment.getUser().getId(), payment.getSubscriptionPlan().getId());
+                    subUser.getId(), payment.getSubscriptionPlan().getId());
+
+            int currentBal = subUser.getCredit() != null ? subUser.getCredit().intValue() : 0;
+            CreditTransaction subTx = CreditTransaction.builder()
+                    .delta(0) // balance không đổi — đây chỉ là record purchase
+                    .balanceBefore(currentBal)
+                    .balanceAfter(currentBal)
+                    .paymentType(PaymentType.SUBSCRIPTION_PURCHASE)
+                    .createdAt(LocalDateTime.now(ZoneOffset.UTC))
+                    .user(subUser)
+                    .payment(payment)
+                    .remark("Mua " + payment.getSubscriptionPlan().getName() + " · "
+                            + String.format("%,d", payment.getAmount()) + "đ")
+                    .build();
+            creditTransactionRepository.save(subTx);
+
             log.info(
-                    "Subscription activated from payment: user={}, plan={}, late={}",
-                    payment.getUser().getId(),
+                    "Subscription activated + tx logged: user={}, plan={}, amount={}, late={}",
+                    subUser.getId(),
                     payment.getSubscriptionPlan().getCode(),
+                    payment.getAmount(),
                     isLatePayment);
             return;
         }
