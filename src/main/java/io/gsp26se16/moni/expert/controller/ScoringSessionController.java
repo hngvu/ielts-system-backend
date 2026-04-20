@@ -49,6 +49,21 @@ public class ScoringSessionController {
                 ApiResponse.<ScoringSessionResponse>builder().result(cancelled).build());
     }
 
+    /**
+     * Learner huỷ session qua writingSubmissionId (dùng cho /scoring-history nơi FE
+     * chỉ có submissionId chứ không biết sessionId). Lookup session đang active → cancel.
+     */
+    @PatchMapping("/by-submission/{writingSubmissionId}/cancel")
+    @PreAuthorize("hasRole('LEARNER')")
+    public ResponseEntity<ApiResponse<ScoringSessionResponse>> cancelByWritingSubmission(
+            @PathVariable Long writingSubmissionId) {
+        String credentialId = getCurrentUserId();
+        ScoringSessionResponse cancelled =
+                sessionService.cancelSessionByWritingSubmissionId(writingSubmissionId, credentialId);
+        return ResponseEntity.ok(
+                ApiResponse.<ScoringSessionResponse>builder().result(cancelled).build());
+    }
+
     @GetMapping("/{id}/queue-position")
     @PreAuthorize("hasRole('LEARNER')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getQueuePosition(@PathVariable Integer id) {

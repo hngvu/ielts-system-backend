@@ -17,6 +17,9 @@ public interface ScoringSessionService {
 
     ScoringSessionResponse cancelSession(Integer sessionId, String credentialId);
 
+    /** Lookup session theo writingSubmissionId rồi cancel (dùng cho /scoring-history UI). */
+    ScoringSessionResponse cancelSessionByWritingSubmissionId(Long writingSubmissionId, String credentialId);
+
     int getQueuePosition(Integer sessionId);
 
     Map<String, Object> getQueuePositionWithStatus(Integer sessionId);

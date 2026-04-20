@@ -58,12 +58,26 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                 .findById(credentialId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        ExpertProfile expert = expertProfileRepository
-                .findById(expertId)
-                .orElseThrow(() -> new AppException(ErrorCode.EXPERT_NOT_FOUND));
+        ExpertProfile expert;
+        if (expertId == null) {
+            // "Gửi ngẫu nhiên" — pick 1 expert AVAILABLE bất kỳ. Ưu tiên ít queue nhất.
+            java.util.List<ExpertProfile> availableExperts =
+                    expertProfileRepository.findByStatus(io.gsp26se16.moni.expert.enumeration.ExpertStatus.AVAILABLE);
+            if (availableExperts.isEmpty()) {
+                throw new AppException(ErrorCode.EXPERT_NOT_AVAILABLE);
+            }
+            expert = availableExperts.stream()
+                    .min(java.util.Comparator.comparingInt(
+                            e -> sessionRepository.countByExpertAndStatus(e, SessionStatus.QUEUED)))
+                    .get();
+        } else {
+            expert = expertProfileRepository
+                    .findById(expertId)
+                    .orElseThrow(() -> new AppException(ErrorCode.EXPERT_NOT_FOUND));
 
-        if (expert.getStatus() == io.gsp26se16.moni.expert.enumeration.ExpertStatus.OFFLINE) {
-            throw new AppException(ErrorCode.EXPERT_NOT_AVAILABLE);
+            if (expert.getStatus() == io.gsp26se16.moni.expert.enumeration.ExpertStatus.OFFLINE) {
+                throw new AppException(ErrorCode.EXPERT_NOT_AVAILABLE);
+            }
         }
 
         String serviceCode = "SPEAKING".equalsIgnoreCase(skill) ? "EXPERT_SPEAKING_SCORE" : "EXPERT_WRITING_SCORE";
@@ -135,6 +149,15 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
         creditService.refund(credentialId, serviceCode);
 
         return toResponse(sessionRepository.save(session));
+    }
+
+    @Override
+    @Transactional
+    public ScoringSessionResponse cancelSessionByWritingSubmissionId(Long writingSubmissionId, String credentialId) {
+        ScoringSession session = sessionRepository
+                .findByWritingSubmissionId(writingSubmissionId)
+                .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
+        return cancelSession(session.getId(), credentialId);
     }
 
     @Override
