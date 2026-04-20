@@ -116,8 +116,10 @@ public class ScoringSessionController {
     }
 
     @GetMapping("/{id}/evaluation")
-    @PreAuthorize("hasRole('LEARNER')")
+    @PreAuthorize("hasAnyRole('LEARNER', 'EXPERT')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getEvaluation(@PathVariable Integer id) {
+        // Expert cần xem lại đánh giá mình đã chấm. Service layer đã check
+        // isSessionOwner || isAssignedExpert nên vẫn an toàn.
         String credentialId = getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .result(sessionService.getEvaluation(id, credentialId))

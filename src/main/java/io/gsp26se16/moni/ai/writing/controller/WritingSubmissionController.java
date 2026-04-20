@@ -171,6 +171,7 @@ public class WritingSubmissionController {
      * Lấy chi tiết một bài nộp (bao gồm nội dung bài viết và kết quả chấm nếu có).
      */
     @GetMapping("/submissions/{id}")
+    @PreAuthorize("hasAnyRole('LEARNER', 'EXPERT')")
     @Transactional(readOnly = true)
     @Operation(summary = "Lấy chi tiết bài viết theo ID")
     public ResponseEntity<ApiResponse<WritingSubmissionDetail>> getSubmissionDetail(@PathVariable Long id) {
@@ -181,8 +182,17 @@ public class WritingSubmissionController {
                 .findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.WRITING_SUBMISSION_NOT_FOUND));
 
-        // Kiểm tra quyền sở hữu
-        if (!submission.getUser().getId().equals(user.getId())) {
+        // Cho phép: chủ bài viết HOẶC expert đã được assign chấm bài này
+        // (expert cần xem lại bài đã chấm của mình trong lịch sử).
+        boolean isOwner = submission.getUser().getId().equals(user.getId());
+        boolean isAssignedExpert = !isOwner
+                && scoringSessionRepository
+                        .findByWritingSubmissionId(id)
+                        .map(s -> s.getExpert() != null
+                                && s.getExpert().getUser() != null
+                                && s.getExpert().getUser().getId().equals(user.getId()))
+                        .orElse(false);
+        if (!isOwner && !isAssignedExpert) {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
 
