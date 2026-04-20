@@ -68,7 +68,9 @@ public class SubscriptionController {
     /** User: gói đang active (null nếu không có). FE dùng cho active-sub banner. */
     @GetMapping("/my/active")
     public ResponseEntity<Map<String, Object>> getMyActiveSubscription(@AuthenticationPrincipal Jwt jwt) {
-        String credentialId = jwt.getSubject();
+        // Dùng claim "userId" (credentialId), không phải sub claim — nhất quán với
+        // ExpertController.getCurrentUserId() và PaymentServiceImpl.
+        String credentialId = jwt.getClaim("userId");
         return subscriptionService
                 .getMyActiveSubscription(credentialId)
                 .<ResponseEntity<Map<String, Object>>>map(sub -> ResponseEntity.ok(Map.of("subscription", sub)))
