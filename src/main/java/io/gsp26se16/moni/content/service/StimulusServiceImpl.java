@@ -115,7 +115,14 @@ public class StimulusServiceImpl implements StimulusService {
             Integer id, String content, String mediaUrl, Object transcript, java.util.List<Integer> tagIds) {
         Stimulus stimulus =
                 stimulusRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.STIMULUS_NOT_FOUND));
+        // Guard: blob: URL chỉ sống trong RAM browser tạo ra nó → từ chối, không cho dirty data
+        if (content != null && content.matches("(?is).*<img[^>]*src=[\"']blob:[^\"']*[\"'][^>]*>.*")) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
         if (content != null) stimulus.setContent(content);
+        if (mediaUrl != null && mediaUrl.startsWith("blob:")) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
         if (mediaUrl != null) stimulus.setMediaUrl(mediaUrl);
         if (transcript != null) stimulus.setTranscript((List<Map<String, Object>>) transcript);
         if (tagIds != null) {
