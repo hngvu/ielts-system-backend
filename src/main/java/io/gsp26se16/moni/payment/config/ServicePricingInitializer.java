@@ -19,18 +19,20 @@ public class ServicePricingInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        seedOrHeal("AI_WRITING_SCORE", "Chấm Writing bằng AI", "Chấm bài Writing Task 1/2 tự động bằng AI", 30);
-        seedOrHeal("AI_SPEAKING_SCORE", "Chấm Speaking bằng AI", "Chấm bài Speaking tự động bằng AI", 30);
+        // Default prices in VND. Sau refactor VND, creditCost field giờ mang nghĩa VND cost.
+        // Admin tự chỉnh qua /admin/pricing (tab Services).
+        seedOrHeal("AI_WRITING_SCORE", "Chấm Writing bằng AI", "Chấm bài Writing Task 1/2 tự động bằng AI", 2_000);
+        seedOrHeal("AI_SPEAKING_SCORE", "Chấm Speaking bằng AI", "Chấm bài Speaking tự động bằng AI", 3_000);
         seedOrHeal(
                 "EXPERT_WRITING_SCORE",
                 "Chấm Writing với Giảng viên",
                 "Chấm bài Writing trực tiếp với giảng viên qua video call",
-                100);
+                30_000);
         seedOrHeal(
                 "EXPERT_SPEAKING_SCORE",
                 "Chấm Speaking với Giảng viên",
                 "Chấm bài Speaking trực tiếp với giảng viên qua video call",
-                120);
+                50_000);
     }
 
     /**
