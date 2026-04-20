@@ -46,10 +46,12 @@ import lombok.extern.slf4j.Slf4j;
 public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final PackagePricingRepository packagePricingRepository;
+    private final io.gsp26se16.moni.payment.repository.SubscriptionPlanRepository subscriptionPlanRepository;
     private final CreditTransactionRepository creditTransactionRepository;
     private final UsersRepository usersRepository;
     private final UserCredentialsRepository userCredentialsRepository;
     private final PaymentNotificationService notificationService;
+    private final io.gsp26se16.moni.payment.service.SubscriptionService subscriptionService;
     private final String txnCodePrefix = "MN";
     private final String txnCodeCharset = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
     private final int txnCodeLength = 6 - txnCodePrefix.length();
@@ -63,22 +65,33 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public PaymentInitResponse initPayment(PaymentInitRequest paymentInitRequest) {
-        if (paymentInitRequest == null
-                || paymentInitRequest.packageId() == null
-                || paymentInitRequest.amount() == null) {
+        if (paymentInitRequest == null || paymentInitRequest.amount() == null || paymentInitRequest.amount() <= 0) {
             throw new AppException(ErrorCode.INVALID_KEY);
         }
 
-        if (paymentInitRequest.amount() <= 0) {
+        // Exactly-one: hoặc nạp VND (packageId) hoặc mua sub (subscriptionPlanId). Không cả 2, không thiếu.
+        boolean hasPackage = paymentInitRequest.packageId() != null;
+        boolean hasSubscription = paymentInitRequest.subscriptionPlanId() != null;
+        if (hasPackage == hasSubscription) {
             throw new AppException(ErrorCode.INVALID_KEY);
         }
 
-        var packagePricing = packagePricingRepository
-                .findById(paymentInitRequest.packageId())
-                .orElseThrow(() -> new AppException(ErrorCode.PACKAGE_PRICING_NOT_FOUND));
-
-        if (packagePricing.getPrice() != paymentInitRequest.amount()) {
-            throw new AppException(ErrorCode.INVALID_KEY);
+        io.gsp26se16.moni.payment.entity.PackagePricing packagePricing = null;
+        io.gsp26se16.moni.payment.entity.SubscriptionPlan subscriptionPlan = null;
+        if (hasPackage) {
+            packagePricing = packagePricingRepository
+                    .findById(paymentInitRequest.packageId())
+                    .orElseThrow(() -> new AppException(ErrorCode.PACKAGE_PRICING_NOT_FOUND));
+            if (packagePricing.getPrice() != paymentInitRequest.amount()) {
+                throw new AppException(ErrorCode.INVALID_KEY);
+            }
+        } else {
+            subscriptionPlan = subscriptionPlanRepository
+                    .findById(paymentInitRequest.subscriptionPlanId())
+                    .orElseThrow(() -> new AppException(ErrorCode.PACKAGE_PRICING_NOT_FOUND));
+            if (!subscriptionPlan.isActive() || subscriptionPlan.getPriceVnd() != paymentInitRequest.amount()) {
+                throw new AppException(ErrorCode.INVALID_KEY);
+            }
         }
 
         String txnCode;
@@ -92,14 +105,16 @@ public class PaymentServiceImpl implements PaymentService {
 
         Users currentUser = getCurrentUser();
         log.info(
-                "Init payment: userId={}, package={}, amount={}",
+                "Init payment: userId={}, type={}, targetId={}, amount={}",
                 currentUser.getId(),
-                packagePricing.getId(),
+                hasPackage ? "PACKAGE" : "SUBSCRIPTION",
+                hasPackage ? packagePricing.getId() : subscriptionPlan.getId(),
                 paymentInitRequest.amount());
 
         LocalDateTime nowUtc = LocalDateTime.now(ZoneOffset.UTC);
         var payment = paymentRepository.save(Payment.builder()
                 .packagePricing(packagePricing)
+                .subscriptionPlan(subscriptionPlan)
                 .amount(paymentInitRequest.amount())
                 .txnCode(txnCode)
                 .createdAt(nowUtc)
@@ -274,11 +289,27 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     private void createCreditTransaction(Payment payment, boolean isLatePayment) {
-        if (payment.getPackagePricing() == null || payment.getUser() == null) {
+        if (payment.getUser() == null) {
+            log.error("Cannot process payment: user is null, paymentId={}", payment.getId());
+            return;
+        }
+
+        // Subscription purchase → kích hoạt gói, KHÔNG cộng VND vào ví.
+        if (payment.getSubscriptionPlan() != null) {
+            subscriptionService.activateSubscription(
+                    payment.getUser().getId(), payment.getSubscriptionPlan().getId());
+            log.info(
+                    "Subscription activated from payment: user={}, plan={}, late={}",
+                    payment.getUser().getId(),
+                    payment.getSubscriptionPlan().getCode(),
+                    isLatePayment);
+            return;
+        }
+
+        if (payment.getPackagePricing() == null) {
             log.error(
-                    "Cannot create credit transaction: packagePricing={}, user={}",
-                    payment.getPackagePricing(),
-                    payment.getUser());
+                    "Cannot create credit transaction: neither package nor subscription set, paymentId={}",
+                    payment.getId());
             return;
         }
 

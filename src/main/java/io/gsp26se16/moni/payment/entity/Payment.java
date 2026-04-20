@@ -40,6 +40,12 @@ public class Payment {
     @JoinColumn(name = "package_id")
     PackagePricing packagePricing;
 
+    // Payment có thể là nạp VND (packagePricing) HOẶC mua gói subscription (subscriptionPlan).
+    // Đúng 1 trong 2 được set, không bao giờ cả 2.
+    @ManyToOne
+    @JoinColumn(name = "subscription_plan_id")
+    SubscriptionPlan subscriptionPlan;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     Users user;
