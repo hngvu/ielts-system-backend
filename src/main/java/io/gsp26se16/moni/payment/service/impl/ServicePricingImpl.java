@@ -1,15 +1,24 @@
 package io.gsp26se16.moni.payment.service.impl;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
+import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.payment.dto.request.ServicePricingCreateRequest;
 import io.gsp26se16.moni.payment.dto.request.ServicePricingUpdateRequest;
 import io.gsp26se16.moni.payment.dto.response.ServicePricingResponse;
+import io.gsp26se16.moni.payment.dto.response.ServiceQuotaResponse;
 import io.gsp26se16.moni.payment.entity.ServicePricing;
+import io.gsp26se16.moni.payment.enumeration.PaymentType;
+import io.gsp26se16.moni.payment.repository.CreditTransactionRepository;
 import io.gsp26se16.moni.payment.repository.ServicePricingRepository;
 import io.gsp26se16.moni.payment.service.ServicePricingService;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +29,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ServicePricingImpl implements ServicePricingService {
 
+    private static final Set<String> FREE_DAILY_SERVICES = Set.of("AI_WRITING_SCORE", "AI_SPEAKING_SCORE");
+
     private final ServicePricingRepository servicePricingRepository;
+    private final CreditTransactionRepository creditTransactionRepository;
+    private final UserCredentialsRepository userCredentialsRepository;
 
     @Override
     public List<ServicePricingResponse> searchServicePricings(
@@ -165,6 +178,42 @@ public class ServicePricingImpl implements ServicePricingService {
 
         servicePricingRepository.deleteById(id);
         log.info("Successfully deleted service pricing with id: {}", id);
+    }
+
+    @Override
+    public ServiceQuotaResponse getUserServiceQuota(String serviceCode) {
+        ServicePricing pricing = servicePricingRepository
+                .findByServiceCode(serviceCode)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_KEY));
+        int defaultCost = pricing.getCreditCost();
+
+        // Service không thuộc nhóm free-daily → effective = default
+        if (!FREE_DAILY_SERVICES.contains(serviceCode)) {
+            return new ServiceQuotaResponse(serviceCode, defaultCost, false, defaultCost);
+        }
+
+        // Lấy user từ JWT; nếu chưa login → trả default an toàn
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof Jwt jwt)) {
+            return new ServiceQuotaResponse(serviceCode, defaultCost, false, defaultCost);
+        }
+        String credentialId = jwt.getClaim("userId");
+        if (credentialId == null) {
+            return new ServiceQuotaResponse(serviceCode, defaultCost, false, defaultCost);
+        }
+        var cred = userCredentialsRepository.findById(credentialId).orElse(null);
+        if (cred == null || cred.getUser() == null) {
+            return new ServiceQuotaResponse(serviceCode, defaultCost, false, defaultCost);
+        }
+
+        LocalDateTime start = LocalDate.now().atStartOfDay();
+        LocalDateTime end = start.plusDays(1).minusNanos(1);
+        long usedToday = creditTransactionRepository.countByUserIdAndServiceCodeAndPaymentTypeAndCreatedAtBetween(
+                cred.getUser().getId(), PaymentType.CONSUME, serviceCode, start, end);
+
+        boolean hasUsed = usedToday > 0;
+        int effective = hasUsed ? defaultCost : 0;
+        return new ServiceQuotaResponse(serviceCode, defaultCost, hasUsed, effective);
     }
 
     private ServicePricingResponse convertToResponse(ServicePricing servicePricing) {

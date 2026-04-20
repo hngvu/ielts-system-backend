@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import io.gsp26se16.moni.payment.dto.request.ServicePricingCreateRequest;
 import io.gsp26se16.moni.payment.dto.request.ServicePricingUpdateRequest;
 import io.gsp26se16.moni.payment.dto.response.ServicePricingResponse;
+import io.gsp26se16.moni.payment.dto.response.ServiceQuotaResponse;
 import io.gsp26se16.moni.payment.service.ServicePricingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,17 @@ public class ServicePricingController {
         List<ServicePricingResponse> pricings = servicePricingService.searchServicePricings(
                 name, serviceCode, minCreditCost, maxCreditCost, sortBy, sortDir);
         return ResponseEntity.ok(pricings);
+    }
+
+    /**
+     * GET /services/quota/{serviceCode}
+     * Trả trạng thái free-daily-quota của user hiện tại cho 1 service cụ thể.
+     * Dùng cho trang practice để FE biết nên hiển thị "Miễn phí" hay giá đậu thật.
+     */
+    @GetMapping("/quota/{serviceCode}")
+    public ResponseEntity<ServiceQuotaResponse> getUserServiceQuota(@PathVariable String serviceCode) {
+        log.info("GET /services/quota/{} - Fetching user quota", serviceCode);
+        return ResponseEntity.ok(servicePricingService.getUserServiceQuota(serviceCode));
     }
 
     @GetMapping("/{id}")
