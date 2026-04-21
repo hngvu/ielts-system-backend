@@ -1339,4 +1339,39 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         if (stimulus == null || stimulus.getId() == null) return 0;
         return stimulusRepository.countQuestionsByStimulusId(stimulus.getId());
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> getLearnMetricStatus() {
+        Users user = getCurrentUser();
+        List<LearnerMetric> metrics = learnerMetricRepository.findByUser(user);
+        boolean hasMetrics = !metrics.isEmpty();
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("hasExistingMetrics", hasMetrics);
+
+        if (hasMetrics) {
+            // Find the most recent metric update
+            LocalDateTime latestUpdate = metrics.stream()
+                    .map(LearnerMetric::getUpdatedAt)
+                    .filter(Objects::nonNull)
+                    .max(LocalDateTime::compareTo)
+                    .orElse(null);
+            result.put("lastMetricDate", latestUpdate != null ? latestUpdate.toString() : null);
+            result.put("metricCount", metrics.size());
+
+            // Get latest monthly assessment info
+            Optional<WeeklyPlan> latestPlan = weeklyPlanRepository.findTopByUserOrderByWeekNumberDesc(user);
+            if (latestPlan.isPresent()) {
+                result.put("lastWeekNumber", latestPlan.get().getWeekNumber());
+                result.put("lastMonthCycle", latestPlan.get().getMonthCycle());
+            }
+        }
+
+        // Check placement result
+        Optional<PlacementResult> placement = placementResultRepository.findFirstByUserOrderByCompletedAtDesc(user);
+        result.put("hasPlacementResult", placement.isPresent());
+
+        return result;
+    }
 }

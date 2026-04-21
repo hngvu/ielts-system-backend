@@ -31,4 +31,10 @@ public interface SubscriptionService {
      * Gọi từ PaymentServiceImpl khi webhook success với subscriptionPlan != null.
      */
     void activateSubscription(String userId, Integer planId);
+
+    /** Kiểm tra user có gói ROADMAP đang active không. */
+    boolean hasActiveRoadmapSubscription(String userId);
+
+    /** Lấy gói ROADMAP đang active của user (nếu có). */
+    Optional<UserSubscriptionResponse> getActiveRoadmapSubscription(String credentialId);
 }

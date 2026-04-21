@@ -12,4 +12,5 @@ public record SubscriptionPlanUpsertRequest(
         Integer durationDays,
         Integer quotaAi,
         Integer quotaExpert,
+        String category,
         Boolean isActive) {}

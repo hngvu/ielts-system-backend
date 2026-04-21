@@ -102,6 +102,8 @@ public enum ErrorCode {
     EXAM_SESSION_ALREADY_SUBMITTED(1083, "Phiên thi đã được nộp", HttpStatus.CONFLICT),
     TEST_NO_DURATION(1084, "Bài thi không có thời gian giới hạn", HttpStatus.BAD_REQUEST),
 
+    ROADMAP_SUBSCRIPTION_REQUIRED(1086, "Bạn cần mua Gói Lộ Trình để sử dụng tính năng này", HttpStatus.FORBIDDEN),
+
     TAG_IN_USE(
             1085,
             "Không thể xóa Tag này vì nó đang được sử dụng trong Bài thi, Bài đọc hoặc Câu hỏi.",

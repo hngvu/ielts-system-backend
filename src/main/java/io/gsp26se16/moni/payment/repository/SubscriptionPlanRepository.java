@@ -1,5 +1,6 @@
 package io.gsp26se16.moni.payment.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,4 +13,6 @@ public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPl
     Optional<SubscriptionPlan> findByCode(String code);
 
     boolean existsByCode(String code);
+
+    List<SubscriptionPlan> findByCategoryAndIsActiveTrue(String category);
 }

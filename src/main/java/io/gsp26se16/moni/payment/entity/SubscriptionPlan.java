@@ -37,5 +37,8 @@ public class SubscriptionPlan {
     int quotaAi; // -1 = unlimited (soft cap tại service)
     int quotaExpert; // số lượt chấm giảng viên
 
+    @Column(columnDefinition = "varchar(20) default 'SCORING'")
+    String category; // SCORING | ROADMAP
+
     boolean isActive;
 }

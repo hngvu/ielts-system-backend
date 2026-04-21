@@ -115,13 +115,18 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .findById(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.PACKAGE_PRICING_NOT_FOUND));
 
-        // Deactivate sub cũ (nếu có) — mua mới sẽ ghi đè, không rollover quota (đã chốt).
+        // Deactivate sub cũ cùng category (nếu có) — mua mới sẽ ghi đè, không rollover quota.
+        String category = plan.getCategory() != null ? plan.getCategory() : "SCORING";
         userSubRepository
-                .findFirstByUser_IdAndIsActiveTrueAndEndAtAfterOrderByEndAtDesc(userId, LocalDateTime.now())
+                .findFirstByUser_IdAndIsActiveTrueAndEndAtAfterAndPlan_CategoryOrderByEndAtDesc(
+                        userId, LocalDateTime.now(), category)
                 .ifPresent(old -> {
                     old.setActive(false);
                     userSubRepository.save(old);
-                    log.info("Replaced existing active sub id={} when user buys new plan", old.getId());
+                    log.info(
+                            "Replaced existing active sub id={} (category={}) when user buys new plan",
+                            old.getId(),
+                            category);
                 });
 
         LocalDateTime now = LocalDateTime.now();
@@ -146,6 +151,26 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 fresh.getRemainExpert());
     }
 
+    @Override
+    public boolean hasActiveRoadmapSubscription(String userId) {
+        return userSubRepository
+                .findFirstByUser_IdAndIsActiveTrueAndEndAtAfterAndPlan_CategoryOrderByEndAtDesc(
+                        userId, LocalDateTime.now(), "ROADMAP")
+                .isPresent();
+    }
+
+    @Override
+    public Optional<UserSubscriptionResponse> getActiveRoadmapSubscription(String credentialId) {
+        var credential = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        Users user = credential.getUser();
+        return userSubRepository
+                .findFirstByUser_IdAndIsActiveTrueAndEndAtAfterAndPlan_CategoryOrderByEndAtDesc(
+                        user.getId(), LocalDateTime.now(), "ROADMAP")
+                .map(this::toUserSubResponse);
+    }
+
     // ----- Helpers -----
 
     private void applyUpsert(SubscriptionPlan plan, SubscriptionPlanUpsertRequest req, boolean isCreate) {
@@ -156,6 +181,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         if (req.durationDays() != null) plan.setDurationDays(req.durationDays());
         if (req.quotaAi() != null) plan.setQuotaAi(req.quotaAi());
         if (req.quotaExpert() != null) plan.setQuotaExpert(req.quotaExpert());
+        if (req.category() != null) plan.setCategory(req.category());
+        else if (isCreate && plan.getCategory() == null) plan.setCategory("SCORING");
         if (req.isActive() != null) plan.setActive(req.isActive());
         else if (isCreate) plan.setActive(true);
     }
@@ -170,6 +197,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 p.getDurationDays(),
                 p.getQuotaAi(),
                 p.getQuotaExpert(),
+                p.getCategory() != null ? p.getCategory() : "SCORING",
                 p.isActive());
     }
 

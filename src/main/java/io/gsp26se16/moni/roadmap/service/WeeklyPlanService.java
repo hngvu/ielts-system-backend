@@ -64,4 +64,7 @@ public interface WeeklyPlanService {
     /** Assign assessment stimulus for a specific slot (JIT) */
     void assignAssessmentForSlot(
             io.gsp26se16.moni.roadmap.entity.DailySlot slot, Users user, java.util.Set<Integer> doneStimulusIds);
+
+    /** Check if user has existing learn metrics (for returning user flow) */
+    java.util.Map<String, Object> getLearnMetricStatus();
 }

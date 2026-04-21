@@ -9,4 +9,5 @@ public record SubscriptionPlanResponse(
         int durationDays,
         int quotaAi,
         int quotaExpert,
+        String category,
         boolean isActive) {}

@@ -19,4 +19,8 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
     List<UserSubscription> findByIsActiveTrueAndEndAtBefore(LocalDateTime now);
 
     List<UserSubscription> findByUser_IdOrderByStartAtDesc(String userId);
+
+    /** Gói đang active của user theo category (SCORING hoặc ROADMAP). */
+    Optional<UserSubscription> findFirstByUser_IdAndIsActiveTrueAndEndAtAfterAndPlan_CategoryOrderByEndAtDesc(
+            String userId, LocalDateTime now, String category);
 }

@@ -76,4 +76,15 @@ public class SubscriptionController {
                 .<ResponseEntity<Map<String, Object>>>map(sub -> ResponseEntity.ok(Map.of("subscription", sub)))
                 .orElseGet(() -> ResponseEntity.ok(Map.of()));
     }
+
+    /** User: kiểm tra gói Lộ Trình đang active. FE dùng để gate roadmap tab. */
+    @GetMapping("/my/roadmap")
+    public ResponseEntity<Map<String, Object>> getMyRoadmapSubscription(@AuthenticationPrincipal Jwt jwt) {
+        String credentialId = jwt.getClaim("userId");
+        return subscriptionService
+                .getActiveRoadmapSubscription(credentialId)
+                .<ResponseEntity<Map<String, Object>>>map(
+                        sub -> ResponseEntity.ok(Map.of("hasActiveSubscription", true, "subscription", sub)))
+                .orElseGet(() -> ResponseEntity.ok(Map.of("hasActiveSubscription", false)));
+    }
 }
