@@ -87,4 +87,18 @@ public class SubscriptionController {
                         sub -> ResponseEntity.ok(Map.of("hasActiveSubscription", true, "subscription", sub)))
                 .orElseGet(() -> ResponseEntity.ok(Map.of("hasActiveSubscription", false)));
     }
+
+    /** Mua gói subscription bằng credit (số dư ví). Nếu đủ tiền → trừ + kích hoạt ngay. */
+    @PostMapping("/purchase-with-credit")
+    @PreAuthorize("hasRole('LEARNER')")
+    public ResponseEntity<Map<String, Object>> purchaseWithCredit(
+            @AuthenticationPrincipal Jwt jwt, @RequestBody Map<String, Integer> body) {
+        String credentialId = jwt.getClaim("userId");
+        Integer planId = body.get("planId");
+        if (planId == null)
+            throw new io.gsp26se16.moni.common.exception.AppException(
+                    io.gsp26se16.moni.common.exception.ErrorCode.INVALID_KEY);
+        var sub = subscriptionService.purchaseWithCredit(credentialId, planId);
+        return ResponseEntity.ok(Map.of("success", true, "subscription", sub));
+    }
 }
