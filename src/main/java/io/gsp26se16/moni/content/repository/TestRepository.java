@@ -66,6 +66,8 @@ public interface TestRepository extends JpaRepository<Test, Integer> {
 
     List<Test> findByTestModeAndSkill(TestMode testMode, Skill skill);
 
+    List<Test> findByTestModeAndSkillAndTestType(TestMode testMode, Skill skill, TestType testType);
+
     @Query("SELECT COUNT(t) FROM Test t WHERE t.testMode = :testMode AND t.skill = :skill")
     long countByTestModeAndSkill(@Param("testMode") TestMode testMode, @Param("skill") Skill skill);
 

@@ -264,9 +264,16 @@ public class FullTestServiceImpl implements FullTestService {
     }
 
     @Override
-    public Map<Integer, List<StimulusOption>> getAvailableStimuli(String skill) {
+    public Map<Integer, List<StimulusOption>> getAvailableStimuli(String skill, String testType) {
         Skill skillEnum = parseSkill(skill);
-        List<Test> practiceTests = testRepository.findByTestModeAndSkill(TestMode.PRACTICE, skillEnum);
+        List<Test> practiceTests;
+
+        if ((skillEnum == Skill.READING || skillEnum == Skill.WRITING) && testType != null && !testType.isBlank()) {
+            TestType typeEnum = parseTestType(testType);
+            practiceTests = testRepository.findByTestModeAndSkillAndTestType(TestMode.PRACTICE, skillEnum, typeEnum);
+        } else {
+            practiceTests = testRepository.findByTestModeAndSkill(TestMode.PRACTICE, skillEnum);
+        }
 
         Map<Integer, Map<Integer, StimulusOption>> groupedBySection = new LinkedHashMap<>();
 

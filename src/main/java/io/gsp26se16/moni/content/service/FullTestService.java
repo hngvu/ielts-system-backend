@@ -21,5 +21,5 @@ public interface FullTestService {
 
     FullTestResponse updateFullTest(Integer id, CreateFullTestRequest request);
 
-    Map<Integer, List<StimulusOption>> getAvailableStimuli(String skill);
+    Map<Integer, List<StimulusOption>> getAvailableStimuli(String skill, String testType);
 }
