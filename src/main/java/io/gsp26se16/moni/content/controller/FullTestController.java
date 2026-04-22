@@ -96,8 +96,7 @@ public class FullTestController {
     @GetMapping("/available-stimuli")
     @Operation(summary = "Lấy danh sách ngữ liệu có sẵn theo kỹ năng (nhóm theo section)")
     public ResponseEntity<ApiResponse<Map<Integer, List<StimulusOption>>>> getAvailableStimuli(
-            @RequestParam String skill,
-            @RequestParam(required = false) String testType) {
+            @RequestParam String skill, @RequestParam(required = false) String testType) {
         Map<Integer, List<StimulusOption>> result = fullTestService.getAvailableStimuli(skill, testType);
         return ResponseEntity.ok(ApiResponse.<Map<Integer, List<StimulusOption>>>builder()
                 .code(1000)

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.TestMode;
+import io.gsp26se16.moni.common.enumeration.TestType;
 import io.gsp26se16.moni.content.entity.Test;
 
 @Repository
