@@ -10,4 +10,6 @@ public record PackagePricingUpdateRequest(
         @NotNull(message = "Price is required") @Positive(message = "Price must be positive") Integer price,
         @NotNull(message = "Credit amount is required") @Positive(message = "Credit amount must be positive")
                 Integer creditAmount,
+        Integer quotaAi,
+        Integer quotaExpert,
         Boolean isActive) {}

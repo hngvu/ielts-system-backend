@@ -23,5 +23,7 @@ public class PackagePricing {
     String category; // BASIC, PRO
     int price;
     int creditAmount;
+    int quotaAi;
+    int quotaExpert;
     boolean isActive;
 }

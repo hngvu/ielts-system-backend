@@ -140,6 +140,8 @@ public class PackagePricingImpl implements PackagePricingService {
         packagePricing.setCategory(request.category());
         packagePricing.setPrice(request.price());
         packagePricing.setCreditAmount(request.creditAmount());
+        packagePricing.setQuotaAi(request.quotaAi() != null ? request.quotaAi() : 0);
+        packagePricing.setQuotaExpert(request.quotaExpert() != null ? request.quotaExpert() : 0);
         packagePricing.setActive(true); // Default to active
 
         PackagePricing savedPackagePricing = packagePricingRepository.save(packagePricing);
@@ -164,6 +166,12 @@ public class PackagePricingImpl implements PackagePricingService {
         packagePricing.setCategory(request.category());
         packagePricing.setPrice(request.price());
         packagePricing.setCreditAmount(request.creditAmount());
+        if (request.quotaAi() != null) {
+            packagePricing.setQuotaAi(request.quotaAi());
+        }
+        if (request.quotaExpert() != null) {
+            packagePricing.setQuotaExpert(request.quotaExpert());
+        }
         if (request.isActive() != null) {
             packagePricing.setActive(request.isActive());
         }
@@ -202,6 +210,8 @@ public class PackagePricingImpl implements PackagePricingService {
                 packagePricing.getCategory(),
                 packagePricing.getPrice(),
                 packagePricing.getCreditAmount(),
+                packagePricing.getQuotaAi(),
+                packagePricing.getQuotaExpert(),
                 packagePricing.isActive());
     }
 }
