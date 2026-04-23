@@ -158,14 +158,23 @@ public class PackagePricingImpl implements PackagePricingService {
                 .findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PACKAGE_PRICING_NOT_FOUND));
 
-        if (!packagePricing.getName().equals(request.name()) && packagePricingRepository.existsByName(request.name())) {
-            throw new RuntimeException("Package pricing already exists with name: " + request.name());
+        // Partial update: only set non-null fields
+        if (request.name() != null) {
+            if (!packagePricing.getName().equals(request.name())
+                    && packagePricingRepository.existsByName(request.name())) {
+                throw new RuntimeException("Package pricing already exists with name: " + request.name());
+            }
+            packagePricing.setName(request.name());
         }
-
-        packagePricing.setName(request.name());
-        packagePricing.setCategory(request.category());
-        packagePricing.setPrice(request.price());
-        packagePricing.setCreditAmount(request.creditAmount());
+        if (request.category() != null) {
+            packagePricing.setCategory(request.category());
+        }
+        if (request.price() != null) {
+            packagePricing.setPrice(request.price());
+        }
+        if (request.creditAmount() != null) {
+            packagePricing.setCreditAmount(request.creditAmount());
+        }
         if (request.quotaAi() != null) {
             packagePricing.setQuotaAi(request.quotaAi());
         }
