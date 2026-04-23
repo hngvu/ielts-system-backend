@@ -1,7 +1,6 @@
 package io.gsp26se16.moni.payment.service.impl;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,11 +15,8 @@ import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.payment.dto.request.SubscriptionPlanUpsertRequest;
 import io.gsp26se16.moni.payment.dto.response.SubscriptionPlanResponse;
 import io.gsp26se16.moni.payment.dto.response.UserSubscriptionResponse;
-import io.gsp26se16.moni.payment.entity.CreditTransaction;
 import io.gsp26se16.moni.payment.entity.SubscriptionPlan;
 import io.gsp26se16.moni.payment.entity.UserSubscription;
-import io.gsp26se16.moni.payment.enumeration.PaymentType;
-import io.gsp26se16.moni.payment.repository.CreditTransactionRepository;
 import io.gsp26se16.moni.payment.repository.SubscriptionPlanRepository;
 import io.gsp26se16.moni.payment.repository.UserSubscriptionRepository;
 import io.gsp26se16.moni.payment.service.SubscriptionService;
@@ -36,7 +32,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final UserSubscriptionRepository userSubRepository;
     private final UserCredentialsRepository userCredentialsRepository;
     private final UsersRepository usersRepository;
-    private final CreditTransactionRepository creditTransactionRepository;
 
     // ----- Plan read -----
 
@@ -172,65 +167,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .findFirstByUser_IdAndIsActiveTrueAndEndAtAfterAndPlan_CategoryOrderByEndAtDesc(
                         user.getId(), LocalDateTime.now(), "ROADMAP")
                 .map(this::toUserSubResponse);
-    }
-
-    @Override
-    @Transactional
-    public UserSubscriptionResponse purchaseWithCredit(String credentialId, Integer planId) {
-        var credential = userCredentialsRepository
-                .findById(credentialId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-        Users user = credential.getUser();
-
-        SubscriptionPlan plan = planRepository
-                .findById(planId)
-                .orElseThrow(() -> new AppException(ErrorCode.PACKAGE_PRICING_NOT_FOUND));
-
-        if (!plan.isActive()) {
-            throw new AppException(ErrorCode.PACKAGE_PRICING_NOT_FOUND);
-        }
-
-        int price = plan.getPriceVnd();
-        int currentBalance = user.getCredit() != null ? user.getCredit().intValue() : 0;
-
-        if (currentBalance < price) {
-            throw new AppException(ErrorCode.INSUFFICIENT_CREDIT);
-        }
-
-        // Trừ credit
-        int newBalance = currentBalance - price;
-        user.setCredit((double) newBalance);
-        usersRepository.save(user);
-
-        // Kích hoạt gói
-        activateSubscription(user.getId(), planId);
-
-        // Log credit transaction
-        CreditTransaction tx = CreditTransaction.builder()
-                .delta(-price)
-                .balanceBefore(currentBalance)
-                .balanceAfter(newBalance)
-                .paymentType(PaymentType.SUBSCRIPTION_PURCHASE)
-                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
-                .user(user)
-                .remark("Mua " + plan.getName() + " bằng số dư ví · " + String.format("%,d", price) + "đ")
-                .build();
-        creditTransactionRepository.save(tx);
-
-        log.info(
-                "Subscription purchased with credit: user={}, plan={}, price={}, balanceBefore={}, balanceAfter={}",
-                user.getId(),
-                plan.getCode(),
-                price,
-                currentBalance,
-                newBalance);
-
-        // Trả về subscription mới
-        return userSubRepository
-                .findFirstByUser_IdAndIsActiveTrueAndEndAtAfterAndPlan_CategoryOrderByEndAtDesc(
-                        user.getId(), LocalDateTime.now(), plan.getCategory() != null ? plan.getCategory() : "SCORING")
-                .map(this::toUserSubResponse)
-                .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION));
     }
 
     // ----- Helpers -----

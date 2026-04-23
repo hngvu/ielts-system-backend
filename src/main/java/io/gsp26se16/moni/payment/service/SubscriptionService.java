@@ -37,11 +37,4 @@ public interface SubscriptionService {
 
     /** Lấy gói ROADMAP đang active của user (nếu có). */
     Optional<UserSubscriptionResponse> getActiveRoadmapSubscription(String credentialId);
-
-    /**
-     * Mua gói subscription bằng credit (VND trong ví).
-     * Kiểm tra balance >= priceVnd, trừ tiền, kích hoạt gói, log transaction.
-     * Trả về UserSubscriptionResponse nếu thành công.
-     */
-    UserSubscriptionResponse purchaseWithCredit(String credentialId, Integer planId);
 }
