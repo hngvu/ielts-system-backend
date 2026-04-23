@@ -20,6 +20,7 @@ public class PackagePricing {
     Integer id;
 
     String name;
+    String category; // BASIC, PRO
     int price;
     int creditAmount;
     boolean isActive;

@@ -26,20 +26,28 @@ public class PackagePricingInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        seedIfMissing("Nạp 50k", 50_000, 50_000);
-        seedIfMissing("Nạp 100k (+10%)", 100_000, 110_000);
-        seedIfMissing("Nạp 200k (+15%)", 200_000, 230_000);
-        seedIfMissing("Nạp 500k (+20%)", 500_000, 600_000);
+        seedIfMissing("Gói 11 lượt chấm", "BASIC", 100_000, 110_000);
+        seedIfMissing("Gói 23 lượt chấm", "BASIC", 200_000, 230_000);
+        seedIfMissing("Gói 60 lượt chấm", "BASIC", 500_000, 600_000);
+
+        seedIfMissing("Gói 120 lượt Pro", "PRO", 1_000_000, 1_200_000);
+        seedIfMissing("Gói 350 lượt Pro + Mentor", "PRO", 2_500_000, 3_500_000);
     }
 
-    private void seedIfMissing(String name, int priceVnd, int vndReceived) {
+    private void seedIfMissing(String name, String category, int priceVnd, int vndReceived) {
         if (repository.existsByName(name)) return;
         PackagePricing pkg = new PackagePricing();
         pkg.setName(name);
+        pkg.setCategory(category);
         pkg.setPrice(priceVnd);
         pkg.setCreditAmount(vndReceived);
         pkg.setActive(true);
         repository.save(pkg);
-        log.info("PackagePricing seeded: {} (pay {}đ → receive {}đ)", name, priceVnd, vndReceived);
+        log.info(
+                "PackagePricing seeded: {} (category: {}, pay {}đ → receive {}đ)",
+                name,
+                category,
+                priceVnd,
+                vndReceived);
     }
 }

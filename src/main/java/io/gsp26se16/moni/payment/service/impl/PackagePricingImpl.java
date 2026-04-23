@@ -137,6 +137,7 @@ public class PackagePricingImpl implements PackagePricingService {
         PackagePricing packagePricing = new PackagePricing();
         packagePricing.setId(null); // Let database generate the ID
         packagePricing.setName(request.name());
+        packagePricing.setCategory(request.category());
         packagePricing.setPrice(request.price());
         packagePricing.setCreditAmount(request.creditAmount());
         packagePricing.setActive(true); // Default to active
@@ -160,6 +161,7 @@ public class PackagePricingImpl implements PackagePricingService {
         }
 
         packagePricing.setName(request.name());
+        packagePricing.setCategory(request.category());
         packagePricing.setPrice(request.price());
         packagePricing.setCreditAmount(request.creditAmount());
         if (request.isActive() != null) {
@@ -197,6 +199,7 @@ public class PackagePricingImpl implements PackagePricingService {
         return new PackagePricingResponse(
                 packagePricing.getId(),
                 packagePricing.getName(),
+                packagePricing.getCategory(),
                 packagePricing.getPrice(),
                 packagePricing.getCreditAmount(),
                 packagePricing.isActive());
