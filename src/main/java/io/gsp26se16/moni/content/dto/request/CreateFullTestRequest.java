@@ -11,5 +11,6 @@ public class CreateFullTestRequest {
     String testType; // ACADEMIC, GENERAL_TRAINING, BOTH, FULL_TEST, PRACTICE
     Integer duration; // in seconds, optional - auto-set if null
     String status; // DRAFT, PUBLISHED, HIDDEN
+    Boolean isPlacement;
     List<Integer> stimulusIds; // ordered by section
 }

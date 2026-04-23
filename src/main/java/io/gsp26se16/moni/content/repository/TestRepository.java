@@ -54,6 +54,12 @@ public interface TestRepository extends JpaRepository<Test, Integer> {
 
     @Query(
             value =
+                    "SELECT * FROM test WHERE skill = :skill AND test_mode = 'FULL_TEST' AND status = 'PUBLISHED' AND is_placement = true ORDER BY RANDOM() LIMIT 1",
+            nativeQuery = true)
+    Optional<Test> findRandomPublishedPlacementTest(@Param("skill") String skill);
+
+    @Query(
+            value =
                     "SELECT * FROM test WHERE skill = :skill AND test_mode = 'FULL_TEST' AND status = 'PUBLISHED' ORDER BY RANDOM() LIMIT 1",
             nativeQuery = true)
     Optional<Test> findRandomPublishedFullTest(@Param("skill") String skill);

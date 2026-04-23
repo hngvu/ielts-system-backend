@@ -70,12 +70,14 @@ public class PlacementServiceImpl implements PlacementService {
     @Transactional(readOnly = true)
     public PlacementTestResponse generate() {
         Test readingTest = testRepository
-                .findRandomPublishedFullTest("READING")
+                .findRandomPublishedPlacementTest("READING")
+                .or(() -> testRepository.findRandomPublishedFullTest("READING"))
                 .or(() -> testRepository.findRandomPublishedTest("READING"))
                 .orElseThrow(() -> new AppException(ErrorCode.PLACEMENT_NO_READING_TEST));
 
         Test listeningTest = testRepository
-                .findRandomPublishedFullTest("LISTENING")
+                .findRandomPublishedPlacementTest("LISTENING")
+                .or(() -> testRepository.findRandomPublishedFullTest("LISTENING"))
                 .or(() -> testRepository.findRandomPublishedTest("LISTENING"))
                 .orElseThrow(() -> new AppException(ErrorCode.PLACEMENT_NO_LISTENING_TEST));
 

@@ -14,6 +14,7 @@ public class FullTestResponse {
     String testType;
     Integer duration;
     String status; // DRAFT, PUBLISHED
+    Boolean isPlacement;
     List<StimulusInfo> stimuli;
 
     @Data

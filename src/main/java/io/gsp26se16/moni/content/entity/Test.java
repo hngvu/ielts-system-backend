@@ -49,6 +49,9 @@ public class Test {
     @Column(name = "status")
     PublishStatus status; // Enum: DRAFT, PUBLISHED, HIDDEN
 
+    @Column(name = "is_placement")
+    Boolean isPlacement = false;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "test_tags", // Tên bảng trung gian
