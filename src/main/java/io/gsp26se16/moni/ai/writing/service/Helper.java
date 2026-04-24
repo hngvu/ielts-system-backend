@@ -330,23 +330,23 @@ public class Helper {
      * preventing prompt injection from being treated as system-level instructions.
      */
     public String[] splitPromptAtEssay(String fullPrompt) {
-        int firstDelim = fullPrompt.indexOf(ESSAY_DELIMITER);
-        if (firstDelim == -1) {
-            // No delimiter found — fallback: entire prompt as system
+        // Use the LAST pair of delimiters — the actual essay boundaries.
+        // Earlier occurrences may appear in anti-injection instruction text.
+        int closingDelim = fullPrompt.lastIndexOf(ESSAY_DELIMITER);
+        if (closingDelim == -1) {
             return new String[] {fullPrompt, ""};
         }
 
-        int essayStart = firstDelim + ESSAY_DELIMITER.length();
-        int secondDelim = fullPrompt.indexOf(ESSAY_DELIMITER, essayStart);
-        if (secondDelim == -1) {
-            // Only one delimiter — fallback
+        int openingDelim = fullPrompt.lastIndexOf(ESSAY_DELIMITER, closingDelim - 1);
+        if (openingDelim == -1) {
             return new String[] {fullPrompt, ""};
         }
 
-        String beforeEssay = fullPrompt.substring(0, firstDelim).trim();
-        String essayContent = fullPrompt.substring(essayStart, secondDelim).trim();
+        int essayStart = openingDelim + ESSAY_DELIMITER.length();
+        String beforeEssay = fullPrompt.substring(0, openingDelim).trim();
+        String essayContent = fullPrompt.substring(essayStart, closingDelim).trim();
         String afterEssay =
-                fullPrompt.substring(secondDelim + ESSAY_DELIMITER.length()).trim();
+                fullPrompt.substring(closingDelim + ESSAY_DELIMITER.length()).trim();
 
         // System = instructions before + after essay
         String systemPart = beforeEssay;
