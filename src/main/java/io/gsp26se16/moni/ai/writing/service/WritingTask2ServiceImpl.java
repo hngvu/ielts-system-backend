@@ -439,21 +439,23 @@ public class WritingTask2ServiceImpl implements WritingTask2Service {
         return text.trim().split("\\s+").length;
     }
 
-    private Map<String, Object> callEvaluation(ChatClient chatClient, String systemPrompt) {
+    private Map<String, Object> callEvaluation(ChatClient chatClient, String fullPrompt) {
+        String[] parts = helper.splitPromptAtEssay(fullPrompt);
         String response = chatClient
                 .prompt()
-                .system(systemPrompt)
-                .user("Return ONLY raw JSON.")
+                .system(parts[0])
+                .user(parts[1] + "\n\nReturn ONLY raw JSON.")
                 .call()
                 .content();
         return helper.parseJson(response);
     }
 
-    private Map<String, Object> callFeedback(ChatClient chatClient, String systemPrompt) {
+    private Map<String, Object> callFeedback(ChatClient chatClient, String fullPrompt) {
+        String[] parts = helper.splitPromptAtEssay(fullPrompt);
         String response = chatClient
                 .prompt()
-                .system(systemPrompt)
-                .user("Explain strictly based on evaluation results. Return ONLY raw JSON.")
+                .system(parts[0])
+                .user(parts[1] + "\n\nExplain strictly based on evaluation results. Return ONLY raw JSON.")
                 .call()
                 .content();
         return helper.parseJson(response);
