@@ -51,6 +51,9 @@ You must strictly assess Task Achievement and ignore:
 INPUT
 ==================================================
 
+[TASK QUESTION — THE ACTUAL PROMPT GIVEN TO THE CANDIDATE]
+{question}
+
 <<<CANDIDATE_ESSAY>>>
 {essay}
 <<<CANDIDATE_ESSAY>>>
@@ -103,6 +106,7 @@ Step 3: Count inaccurate claims and determine violation severity.
 VIOLATION KEYS (USE ONLY THESE)
 ==================================================
 
+completely_off_topic
 inaccurate_data_reporting
 missing_key_features
 no_overview
@@ -137,6 +141,19 @@ no_overview:
 incomplete_coverage:
   Activate if the essay only describes part of the data and ignores
   significant categories or time periods shown in the chart.
+
+completely_off_topic:
+  THIS IS THE MOST CRITICAL VIOLATION TO CHECK.
+  Compare the [TASK QUESTION] with the essay content.
+  Activate if the essay describes a COMPLETELY DIFFERENT topic, chart type, or subject
+  than what the question asks about.
+  Examples:
+  - Question asks about "manufacturing process" but essay describes "tourist numbers"
+  - Question asks about "bar chart of exports" but essay describes "line graph of population"
+  - Question asks about "map changes" but essay describes "pie chart of energy"
+  If the essay topic does NOT match the question topic, this violation MUST be active.
+  If active: severity MUST be "major", band MUST be 0.
+  A well-written essay on the WRONG topic is still completely off-topic.
 
 irrelevant_content:
   Activate if the essay includes opinions, recommendations, or content
@@ -242,6 +259,13 @@ Return ONLY raw JSON in this exact format:
     }
   ],
   "violations": {
+    "completely_off_topic": {
+      "active": false,
+      "severity": "",
+      "location": "",
+      "evidence": "",
+      "reason": ""
+    },
     "inaccurate_data_reporting": {
       "active": true,
       "severity": "moderate",

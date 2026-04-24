@@ -89,6 +89,14 @@ Return EXACTLY this JSON structure:
   "band_descriptor_match": "",
   "justification": "",
   "violations": {
+    "completely_off_topic": {
+      "active": false,
+      "severity": "",
+      "location": "",
+      "evidence": "",
+      "reason": "",
+      "band_cap": 0
+    },
     "missing_clear_position": {
       "active": false,
       "severity": "",
@@ -170,6 +178,21 @@ Depth of Development
 Relevance
 
 VIOLATION DEFINITIONS
+
+completely_off_topic (HARD CAP — CHECK THIS FIRST)
+
+THIS IS THE MOST CRITICAL VIOLATION TO CHECK.
+Compare the [QUESTION] with the essay content.
+Active if the essay discusses a COMPLETELY DIFFERENT topic than what the question asks about.
+Examples:
+- Question asks about "technology in education" but essay discusses "tourism statistics"
+- Question asks about "advantages of remote work" but essay discusses "climate change"
+A well-written essay on the WRONG topic is still completely off-topic.
+
+If active:
+band_cap MUST be 0
+severity MUST be "major"
+
 missing_clear_position
 
 Active if:

@@ -104,6 +104,9 @@ public class RuleEngine {
             // Translated as hard cap: TR ≤ 7.0
             Map.entry("weak_argument_depth", new HardRule(Map.of("TR", 7.0), null)),
 
+            // [NEW] Completely off-topic — essay describes a different topic/chart than the question
+            Map.entry("completely_off_topic", new HardRule(Map.of("TR", 0.0, "TA", 0.0), 1.0)),
+
             // [NEW] Spam or Gibberish — catches essays > 20 words that make no sense
             Map.entry(
                     "spam_or_gibberish",

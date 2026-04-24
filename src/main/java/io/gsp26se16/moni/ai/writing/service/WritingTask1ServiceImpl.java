@@ -92,10 +92,11 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
             Map<String, Object> parsedEssay = phase1Parse(chatClient, sanitizedEssay);
 
             // ── Phase 2–5 in parallel ─────────────────────────────────────────
+            final String question = request.getQuestion() != null ? request.getQuestion() : "";
             CompletableFuture<Map<String, Object>> taFuture = CompletableFuture.supplyAsync(
                     () -> {
                         try {
-                            return phase2TaskAchievement(chatClient, sanitizedEssay, parsedEssay, chartData);
+                            return phase2TaskAchievement(chatClient, question, sanitizedEssay, parsedEssay, chartData);
                         } catch (JsonProcessingException e) {
                             throw new RuntimeException("Error in JSON processing for TA", e);
                         }
@@ -159,11 +160,17 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
     }
 
     private Map<String, Object> phase2TaskAchievement(
-            ChatClient chatClient, String essay, Map<String, Object> parsed, Map<String, Object> chartData)
+            ChatClient chatClient,
+            String question,
+            String essay,
+            Map<String, Object> parsed,
+            Map<String, Object> chartData)
             throws JsonProcessingException {
         String prompt = promptLoader.loadPrompt(
                 "writing/phase2_ta.txt",
                 Map.of(
+                        "question",
+                        question,
                         "essay",
                         essay,
                         "phase1_json",
