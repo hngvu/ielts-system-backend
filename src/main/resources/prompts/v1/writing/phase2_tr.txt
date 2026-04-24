@@ -349,7 +349,7 @@ INPUT FORMAT
 <<<CANDIDATE_ESSAY>>>
 
 [PARSED_STRUCTURE]
-{structure_json}
+{phase2_json}
 
 🔚 FINAL INSTRUCTION
 
