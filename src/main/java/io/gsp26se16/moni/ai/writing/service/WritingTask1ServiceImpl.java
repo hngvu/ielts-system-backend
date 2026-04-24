@@ -87,12 +87,12 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
 
             // ── Sanitize essay against prompt injection ─────────────────────
             String sanitizedEssay = helper.sanitizeEssay(request.getAnswer());
+            final String question = request.getQuestion() != null ? request.getQuestion() : "";
 
             // ── Phase 1 ───────────────────────────────────────────────────────
-            Map<String, Object> parsedEssay = phase1Parse(chatClient, sanitizedEssay);
+            Map<String, Object> parsedEssay = phase1Parse(chatClient, question, sanitizedEssay);
 
             // ── Phase 2–5 in parallel ─────────────────────────────────────────
-            final String question = request.getQuestion() != null ? request.getQuestion() : "";
             CompletableFuture<Map<String, Object>> taFuture = CompletableFuture.supplyAsync(
                     () -> {
                         try {
@@ -154,8 +154,9 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
     // PHASES
     // =========================================================================
 
-    private Map<String, Object> phase1Parse(ChatClient chatClient, String essay) {
-        String prompt = promptLoader.loadPrompt("writing/phase1_parse.txt", Map.of("essay", essay));
+    private Map<String, Object> phase1Parse(ChatClient chatClient, String question, String essay) {
+        String prompt =
+                promptLoader.loadPrompt("writing/phase1_parse.txt", Map.of("question", question, "essay", essay));
         return callEvaluation(chatClient, prompt);
     }
 
