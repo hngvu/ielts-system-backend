@@ -107,6 +107,9 @@ VIOLATION KEYS (USE ONLY THESE)
 ==================================================
 
 completely_off_topic
+task_mismatch
+wrong_data_source
+no_data_reference
 inaccurate_data_reporting
 missing_key_features
 no_overview
@@ -152,8 +155,29 @@ completely_off_topic:
   - Question asks about "bar chart of exports" but essay describes "line graph of population"
   - Question asks about "map changes" but essay describes "pie chart of energy"
   If the essay topic does NOT match the question topic, this violation MUST be active.
-  If active: severity MUST be "major", band MUST be 0.
+  If active: severity MUST be "major", band MUST be 1.
   A well-written essay on the WRONG topic is still completely off-topic.
+
+task_mismatch:
+  Activate if the candidate wrote a Task 2 style argumentative/opinion essay
+  instead of a Task 1 data description essay.
+  Signs: the essay argues a viewpoint, gives personal opinions, discusses
+  advantages/disadvantages, but does NOT describe any visual data.
+  If active: severity MUST be "major", band MUST be 2.
+
+wrong_data_source:
+  Activate if the essay describes the correct TYPE of chart (e.g., line graph)
+  but uses completely different data/entities than what the actual chart shows.
+  Example: chart shows "Anthropology graduate destinations" but essay describes
+  "tourist numbers to Caribbean island" — both could be charts, but different datasets.
+  If active: severity MUST be "major", band MUST be 3.
+  This is different from completely_off_topic: the essay at least attempts a
+  Task 1 response, but uses fabricated or memorized data instead of the actual chart.
+
+no_data_reference:
+  Activate if the Task 1 essay contains NO numerical data, percentages, or
+  specific trend descriptions at all. A Task 1 response MUST reference data.
+  If active: severity MUST be "major", band MUST be 2.
 
 irrelevant_content:
   Activate if the essay includes opinions, recommendations, or content
@@ -260,6 +284,27 @@ Return ONLY raw JSON in this exact format:
   ],
   "violations": {
     "completely_off_topic": {
+      "active": false,
+      "severity": "",
+      "location": "",
+      "evidence": "",
+      "reason": ""
+    },
+    "task_mismatch": {
+      "active": false,
+      "severity": "",
+      "location": "",
+      "evidence": "",
+      "reason": ""
+    },
+    "wrong_data_source": {
+      "active": false,
+      "severity": "",
+      "location": "",
+      "evidence": "",
+      "reason": ""
+    },
+    "no_data_reference": {
       "active": false,
       "severity": "",
       "location": "",

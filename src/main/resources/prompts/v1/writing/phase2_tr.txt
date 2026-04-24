@@ -121,6 +121,22 @@ Return EXACTLY this JSON structure:
       "reason": "",
       "band_cap": null
     },
+    "task_mismatch": {
+      "active": false,
+      "severity": "",
+      "location": "",
+      "evidence": "",
+      "reason": "",
+      "band_cap": 2.0
+    },
+    "weak_argument_depth": {
+      "active": false,
+      "severity": "",
+      "location": "",
+      "evidence": "",
+      "reason": "",
+      "band_cap": null
+    },
     "irrelevant_content": {
       "active": false,
       "severity": "",
@@ -255,6 +271,31 @@ Ideas present but not extended
 Arguments lack explanation or examples
 
 Paragraphs underdeveloped
+
+task_mismatch
+
+Active if:
+
+The candidate wrote a Task 1 data description essay instead of a Task 2
+argumentative/opinion essay. Signs: the essay describes charts, graphs,
+data trends, but does NOT present arguments or personal opinions.
+
+If active:
+band_cap MUST be 2.0
+severity MUST be "major"
+
+weak_argument_depth
+
+Active if:
+
+Ideas are present but lack depth, explanation, or supporting examples.
+Arguments are superficial or overly general without concrete reasoning.
+
+Severity:
+- "serious": Arguments are so thin that the essay fails to develop
+  ANY point beyond a single sentence. Band cap TR ≤ 6.
+- default (mild): Arguments exist but could be more developed.
+  Band cap TR ≤ 7.
 
 irrelevant_content
 
