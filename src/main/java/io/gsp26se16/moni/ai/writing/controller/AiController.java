@@ -35,6 +35,7 @@ public class AiController {
     private final CreditService creditService;
     private final TranscriptService transcriptService;
     private final ConversationEngine conversationEngine;
+    private final io.gsp26se16.moni.ai.writing.service.Helper writingHelper;
     private final io.gsp26se16.moni.ai.writing.repository.WritingSubmissionRepository writingSubmissionRepository;
     private final io.gsp26se16.moni.ai.writing.repository.AiEvaluationRepository aiEvaluationRepository;
 
@@ -44,6 +45,10 @@ public class AiController {
 
         if (request.getAnswer() == null || request.getAnswer().trim().split("\\s+").length < 20) {
             throw new AppException(ErrorCode.SPAM_ESSAY);
+        }
+
+        if (!writingHelper.isEnglish(request.getAnswer())) {
+            throw new AppException(ErrorCode.NON_ENGLISH_ESSAY);
         }
 
         String userId = getCurrentUserId();

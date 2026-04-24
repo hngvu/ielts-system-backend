@@ -440,8 +440,40 @@ public class Helper {
         return false;
     }
 
+    // =========================================================================
+    // ENGLISH LANGUAGE DETECTION
+    // =========================================================================
+
     /**
-     * Neutralizes prompt injection patterns by replacing them with [FILTERED] markers,
+     * Checks if the essay is predominantly written in English.
+     * Uses a simple heuristic: counts words that match common English patterns
+     * (Latin alphabet, common English words) vs total words.
+     * Returns true if the text appears to be English.
+     */
+    public boolean isEnglish(String text) {
+        if (text == null || text.isBlank()) return false;
+
+        String cleaned = text.replaceAll("<[^>]*>", " ").trim();
+        String[] words = cleaned.split("\\s+");
+        if (words.length == 0) return false;
+
+        int latinWords = 0;
+        for (String word : words) {
+            // Strip punctuation
+            String w = word.replaceAll("[^\\p{L}]", "");
+            if (w.isEmpty()) continue;
+            // Check if word uses only Latin/ASCII letters
+            if (w.matches("[a-zA-Z]+")) {
+                latinWords++;
+            }
+        }
+
+        double ratio = (double) latinWords / words.length;
+        // At least 70% of words should be Latin-alphabet to be considered English
+        return ratio >= 0.70;
+    }
+
+    /**
      * then prepends [INJECTION_DETECTED] tag so the AI knows to trigger spam_or_gibberish.
      *
      * This physically removes harmful instruction text from the essay before it reaches
