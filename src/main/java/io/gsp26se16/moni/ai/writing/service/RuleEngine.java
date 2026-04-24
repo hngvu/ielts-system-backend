@@ -18,23 +18,15 @@ public class RuleEngine {
 
             // ---------- TASK 1 (TA) ----------
 
-            // Sai data nặng → hiếm khi > 5.5
             Map.entry("data_misinterpretation", new HardRule(Map.of("TA", 5.0), 5.5)),
             Map.entry("no_overview", new HardRule(Map.of("TA", 6.0), 6.5)),
             Map.entry("irrelevant_data", new HardRule(Map.of("TA", 6.0), null)),
 
             // inaccurate_data_reporting: severity-aware dispatch in applyAllRules()
-            // severity "major"    → TA ≤ 4, overall ≤ 5.0
-            // severity "moderate" → TA ≤ 5, overall ≤ 5.5
-            // severity "minor"    → no hard cap
             Map.entry("inaccurate_data_reporting", new HardRule(Map.of("TA", 5.0), 5.5)),
             Map.entry("missing_key_features", new HardRule(Map.of("TA", 6.0), 6.5)),
             Map.entry("incomplete_coverage", new HardRule(Map.of("TA", 6.0), null)),
-
-            // Wrong data source: essay describes correct chart TYPE but wrong data
             Map.entry("wrong_data_source", new HardRule(Map.of("TA", 3.0), 5.5)),
-
-            // No data reference: Task 1 essay with no numbers/percentages/trends at all
             Map.entry("no_data_reference", new HardRule(Map.of("TA", 2.0), 4.5)),
 
             // ---------- TASK 2 (TR) ----------
@@ -48,16 +40,11 @@ public class RuleEngine {
             Map.entry("tr_irrelevant_content", new HardRule(Map.of("TR", 6.0), null)),
 
             // weak_argument_depth: severity-aware dispatch in applyAllRules()
-            // severity "serious" → TR ≤ 6
-            // default            → TR ≤ 7
             Map.entry("weak_argument_depth", new HardRule(Map.of("TR", 7.0), null)),
 
-            // ---------- OFF-TOPIC / MISMATCH (CRITICAL) ----------
+            // ---------- OFF-TOPIC / MISMATCH ----------
 
-            // Completely off-topic: essay topic ≠ question topic → band 1
             Map.entry("completely_off_topic", new HardRule(Map.of("TR", 1.0, "TA", 1.0), 2.0)),
-
-            // Task mismatch: wrote Task 2 essay for Task 1, or vice versa
             Map.entry("task_mismatch", new HardRule(Map.of("TA", 2.0, "TR", 2.0), 4.5)),
 
             // ---------- SPAM ----------
@@ -108,6 +95,15 @@ public class RuleEngine {
     // =====================================================
     // ================= APPLY RULES =======================
     // =====================================================
+    //
+    // Pipeline (pre-adjust model):
+    //   1. Hard caps (violation-based caps on TA/TR/CC/LR/GRA)
+    //   2. Soft penalties (minor deductions)
+    //   3. Dependency scaling: TA/TR → CC, LR, GRA (strongest)
+    //   4. Dependency scaling: CC → LR, GRA
+    //   5. Cross-effects: LR → CC, GRA → CC (light)
+    //   6. Round all criteria to whole numbers
+    //
 
     public RuleResult applyAllRules(Map<String, Double> originalBands, Map<String, Violation> violations) {
 
@@ -131,7 +127,7 @@ public class RuleEngine {
                 if ("significant".equals(severity)) {
                     violationKey = "logic_break_significant";
                 } else {
-                    continue; // minor → soft rule only
+                    continue;
                 }
             }
 
@@ -141,7 +137,7 @@ public class RuleEngine {
                 if ("TR".equals(criterion)) {
                     violationKey = "irrelevant_content_tr";
                 } else {
-                    continue; // CC scope → no hard cap
+                    continue;
                 }
             }
 
@@ -155,9 +151,8 @@ public class RuleEngine {
                     overallCap = (overallCap == null) ? 5.0 : Math.min(overallCap, 5.0);
                     continue;
                 } else if ("minor".equals(severity)) {
-                    continue; // minor → no hard cap
+                    continue;
                 }
-                // "moderate" → fall through to default HardRule
             }
 
             // --- Severity dispatch: weak_argument_depth ---
@@ -169,7 +164,6 @@ public class RuleEngine {
                     hardCappedCriteria.add("TR");
                     continue;
                 }
-                // default → fall through to HardRule (TR ≤ 7)
             }
 
             HardRule rule = HARD_RULES.get(violationKey);
@@ -191,30 +185,7 @@ public class RuleEngine {
             }
         }
 
-        // ========== STEP 2: EXAMINER BIAS ==========
-        // When TA/TR is very low, real examiners also score CC/LR/GRA lower
-        // because off-topic or irrelevant content makes coherence & vocabulary
-        // assessment less meaningful.
-
-        Double ta = adjusted.get("TA");
-        Double tr = adjusted.get("TR");
-        double taskScore = ta != null ? ta : tr != null ? tr : 9.0;
-
-        if (taskScore <= 2.0) {
-            // Extremely off-topic / gibberish → cap all criteria hard
-            adjusted.computeIfPresent("CC", (k, v) -> Math.min(v, 4.0));
-            adjusted.computeIfPresent("LR", (k, v) -> Math.min(v, 4.0));
-            adjusted.computeIfPresent("GRA", (k, v) -> Math.min(v, 5.0));
-        } else if (taskScore <= 3.0) {
-            adjusted.computeIfPresent("CC", (k, v) -> Math.min(v, 6.0));
-            adjusted.computeIfPresent("LR", (k, v) -> Math.min(v, 6.0));
-            adjusted.computeIfPresent("GRA", (k, v) -> Math.min(v, 7.0));
-        } else if (taskScore <= 4.0) {
-            adjusted.computeIfPresent("CC", (k, v) -> Math.min(v, 7.0));
-            adjusted.computeIfPresent("LR", (k, v) -> Math.min(v, 7.0));
-        }
-
-        // ========== STEP 3: SOFT PENALTIES ==========
+        // ========== STEP 2: SOFT PENALTIES ==========
 
         Map<String, Double> penaltyTracker = new HashMap<>();
 
@@ -227,13 +198,13 @@ public class RuleEngine {
             if ("logic_break".equals(violationKey)) {
                 String severity = entry.getValue().severity();
                 if ("significant".equals(severity)) {
-                    continue; // handled in hard caps
+                    continue;
                 }
                 violationKey = "logic_break_minor";
             }
 
             if ("irrelevant_content".equals(violationKey)) {
-                continue; // hard cap or no soft rule
+                continue;
             }
 
             SoftRule rule = SOFT_RULES.get(violationKey);
@@ -254,8 +225,75 @@ public class RuleEngine {
             penaltyTracker.put(criterion, currentPenalty + penaltyToApply);
         }
 
+        // ========== STEP 3: DEPENDENCY SCALING (PRE-ADJUST) ==========
+        //
+        // Examiner mental model: TA/TR → CC → LR → GRA
+        // When a higher-order criterion is low, lower-order criteria
+        // lose validity and get scaled down proportionally.
+        //
+        // Uses scaling factors instead of hard caps to produce
+        // natural-looking score profiles that match real examiner behavior.
+
+        // --- 3a. TA/TR → CC, LR, GRA (strongest influence) ---
+        double taskScore = getTaskScore(adjusted);
+        final double taskFactor;
+
+        if (taskScore <= 2.0) {
+            taskFactor = 0.5;
+        } else if (taskScore <= 3.0) {
+            taskFactor = 0.7;
+        } else if (taskScore <= 4.0) {
+            taskFactor = 0.85;
+        } else if (taskScore <= 5.0) {
+            taskFactor = 0.93;
+        } else {
+            taskFactor = 1.0;
+        }
+
+        if (taskFactor < 1.0) {
+            final double graFactor = Math.min(taskFactor + 0.1, 1.0);
+            adjusted.computeIfPresent("CC", (k, v) -> round2(v * taskFactor));
+            adjusted.computeIfPresent("LR", (k, v) -> round2(v * taskFactor));
+            adjusted.computeIfPresent("GRA", (k, v) -> round2(v * graFactor));
+        }
+
+        // --- 3b. CC → LR, GRA (structure affects perception of vocab/grammar) ---
+        double ccScore = adjusted.getOrDefault("CC", 9.0);
+
+        if (ccScore <= 4.0) {
+            adjusted.computeIfPresent("LR", (k, v) -> round2(v - 1.5));
+            adjusted.computeIfPresent("GRA", (k, v) -> round2(v - 1.0));
+        } else if (ccScore <= 5.0) {
+            adjusted.computeIfPresent("LR", (k, v) -> round2(v - 1.0));
+            adjusted.computeIfPresent("GRA", (k, v) -> round2(v - 0.5));
+        } else if (ccScore <= 6.0) {
+            adjusted.computeIfPresent("LR", (k, v) -> round2(v - 0.5));
+        }
+
+        // --- 3c. LR → CC (light: wrong words hurt comprehension) ---
+        double lrScore = adjusted.getOrDefault("LR", 9.0);
+
+        if (lrScore <= 4.0) {
+            adjusted.computeIfPresent("CC", (k, v) -> round2(v - 1.0));
+        } else if (lrScore <= 5.0) {
+            adjusted.computeIfPresent("CC", (k, v) -> round2(v - 0.5));
+        }
+
+        // --- 3d. GRA → CC (very light: bad grammar disrupts flow) ---
+        double graScore = adjusted.getOrDefault("GRA", 9.0);
+
+        if (graScore <= 4.0) {
+            adjusted.computeIfPresent("CC", (k, v) -> round2(v - 1.0));
+        } else if (graScore <= 5.0) {
+            adjusted.computeIfPresent("CC", (k, v) -> round2(v - 0.5));
+        }
+
+        // --- Clamp: no criterion below 0 ---
+        for (String key : adjusted.keySet()) {
+            adjusted.computeIfPresent(key, (k, v) -> Math.max(v, 0.0));
+        }
+
         // ========== STEP 4: ROUND CRITERIA TO WHOLE BANDS ==========
-        // IELTS: individual criterion scores are whole numbers.
         for (Map.Entry<String, Double> e : adjusted.entrySet()) {
             adjusted.put(e.getKey(), (double) Math.round(e.getValue()));
         }
@@ -268,10 +306,10 @@ public class RuleEngine {
     // =====================================================
 
     public double calculateFinalBand(Map<String, Double> adjustedBands, Double overallCap) {
-        // If TA/TR ≤ 2 (off-topic/gibberish), cap overall severely
-        Double taBand = adjustedBands.getOrDefault("TA", adjustedBands.get("TR"));
-        if (taBand != null && taBand <= 2.0) {
-            // Average all but ensure result reflects near-failure
+        double taskScore = getTaskScore(adjustedBands);
+
+        // Off-topic / gibberish: overall reflects near-failure
+        if (taskScore <= 2.0) {
             double average = adjustedBands.values().stream()
                     .mapToDouble(Double::doubleValue)
                     .average()
@@ -292,6 +330,16 @@ public class RuleEngine {
         }
 
         return ieltsRounding(average);
+    }
+
+    // =====================================================
+    // ================= HELPERS ===========================
+    // =====================================================
+
+    private double getTaskScore(Map<String, Double> bands) {
+        Double ta = bands.get("TA");
+        Double tr = bands.get("TR");
+        return ta != null ? ta : tr != null ? tr : 9.0;
     }
 
     public double ieltsRounding(double score) {
