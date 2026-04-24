@@ -67,4 +67,10 @@ public interface WeeklyPlanService {
 
     /** Check if user has existing learn metrics (for returning user flow) */
     java.util.Map<String, Object> getLearnMetricStatus();
+
+    /** Admin: lấy weekly plan hiện tại của 1 học viên cụ thể qua credentialId. */
+    WeeklyPlanDetailResponse getCurrentPlanByCredentialId(String credentialId);
+
+    /** Admin: lấy lịch sử weekly plan của 1 học viên cụ thể qua credentialId. */
+    List<WeeklyPlanSummaryResponse> getHistoryByCredentialId(String credentialId);
 }

@@ -315,9 +315,21 @@ public class PracticeServiceImpl implements PracticeService {
     @Override
     @Transactional(readOnly = true)
     public List<AttemptHistoryResponse> getAttemptHistory() {
-        Users user = getCurrentUser();
-        List<Attempt> attempts = attemptRepository.findByUserOrderBySubmittedAtDesc(user);
+        return mapAttemptsToHistory(attemptRepository.findByUserOrderBySubmittedAtDesc(getCurrentUser()));
+    }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<AttemptHistoryResponse> getAttemptHistoryByCredentialId(String credentialId) {
+        UserCredentials credentials = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        Users user = credentials.getUser();
+        if (user == null) throw new AppException(ErrorCode.USER_NOT_EXISTED);
+        return mapAttemptsToHistory(attemptRepository.findByUserOrderBySubmittedAtDesc(user));
+    }
+
+    private List<AttemptHistoryResponse> mapAttemptsToHistory(List<Attempt> attempts) {
         return attempts.stream()
                 .map(a -> {
                     int elapsed = 0;

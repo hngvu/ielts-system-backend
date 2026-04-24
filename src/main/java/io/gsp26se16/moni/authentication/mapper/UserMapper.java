@@ -12,6 +12,7 @@ public interface UserMapper {
     @Mapping(source = "fullName", target = "full_name")
     Users toUser(RegisterRequest request);
 
+    @Mapping(source = "credential.id", target = "id")
     @Mapping(source = "credential.email", target = "email")
     @Mapping(source = "full_name", target = "full_name")
     @Mapping(source = "credential.role", target = "role")
