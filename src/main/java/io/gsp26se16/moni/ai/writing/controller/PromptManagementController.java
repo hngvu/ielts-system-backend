@@ -33,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PromptManagementController {
 
     private final PromptManagementService promptManagementService;
+    private final io.gsp26se16.moni.ai.writing.service.PromptLoader promptLoader;
 
     /** List all prompts with their active version. */
     @GetMapping
@@ -123,5 +124,14 @@ public class PromptManagementController {
     @GetMapping("/active-versions")
     public ResponseEntity<Map<String, String>> getActiveVersions() {
         return ResponseEntity.ok(promptManagementService.loadActiveVersions());
+    }
+
+    /** Force invalidate all cached prompts — forces reload from disk/classpath on next request. */
+    @PostMapping("/cache/invalidate")
+    public ResponseEntity<Map<String, String>> invalidateCache() {
+        promptLoader.invalidateAll();
+        log.info("Admin invalidated all prompt caches");
+        return ResponseEntity.ok(
+                Map.of("message", "All prompt caches invalidated. Next request will reload from disk."));
     }
 }
