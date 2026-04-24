@@ -202,13 +202,20 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
     private Map<String, Object> phase6Calculate(
             Map<String, Object> ta, Map<String, Object> cc, Map<String, Object> lr, Map<String, Object> gra) {
 
+        // Inject "criterion" tag into each phase output so mergeCriterion can
+        // inject adjusted_band back. TA already has "criterion":"TA" from prompt.
+        ta.putIfAbsent("criterion", "TA");
+        Map<String, Object> ccTagged = helper.withCriterion(cc, "CC");
+        Map<String, Object> lrTagged = helper.withCriterion(lr, "LR");
+        Map<String, Object> graTagged = helper.withCriterion(gra, "GRA");
+
         Map<String, Double> rawBands = Map.of(
                 "TA", getBand(ta),
-                "CC", getBand(cc),
-                "LR", getBand(lr),
-                "GRA", getBand(gra));
+                "CC", getBand(ccTagged),
+                "LR", getBand(lrTagged),
+                "GRA", getBand(graTagged));
 
-        Map<String, RuleEngine.Violation> violations = helper.collectViolations(ta, cc, lr, gra);
+        Map<String, RuleEngine.Violation> violations = helper.collectViolations(ta, ccTagged, lrTagged, graTagged);
         RuleEngine.RuleResult ruleResult = ruleEngine.applyAllRules(rawBands, violations);
         double finalBand = ruleEngine.calculateFinalBand(ruleResult.adjustedBands(), ruleResult.overallCap());
 
@@ -220,9 +227,9 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
                 "criteria",
                 Map.of(
                         "TA", helper.mergeCriterion(ta, ruleResult.adjustedBands()),
-                        "CC", helper.mergeCriterion(cc, ruleResult.adjustedBands()),
-                        "LR", helper.mergeCriterion(lr, ruleResult.adjustedBands()),
-                        "GRA", helper.mergeCriterion(gra, ruleResult.adjustedBands())));
+                        "CC", helper.mergeCriterion(ccTagged, ruleResult.adjustedBands()),
+                        "LR", helper.mergeCriterion(lrTagged, ruleResult.adjustedBands()),
+                        "GRA", helper.mergeCriterion(graTagged, ruleResult.adjustedBands())));
         return result;
     }
 
