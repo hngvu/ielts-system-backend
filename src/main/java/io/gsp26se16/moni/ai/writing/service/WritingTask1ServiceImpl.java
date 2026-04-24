@@ -85,14 +85,17 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
             }
             final Map<String, Object> chartData = tempChartData;
 
+            // ── Sanitize essay against prompt injection ─────────────────────
+            String sanitizedEssay = helper.sanitizeEssay(request.getAnswer());
+
             // ── Phase 1 ───────────────────────────────────────────────────────
-            Map<String, Object> parsedEssay = phase1Parse(chatClient, request.getAnswer());
+            Map<String, Object> parsedEssay = phase1Parse(chatClient, sanitizedEssay);
 
             // ── Phase 2–5 in parallel ─────────────────────────────────────────
             CompletableFuture<Map<String, Object>> taFuture = CompletableFuture.supplyAsync(
                     () -> {
                         try {
-                            return phase2TaskAchievement(chatClient, request.getAnswer(), parsedEssay, chartData);
+                            return phase2TaskAchievement(chatClient, sanitizedEssay, parsedEssay, chartData);
                         } catch (JsonProcessingException e) {
                             throw new RuntimeException("Error in JSON processing for TA", e);
                         }
@@ -102,7 +105,7 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
             CompletableFuture<Map<String, Object>> ccFuture = CompletableFuture.supplyAsync(
                     () -> {
                         try {
-                            return phase3Coherence(chatClient, request.getAnswer(), parsedEssay);
+                            return phase3Coherence(chatClient, sanitizedEssay, parsedEssay);
                         } catch (JsonProcessingException e) {
                             throw new RuntimeException("Error in JSON processing for CC", e);
                         }
@@ -110,10 +113,10 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
                     aiExecutor);
 
             CompletableFuture<Map<String, Object>> lrFuture =
-                    CompletableFuture.supplyAsync(() -> phase4Lexical(chatClient, request.getAnswer()), aiExecutor);
+                    CompletableFuture.supplyAsync(() -> phase4Lexical(chatClient, sanitizedEssay), aiExecutor);
 
             CompletableFuture<Map<String, Object>> graFuture =
-                    CompletableFuture.supplyAsync(() -> phase5Grammar(chatClient, request.getAnswer()), aiExecutor);
+                    CompletableFuture.supplyAsync(() -> phase5Grammar(chatClient, sanitizedEssay), aiExecutor);
 
             CompletableFuture.allOf(taFuture, ccFuture, lrFuture, graFuture).join();
 
@@ -126,7 +129,7 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
             Map<String, Object> finalResult = phase6Calculate(ta, cc, lr, gra);
 
             // ── Phase 7: Feedback ─────────────────────────────────────────────
-            Map<String, Object> feedback = phase7Feedback(chatClient, chartData, request.getAnswer(), finalResult);
+            Map<String, Object> feedback = phase7Feedback(chatClient, chartData, sanitizedEssay, finalResult);
 
             // ── Lưu AiEvaluation + cập nhật submission COMPLETED ─────────────
             double finalBand = (double) finalResult.get("final_band");

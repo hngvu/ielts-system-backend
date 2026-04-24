@@ -72,7 +72,7 @@ public class WritingTask2ServiceImpl implements WritingTask2Service {
             ChatClient chatClient = chatClientBuilder.build();
 
             String question = request.getQuestion();
-            String essay = request.getAnswer();
+            String essay = helper.sanitizeEssay(request.getAnswer());
 
             // ── Phase 1: Structural parse ─────────────────────────────────────
             Map<String, Object> parsedEssay = phase1Parse(chatClient, question, essay);

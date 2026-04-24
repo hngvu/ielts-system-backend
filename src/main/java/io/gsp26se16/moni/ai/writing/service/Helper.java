@@ -1,7 +1,9 @@
 package io.gsp26se16.moni.ai.writing.service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Service;
 
@@ -302,5 +304,54 @@ public class Helper {
 
     public Map<String, Object> defaultCriterion(String criterion) {
         return Map.of("criterion", criterion, "band", 0.0, "reason", "Fallback due to error");
+    }
+
+    // =========================================================================
+    // PROMPT INJECTION DETECTION
+    // =========================================================================
+
+    private static final List<Pattern> INJECTION_PATTERNS = List.of(
+            Pattern.compile("<<\\s*SYSTEM\\s*PROMPT\\s*>>", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\[\\s*SYSTEM\\s*\\]", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\[\\[\\s*INST\\s*\\]\\]", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("<\\|im_start\\|>", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("###\\s*INSTRUCTION", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("ignore\\s+(all\\s+)?(previous|above|prior)\\s+instructions", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("disregard\\s+(all\\s+)?(previous|above|prior)", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("forget\\s+(your|all|the)\\s+instructions", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("you\\s+are\\s+now\\s+(a|an|my)", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("new\\s+(task|role|instruction)\\s*:", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("give\\s+(me|this)\\s+(a\\s+)?band\\s+\\d", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("(score|rate)\\s+this\\s+(essay\\s+)?(a\\s+)?\\d", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("this\\s+essay\\s+deserves\\s+(a\\s+)?(high|band)", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("return\\s+.*band.*:\\s*[89]", Pattern.CASE_INSENSITIVE));
+
+    /**
+     * Detects prompt injection attempts in essay text.
+     * Returns true if suspicious patterns are found.
+     */
+    public boolean detectInjection(String essay) {
+        if (essay == null || essay.isBlank()) return false;
+        for (Pattern p : INJECTION_PATTERNS) {
+            if (p.matcher(essay).find()) {
+                log.warn("Prompt injection detected in essay. Pattern: {}", p.pattern());
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Prepends an injection warning tag if suspicious patterns are detected.
+     * The prompt templates are configured to treat [INJECTION_DETECTED] as
+     * a signal to activate spam_or_gibberish violation.
+     */
+    public String sanitizeEssay(String essay) {
+        if (essay == null) return "";
+        if (detectInjection(essay)) {
+            log.warn("Essay contains prompt injection patterns. Adding injection warning.");
+            return "[INJECTION_DETECTED] " + essay;
+        }
+        return essay;
     }
 }

@@ -53,7 +53,7 @@ public class RuleEngine {
             // ---------- TASK 1 (TA) ----------
             // NOTE: Task 1 TA prompt not included in uploaded files.
             //       These rules are retained for the Task 1 pipeline.
-            Map.entry("data_misinterpretation", new HardRule(Map.of("TA", 5.5), 6.0)),
+            Map.entry("data_misinterpretation", new HardRule(Map.of("TA", 5.0), 6.0)),
             Map.entry("no_overview", new HardRule(Map.of("TA", 6.0), 6.5)),
             Map.entry("irrelevant_data", new HardRule(Map.of("TA", 6.0), null)),
 
@@ -81,15 +81,15 @@ public class RuleEngine {
 
             // Emitted by phase2_ta.txt as "unclear_position_progression"
             // Legacy alias "contradictory_position" retained below
-            Map.entry("unclear_position_progression", new HardRule(Map.of("TR", 5.5), 6.0)),
+            Map.entry("unclear_position_progression", new HardRule(Map.of("TR", 5.0), 6.0)),
 
             // Legacy alias → same caps as unclear_position_progression
-            Map.entry("contradictory_position", new HardRule(Map.of("TR", 5.5), 6.0)),
+            Map.entry("contradictory_position", new HardRule(Map.of("TR", 5.0), 6.0)),
 
             // NOTE: "mixed_task" is in the engine but NOT defined in any uploaded TR prompt
             //       violation schema. Action required: add "mixed_task" to phase2_ta.txt
             //       and phase2_tr.txt violation blocks, or remove this rule if not applicable.
-            Map.entry("mixed_task", new HardRule(Map.of("TR", 5.5), 6.0)),
+            Map.entry("mixed_task", new HardRule(Map.of("TR", 5.0), 6.0)),
 
             // Emitted by phase2_ta.txt and phase2_tr.txt as "irrelevant_content" (TR-scoped)
             // Dispatch logic in applyAllRules() uses criterion tag to differentiate
@@ -306,6 +306,13 @@ public class RuleEngine {
 
             adjusted.put(criterion, round2(newBand));
             penaltyTracker.put(criterion, currentPenalty + penaltyToApply);
+        }
+
+        // ================= ROUND CRITERIA TO WHOLE BANDS =================
+        // IELTS rules: individual criterion scores MUST be whole numbers.
+        // Only the overall band can be a half-band increment (e.g. 6.5).
+        for (Map.Entry<String, Double> e : adjusted.entrySet()) {
+            adjusted.put(e.getKey(), (double) Math.round(e.getValue()));
         }
 
         return new RuleResult(adjusted, overallCap, appliedHardRules);
