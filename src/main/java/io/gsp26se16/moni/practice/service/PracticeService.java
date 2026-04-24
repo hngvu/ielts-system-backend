@@ -12,4 +12,7 @@ public interface PracticeService {
     SubmitAttemptResponse getAttemptResult(Integer attemptId);
 
     List<AttemptHistoryResponse> getAttemptHistory();
+
+    /** Admin: lấy lịch sử làm bài của 1 học viên cụ thể qua credentialId. */
+    List<AttemptHistoryResponse> getAttemptHistoryByCredentialId(String credentialId);
 }

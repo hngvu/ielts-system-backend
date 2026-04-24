@@ -11,6 +11,9 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserProfileResponse {
+    /** credentialId — dùng cho admin endpoints (/users/{id}/*, /credentials/{id}/ban). */
+    String id;
+
     String email;
 
     String full_name;

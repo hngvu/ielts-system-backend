@@ -1374,4 +1374,47 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
 
         return result;
     }
+
+    // =====================================================================
+    // ADMIN: xem weekly plan của học viên khác qua credentialId
+    // =====================================================================
+
+    @Override
+    @Transactional(readOnly = true)
+    public WeeklyPlanDetailResponse getCurrentPlanByCredentialId(String credentialId) {
+        Users user = resolveUserByCredential(credentialId);
+        WeeklyPlan plan = weeklyPlanRepository
+                .findFirstByUserAndStatusOrderByWeekNumberDesc(user, "ACTIVE")
+                .orElse(null);
+        return plan == null ? null : buildDetailResponse(plan, user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<WeeklyPlanSummaryResponse> getHistoryByCredentialId(String credentialId) {
+        Users user = resolveUserByCredential(credentialId);
+        return weeklyPlanRepository.findByUserOrderByWeekNumberDesc(user).stream()
+                .filter(p -> "COMPLETED".equals(p.getStatus()))
+                .map(p -> WeeklyPlanSummaryResponse.builder()
+                        .weekNumber(p.getWeekNumber())
+                        .monthCycle(p.getMonthCycle())
+                        .weekInMonth(p.getWeekInMonth())
+                        .weekStartDate(p.getWeekStartDate().toString())
+                        .weekEndDate(p.getWeekEndDate().toString())
+                        .weeklyAccuracy(p.getWeeklyAccuracy())
+                        .completionRate(p.getCompletionRate())
+                        .performanceVerdict(p.getPerformanceVerdict())
+                        .build())
+                .toList();
+    }
+
+    private Users resolveUserByCredential(String credentialId) {
+        UserCredentials credentials = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        if (credentials.getUser() == null) {
+            throw new AppException(ErrorCode.USER_NOT_EXISTED);
+        }
+        return credentials.getUser();
+    }
 }

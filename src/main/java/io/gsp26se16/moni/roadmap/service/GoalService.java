@@ -27,5 +27,8 @@ public interface GoalService {
 
     LearnerRoadmapInsightsResponse getRoadmapInsightsByWeek(Integer weekNumber);
 
+    /** Admin: lấy roadmap insights của 1 học viên cụ thể qua credentialId. */
+    LearnerRoadmapInsightsResponse getRoadmapInsightsByCredentialId(String credentialId);
+
     void snapshotInsightsForWeek(Users user, Integer weekNumber);
 }

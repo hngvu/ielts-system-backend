@@ -163,6 +163,18 @@ public class GoalServiceImpl implements GoalService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public LearnerRoadmapInsightsResponse getRoadmapInsightsByCredentialId(String credentialId) {
+        UserCredentials credentials = userCredentialsRepository
+                .findById(credentialId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        if (credentials.getUser() == null) {
+            throw new AppException(ErrorCode.USER_NOT_EXISTED);
+        }
+        return generateInsightsForUser(credentials.getUser());
+    }
+
+    @Override
     @Transactional
     public void snapshotInsightsForWeek(Users user, Integer weekNumber) {
         LearnerRoadmapInsightsResponse insights = generateInsightsForUser(user);
