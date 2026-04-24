@@ -238,7 +238,12 @@ public class Helper {
     // =========================================================================
 
     /**
-     * Parse JSON response from LLM, with repair fallback for common LLM JSON errors.
+     * Parse JSON response from LLM, with multi-stage repair fallback.
+     *
+     * Strategy:
+     *   1. Try raw (after stripping markdown fences)
+     *   2. Try fixing trailing commas only (safe, handles most LLM errors)
+     *   3. Try aggressive repair (unquoted values) — last resort
      */
     public Map<String, Object> parseJson(String response) {
         if (response == null || response.trim().isEmpty()) {
@@ -246,36 +251,51 @@ public class Helper {
             return Map.of("error", "Empty response", "raw", "");
         }
 
+        String cleaned = cleanJsonResponse(response);
+
+        // Stage 1: try as-is
         try {
-            String cleaned = cleanJsonResponse(response);
             return relaxedMapper.readValue(cleaned, Map.class);
+        } catch (Exception ignored) {
+        }
+
+        // Stage 2: fix trailing commas only (safe repair)
+        try {
+            String fixed = fixTrailingCommas(cleaned);
+            return relaxedMapper.readValue(fixed, Map.class);
+        } catch (Exception ignored) {
+        }
+
+        // Stage 3: aggressive repair (unquoted values)
+        try {
+            String repaired = repairUnquotedValues(fixTrailingCommas(cleaned));
+            return relaxedMapper.readValue(repaired, Map.class);
         } catch (Exception e) {
-            log.warn("Initial JSON parse failed, attempting repair. Raw: {}", response);
-            try {
-                String repaired = repairJson(cleanJsonResponse(response));
-                return relaxedMapper.readValue(repaired, Map.class);
-            } catch (Exception e2) {
-                log.error("JSON repair also failed. Raw response: {}", response, e2);
-                return Map.of("error", "Invalid JSON", "raw", response);
-            }
+            log.error("All JSON repair stages failed. Raw response: {}", response, e);
+            return Map.of("error", "Invalid JSON", "raw", response);
         }
     }
 
     /**
-     * Repair common LLM JSON errors:
-     * 1. Unquoted string values:  "evidence": oil consuming patterns  →  "evidence": "oil consuming patterns"
-     * 2. Trailing commas before } or ]
+     * Fix trailing commas before closing braces/brackets.
+     * This is the most common LLM JSON error and is safe to apply.
      */
-    public String repairJson(String json) {
+    public String fixTrailingCommas(String json) {
+        if (json == null) return "{}";
+        return json.replaceAll(",\\s*([}\\]])", "$1");
+    }
+
+    /**
+     * Fix unquoted string values in JSON.
+     * More aggressive — only used as last resort since it can corrupt
+     * Vietnamese/Unicode text inside arrays.
+     */
+    public String repairUnquotedValues(String json) {
         if (json == null) return "{}";
 
-        // Pass 1: fix trailing commas before closing braces/brackets
-        String step1 = json.replaceAll(",\\s*([}\\]])", "$1");
-
-        // Pass 2: fix unquoted string values
         java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
                 "(\"[^\"]+\"\\s*:\\s*)(?![\"\\[\\{\\]\\}\\d]|true\\b|false\\b|null\\b)([^,}\\]]+)");
-        java.util.regex.Matcher matcher = pattern.matcher(step1);
+        java.util.regex.Matcher matcher = pattern.matcher(json);
         StringBuffer sb = new StringBuffer();
 
         while (matcher.find()) {
@@ -285,6 +305,13 @@ public class Helper {
         }
         matcher.appendTail(sb);
         return sb.toString();
+    }
+
+    /**
+     * Legacy method kept for backward compatibility.
+     */
+    public String repairJson(String json) {
+        return repairUnquotedValues(fixTrailingCommas(json));
     }
 
     /**
