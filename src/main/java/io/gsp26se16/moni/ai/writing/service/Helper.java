@@ -57,13 +57,19 @@ public class Helper {
                 boolean active = Boolean.TRUE.equals(vMap.get("active"));
                 if (!active) continue;
 
+                String severity = vMap.get("severity") != null ? String.valueOf(vMap.get("severity")) : "";
+                String criterionTag =
+                        criterion.get("criterion") != null ? String.valueOf(criterion.get("criterion")) : "";
+
                 result.put(
                         key,
                         new RuleEngine.Violation(
                                 true,
                                 String.valueOf(vMap.get("location")),
                                 String.valueOf(vMap.get("evidence")),
-                                String.valueOf(vMap.get("reason"))));
+                                String.valueOf(vMap.get("reason")),
+                                severity,
+                                criterionTag));
             }
         }
 
