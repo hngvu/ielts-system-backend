@@ -48,6 +48,7 @@ public class PlacementServiceImpl implements PlacementService {
     private final UserCredentialsRepository userCredentialsRepository;
     private final GoalService goalService;
     private final LearnerMetricRepository learnerMetricRepository;
+    private final TagRepository tagRepository;
 
     public PlacementServiceImpl(
             PlacementResultRepository placementResultRepository,
@@ -56,7 +57,8 @@ public class PlacementServiceImpl implements PlacementService {
             QuestionRepository questionRepository,
             UserCredentialsRepository userCredentialsRepository,
             @Lazy GoalService goalService,
-            LearnerMetricRepository learnerMetricRepository) {
+            LearnerMetricRepository learnerMetricRepository,
+            TagRepository tagRepository) {
         this.placementResultRepository = placementResultRepository;
         this.testRepository = testRepository;
         this.testService = testService;
@@ -64,6 +66,7 @@ public class PlacementServiceImpl implements PlacementService {
         this.userCredentialsRepository = userCredentialsRepository;
         this.goalService = goalService;
         this.learnerMetricRepository = learnerMetricRepository;
+        this.tagRepository = tagRepository;
     }
 
     @Override
@@ -120,6 +123,9 @@ public class PlacementServiceImpl implements PlacementService {
 
         result = placementResultRepository.save(result);
 
+        // Seed LearnerMetrics for Writing & Speaking from self-assessed bands
+        seedWritingSpeakingMetrics(user, request.getWritingBand(), request.getSpeakingBand());
+
         // Auto-create Goals from placement result
         try {
             goalService.createGoalsFromPlacement(
@@ -167,6 +173,14 @@ public class PlacementServiceImpl implements PlacementService {
                 .build();
 
         result = placementResultRepository.save(result);
+
+        // Seed LearnerMetrics for ALL 4 skills from self-assessed bands
+        seedAllSkillMetrics(
+                user,
+                request.getReadingBand(),
+                request.getListeningBand(),
+                request.getWritingBand(),
+                request.getSpeakingBand());
 
         // Auto-create Goals from self-assessed placement result
         try {
@@ -326,6 +340,102 @@ public class PlacementServiceImpl implements PlacementService {
         Users user = credentials.getUser();
         if (user == null) throw new AppException(ErrorCode.USER_NOT_EXISTED);
         return user;
+    }
+
+    // =========================================================================
+    // SEED LEARNER METRICS FROM PLACEMENT BANDS
+    // =========================================================================
+
+    /**
+     * Seed LearnerMetric for Writing & Speaking criteria from placement bands.
+     * Called after submit() — Reading/Listening already get metrics from gradeAnswers().
+     *
+     * Writing criteria: W_TA, W_CC, W_LR, W_GRA
+     * Speaking criteria: FC, LR (speaking), GRA (speaking), PR
+     */
+    private void seedWritingSpeakingMetrics(Users user, double writingBand, double speakingBand) {
+        LocalDateTime now = LocalDateTime.now();
+
+        // Writing criteria tags
+        seedCriterionMetric(user, "W_TA", Skill.WRITING, writingBand, now);
+        seedCriterionMetric(user, "W_CC", Skill.WRITING, writingBand, now);
+        seedCriterionMetric(user, "W_LR", Skill.WRITING, writingBand, now);
+        seedCriterionMetric(user, "W_GRA", Skill.WRITING, writingBand, now);
+
+        // Speaking criteria tags
+        seedCriterionMetric(user, "FC", Skill.SPEAKING, speakingBand, now);
+        seedCriterionMetric(user, "LR", Skill.SPEAKING, speakingBand, now);
+        seedCriterionMetric(user, "GRA", Skill.SPEAKING, speakingBand, now);
+        seedCriterionMetric(user, "PR", Skill.SPEAKING, speakingBand, now);
+
+        log.info(
+                "Seeded Writing/Speaking LearnerMetrics from placement: writing={}, speaking={}",
+                writingBand,
+                speakingBand);
+    }
+
+    /**
+     * Seed LearnerMetric for ALL 4 skills from self-assessed bands.
+     * Called after selfAssess() — no gradeAnswers() runs, so all skills need seeding.
+     */
+    private void seedAllSkillMetrics(
+            Users user, double readingBand, double listeningBand, double writingBand, double speakingBand) {
+        LocalDateTime now = LocalDateTime.now();
+
+        // Reading: seed by passage type tags
+        for (String code : List.of("PASSAGE_1", "PASSAGE_2", "PASSAGE_3")) {
+            seedCriterionMetric(user, code, Skill.READING, readingBand, now);
+        }
+
+        // Listening: seed by section type tags
+        for (String code : List.of("SECTION_1", "SECTION_2", "SECTION_3", "SECTION_4")) {
+            seedCriterionMetric(user, code, Skill.LISTENING, listeningBand, now);
+        }
+
+        // Writing & Speaking
+        seedWritingSpeakingMetrics(user, writingBand, speakingBand);
+
+        log.info(
+                "Seeded ALL LearnerMetrics from self-assess: R={}, L={}, W={}, S={}",
+                readingBand,
+                listeningBand,
+                writingBand,
+                speakingBand);
+    }
+
+    /**
+     * Create or update a single LearnerMetric from a placement band score.
+     * mastery = band / 9.0 (normalize to [0,1])
+     * confidence starts low (0.33) since this is self-assessed, not tested.
+     */
+    private void seedCriterionMetric(Users user, String tagCode, Skill skill, double band, LocalDateTime now) {
+        Tag tag = tagRepository.findByCode(tagCode).orElse(null);
+        if (tag == null) {
+            log.debug("Tag not found for code={}, skipping metric seed", tagCode);
+            return;
+        }
+
+        LearnerMetric metric = learnerMetricRepository
+                .findByUserAndTagAndSkill(user, tag, skill)
+                .orElseGet(() -> {
+                    LearnerMetric m = new LearnerMetric();
+                    m.setUser(user);
+                    m.setTag(tag);
+                    m.setSkill(skill);
+                    m.setPGuess(0.05);
+                    m.setPSlip(0.15);
+                    m.setPTransit(0.1);
+                    return m;
+                });
+
+        double mastery = Math.max(0.0, Math.min(1.0, band / 9.0));
+        metric.setMasteryLevel(mastery);
+        metric.setAttemptCount(metric.getAttemptCount() == null ? 1 : metric.getAttemptCount() + 1);
+        // Low confidence for placement (self-assessed) — will increase with real practice
+        metric.setConfidenceScore(0.33);
+        metric.setUpdatedAt(now);
+
+        learnerMetricRepository.save(metric);
     }
 
     private PlacementResultResponse toResponse(PlacementResult result) {
