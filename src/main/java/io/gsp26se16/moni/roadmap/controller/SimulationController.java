@@ -158,39 +158,48 @@ public class SimulationController {
                     .build());
         }
 
-        // Shift plan dates 1 day backward → effectively advances "today" to next day
-        currentPlan.setWeekStartDate(currentPlan.getWeekStartDate().minusDays(1));
-        currentPlan.setWeekEndDate(currentPlan.getWeekEndDate().minusDays(1));
-        weeklyPlanRepository.save(currentPlan);
-
-        // Shift all slot dates 1 day backward to match
+        // Find the next day's slots (future, still TODO) and move them to today
         List<DailySlot> slots = dailySlotRepository.findByWeeklyPlanOrderByDayOfWeekAscIdAsc(currentPlan);
-        int shifted = 0;
+
+        // Find earliest future date that has TODO slots
+        java.time.LocalDate nextDate = null;
         for (DailySlot slot : slots) {
-            slot.setSlotDate(slot.getSlotDate().minusDays(1));
-            dailySlotRepository.save(slot);
-            shifted++;
+            if (slot.getSlotDate() != null && slot.getSlotDate().isAfter(today) && "TODO".equals(slot.getStatus())) {
+                if (nextDate == null || slot.getSlotDate().isBefore(nextDate)) {
+                    nextDate = slot.getSlotDate();
+                }
+            }
+        }
+
+        if (nextDate == null) {
+            return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
+                    .code(1000)
+                    .message("Không còn ngày tương lai nào cần mở. Dùng 'Evaluate & Next' để sang tuần mới.")
+                    .result(Map.of("success", false, "reason", "NO_FUTURE_SLOTS"))
+                    .build());
+        }
+
+        // Move ONLY that next day's slots to today → unlocks them in the UI
+        int moved = 0;
+        for (DailySlot slot : slots) {
+            if (nextDate.equals(slot.getSlotDate())) {
+                slot.setSlotDate(today);
+                dailySlotRepository.save(slot);
+                moved++;
+            }
         }
 
         log.info(
-                "[Simulation] Advanced 1 day for user {}: day {} → day {}, shifted {} slots",
+                "[Simulation] Advanced day for user {}: moved {} slots from {} to today ({})",
                 userId,
-                currentDayIndex,
-                nextDayIndex,
-                shifted);
+                moved,
+                nextDate,
+                today);
 
         return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .code(1000)
-                .message("Đã tua nhanh 1 ngày! Bây giờ đang ở ngày " + nextDayIndex + " của tuần.")
-                .result(Map.of(
-                        "success",
-                        true,
-                        "previousDay",
-                        currentDayIndex,
-                        "currentDay",
-                        nextDayIndex,
-                        "shiftedSlots",
-                        shifted))
+                .message("Đã mở " + moved + " task của ngày " + nextDate + "!")
+                .result(Map.of("success", true, "openedDate", nextDate.toString(), "slotsUnlocked", moved))
                 .build());
     }
 
