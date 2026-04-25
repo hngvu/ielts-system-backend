@@ -381,17 +381,49 @@ public class PlacementServiceImpl implements PlacementService {
      * Seed LearnerMetric for ALL 4 skills from self-assessed bands.
      * Called after selfAssess() — no gradeAnswers() runs, so all skills need seeding.
      */
+    // Reading question type tag codes
+    private static final List<String> READING_QT_CODES = List.of(
+            "QT_MCQ",
+            "QT_MCQ_MULTIPLE",
+            "QT_TFNG",
+            "QT_YNNG",
+            "QT_MATCH_HEAD",
+            "QT_MATCH_INFO",
+            "QT_MATCH_FEAT",
+            "QT_MATCH_END",
+            "QT_GAP_FILLING",
+            "QT_SENTENCE_COMP",
+            "QT_SUM_COMP",
+            "QT_SHORT_ANS",
+            "QT_DIAG_LABEL",
+            "QT_FILL_IN_THE_BLANK");
+
+    // Listening question type tag codes
+    private static final List<String> LISTENING_QT_CODES = List.of(
+            "QT_MCQ_L",
+            "QT_GAP_FILLING_L",
+            "QT_MAP_LABELING",
+            "QT_FORM_COMPLETION",
+            "QT_NOTE_COMPLETION",
+            "QT_TABLE_COMP");
+
     private void seedAllSkillMetrics(
             Users user, double readingBand, double listeningBand, double writingBand, double speakingBand) {
         LocalDateTime now = LocalDateTime.now();
 
-        // Reading: seed by passage type tags (DB codes: READ_PASSAGE_1/2/3)
+        // Reading: passage structure + question types
         for (String code : List.of("READ_PASSAGE_1", "READ_PASSAGE_2", "READ_PASSAGE_3")) {
             seedCriterionMetric(user, code, Skill.READING, readingBand, now);
         }
+        for (String code : READING_QT_CODES) {
+            seedCriterionMetric(user, code, Skill.READING, readingBand, now);
+        }
 
-        // Listening: seed by section type tags (DB codes: LIST_SECTION_1/2/3/4)
+        // Listening: section structure + question types
         for (String code : List.of("LIST_SECTION_1", "LIST_SECTION_2", "LIST_SECTION_3", "LIST_SECTION_4")) {
+            seedCriterionMetric(user, code, Skill.LISTENING, listeningBand, now);
+        }
+        for (String code : LISTENING_QT_CODES) {
             seedCriterionMetric(user, code, Skill.LISTENING, listeningBand, now);
         }
 
@@ -399,7 +431,7 @@ public class PlacementServiceImpl implements PlacementService {
         seedWritingSpeakingMetrics(user, writingBand, speakingBand);
 
         log.info(
-                "Seeded ALL LearnerMetrics from self-assess: R={}, L={}, W={}, S={}",
+                "Seeded ALL LearnerMetrics: R={}, L={}, W={}, S={}",
                 readingBand,
                 listeningBand,
                 writingBand,
