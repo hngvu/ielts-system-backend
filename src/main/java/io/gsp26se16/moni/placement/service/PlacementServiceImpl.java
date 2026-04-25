@@ -124,10 +124,9 @@ public class PlacementServiceImpl implements PlacementService {
 
         result = placementResultRepository.save(result);
 
-        // Seed LearnerMetrics for ALL 4 skills from placement results
-        // Reading/Listening: gradeAnswers() creates per-question-tag metrics, but structural
-        // tags (PASSAGE_1/2/3, SECTION_1/2/3/4) may not be on questions → seed from bands
-        seedAllSkillMetrics(user, readingBand, listeningBand, request.getWritingBand(), request.getSpeakingBand());
+        // Seed LearnerMetrics for Writing & Speaking from self-assessed bands.
+        // Reading/Listening metrics are already created by gradeAnswers() from actual question tags.
+        seedWritingSpeakingMetrics(user, request.getWritingBand(), request.getSpeakingBand());
 
         // Auto-create Goals from placement result
         try {
@@ -381,49 +380,23 @@ public class PlacementServiceImpl implements PlacementService {
      * Seed LearnerMetric for ALL 4 skills from self-assessed bands.
      * Called after selfAssess() — no gradeAnswers() runs, so all skills need seeding.
      */
-    // Reading question type tag codes
-    private static final List<String> READING_QT_CODES = List.of(
-            "QT_MCQ",
-            "QT_MCQ_MULTIPLE",
-            "QT_TFNG",
-            "QT_YNNG",
-            "QT_MATCH_HEAD",
-            "QT_MATCH_INFO",
-            "QT_MATCH_FEAT",
-            "QT_MATCH_END",
-            "QT_GAP_FILLING",
-            "QT_SENTENCE_COMP",
-            "QT_SUM_COMP",
-            "QT_SHORT_ANS",
-            "QT_DIAG_LABEL",
-            "QT_FILL_IN_THE_BLANK");
-
-    // Listening question type tag codes
-    private static final List<String> LISTENING_QT_CODES = List.of(
-            "QT_MCQ_L",
-            "QT_GAP_FILLING_L",
-            "QT_MAP_LABELING",
-            "QT_FORM_COMPLETION",
-            "QT_NOTE_COMPLETION",
-            "QT_TABLE_COMP");
-
+    /**
+     * Seed LearnerMetric for ALL 4 skills from self-assessed bands.
+     * Used by selfAssess() only — no gradeAnswers() runs, so R/L also need seeding.
+     * Seeds generic question type tags based on band level.
+     */
     private void seedAllSkillMetrics(
             Users user, double readingBand, double listeningBand, double writingBand, double speakingBand) {
         LocalDateTime now = LocalDateTime.now();
 
-        // Reading: passage structure + question types
-        for (String code : List.of("READ_PASSAGE_1", "READ_PASSAGE_2", "READ_PASSAGE_3")) {
-            seedCriterionMetric(user, code, Skill.READING, readingBand, now);
-        }
-        for (String code : READING_QT_CODES) {
+        // Reading: seed common question types (no Passage tags — those are structural only)
+        for (String code : List.of(
+                "QT_MCQ", "QT_TFNG", "QT_YNNG", "QT_GAP_FILLING", "QT_MATCH_HEAD", "QT_MATCH_INFO", "QT_SHORT_ANS")) {
             seedCriterionMetric(user, code, Skill.READING, readingBand, now);
         }
 
-        // Listening: section structure + question types
-        for (String code : List.of("LIST_SECTION_1", "LIST_SECTION_2", "LIST_SECTION_3", "LIST_SECTION_4")) {
-            seedCriterionMetric(user, code, Skill.LISTENING, listeningBand, now);
-        }
-        for (String code : LISTENING_QT_CODES) {
+        // Listening: seed common question types (no Section tags)
+        for (String code : List.of("QT_MCQ_L", "QT_GAP_FILLING_L", "QT_FORM_COMPLETION", "QT_NOTE_COMPLETION")) {
             seedCriterionMetric(user, code, Skill.LISTENING, listeningBand, now);
         }
 
@@ -431,7 +404,7 @@ public class PlacementServiceImpl implements PlacementService {
         seedWritingSpeakingMetrics(user, writingBand, speakingBand);
 
         log.info(
-                "Seeded ALL LearnerMetrics: R={}, L={}, W={}, S={}",
+                "Seeded ALL LearnerMetrics (self-assess): R={}, L={}, W={}, S={}",
                 readingBand,
                 listeningBand,
                 writingBand,
