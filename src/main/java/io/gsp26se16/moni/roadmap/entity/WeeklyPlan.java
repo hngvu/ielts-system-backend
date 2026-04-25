@@ -59,4 +59,8 @@ public class WeeklyPlan {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    /** Simulation only: overrides "today" for this plan. Null = use real date. */
+    @Column(name = "simulated_today")
+    private LocalDate simulatedToday;
 }

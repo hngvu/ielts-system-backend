@@ -134,72 +134,47 @@ public class SimulationController {
 
     /**
      * Advance 1 day in the simulation.
-     * Shifts the entire weekly plan 1 day into the past so that
-     * "tomorrow's" slots become "today's" slots from the system's perspective.
-     * This simulates time moving forward without changing slot order.
+     * Sets simulatedToday on the plan to the next day so FE treats it as "today".
+     * No slot dates are modified — only the virtual clock moves forward.
      */
     @PostMapping("/skip-day/{userId}")
-    @Operation(summary = "[Simulation] Tua nhanh 1 ngày (mở task ngày tiếp theo)")
+    @Operation(summary = "[Simulation] Tua nhanh 1 ngày (giả lập hôm nay = ngày tiếp theo)")
     @Transactional
     public ResponseEntity<ApiResponse<Map<String, Object>>> advanceOneDay(@PathVariable String userId) {
         Users user = resolveUser(userId);
         WeeklyPlan currentPlan = getActivePlan(user);
 
-        java.time.LocalDate today = java.time.LocalDate.now();
-        java.time.LocalDate planStart = currentPlan.getWeekStartDate();
-        int currentDayIndex = (int) java.time.temporal.ChronoUnit.DAYS.between(planStart, today) + 1;
-        int nextDayIndex = currentDayIndex + 1;
+        // Current effective "today" = simulatedToday or real today
+        java.time.LocalDate effectiveToday =
+                currentPlan.getSimulatedToday() != null ? currentPlan.getSimulatedToday() : java.time.LocalDate.now();
 
-        if (nextDayIndex > 7) {
+        java.time.LocalDate nextDay = effectiveToday.plusDays(1);
+
+        // Guard: don't go past the plan's end date
+        if (nextDay.isAfter(currentPlan.getWeekEndDate())) {
             return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                     .code(1000)
                     .message("Đã hết ngày trong tuần này. Dùng 'Evaluate & Next' để sang tuần mới.")
-                    .result(Map.of("success", false, "currentDay", currentDayIndex, "reason", "END_OF_WEEK"))
+                    .result(Map.of(
+                            "success", false, "simulatedToday", effectiveToday.toString(), "reason", "END_OF_WEEK"))
                     .build());
         }
 
-        // Find the next day's slots (future, still TODO) and move them to today
-        List<DailySlot> slots = dailySlotRepository.findByWeeklyPlanOrderByDayOfWeekAscIdAsc(currentPlan);
+        currentPlan.setSimulatedToday(nextDay);
+        weeklyPlanRepository.save(currentPlan);
 
-        // Find earliest future date that has TODO slots
-        java.time.LocalDate nextDate = null;
-        for (DailySlot slot : slots) {
-            if (slot.getSlotDate() != null && slot.getSlotDate().isAfter(today) && "TODO".equals(slot.getStatus())) {
-                if (nextDate == null || slot.getSlotDate().isBefore(nextDate)) {
-                    nextDate = slot.getSlotDate();
-                }
-            }
-        }
-
-        if (nextDate == null) {
-            return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
-                    .code(1000)
-                    .message("Không còn ngày tương lai nào cần mở. Dùng 'Evaluate & Next' để sang tuần mới.")
-                    .result(Map.of("success", false, "reason", "NO_FUTURE_SLOTS"))
-                    .build());
-        }
-
-        // Move ONLY that next day's slots to today → unlocks them in the UI
-        int moved = 0;
-        for (DailySlot slot : slots) {
-            if (nextDate.equals(slot.getSlotDate())) {
-                slot.setSlotDate(today);
-                dailySlotRepository.save(slot);
-                moved++;
-            }
-        }
-
-        log.info(
-                "[Simulation] Advanced day for user {}: moved {} slots from {} to today ({})",
-                userId,
-                moved,
-                nextDate,
-                today);
+        log.info("[Simulation] Advanced day for user {}: {} → {}", userId, effectiveToday, nextDay);
 
         return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .code(1000)
-                .message("Đã mở " + moved + " task của ngày " + nextDate + "!")
-                .result(Map.of("success", true, "openedDate", nextDate.toString(), "slotsUnlocked", moved))
+                .message("Đã tua tới ngày " + nextDay + "!")
+                .result(Map.of(
+                        "success",
+                        true,
+                        "simulatedToday",
+                        nextDay.toString(),
+                        "previousDay",
+                        effectiveToday.toString()))
                 .build());
     }
 
