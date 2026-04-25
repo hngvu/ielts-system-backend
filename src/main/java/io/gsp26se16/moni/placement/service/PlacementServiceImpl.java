@@ -124,8 +124,10 @@ public class PlacementServiceImpl implements PlacementService {
 
         result = placementResultRepository.save(result);
 
-        // Seed LearnerMetrics for Writing & Speaking from self-assessed bands
-        seedWritingSpeakingMetrics(user, request.getWritingBand(), request.getSpeakingBand());
+        // Seed LearnerMetrics for ALL 4 skills from placement results
+        // Reading/Listening: gradeAnswers() creates per-question-tag metrics, but structural
+        // tags (PASSAGE_1/2/3, SECTION_1/2/3/4) may not be on questions → seed from bands
+        seedAllSkillMetrics(user, readingBand, listeningBand, request.getWritingBand(), request.getSpeakingBand());
 
         // Auto-create Goals from placement result
         try {
