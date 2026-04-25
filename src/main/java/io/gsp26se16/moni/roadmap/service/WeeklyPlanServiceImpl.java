@@ -1206,7 +1206,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     private WeeklyPlanDetailResponse buildDetailResponse(WeeklyPlan plan, Users user) {
         List<DailySlot> allSlots = dailySlotRepository.findByWeeklyPlanOrderByDayOfWeekAscIdAsc(plan);
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = plan.getSimulatedToday() != null ? plan.getSimulatedToday() : LocalDate.now();
         List<DailySlot> todaySlots =
                 allSlots.stream().filter(s -> s.getSlotDate().equals(today)).toList();
 
@@ -1285,6 +1285,10 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                 .todayCompleted(todayCompleted)
                 .suggestVocabulary(suggestVocabulary)
                 .monthlyAssessmentPending(monthlyPending)
+                .simulatedToday(
+                        plan.getSimulatedToday() != null
+                                ? plan.getSimulatedToday().toString()
+                                : null)
                 .build();
     }
 

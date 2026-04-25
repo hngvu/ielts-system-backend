@@ -27,4 +27,5 @@ public class WeeklyPlanDetailResponse {
     Boolean todayCompleted;
     Boolean suggestVocabulary;
     Boolean monthlyAssessmentPending;
+    String simulatedToday;
 }
