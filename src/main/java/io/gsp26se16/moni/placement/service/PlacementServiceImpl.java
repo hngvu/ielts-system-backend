@@ -385,13 +385,13 @@ public class PlacementServiceImpl implements PlacementService {
             Users user, double readingBand, double listeningBand, double writingBand, double speakingBand) {
         LocalDateTime now = LocalDateTime.now();
 
-        // Reading: seed by passage type tags
-        for (String code : List.of("PASSAGE_1", "PASSAGE_2", "PASSAGE_3")) {
+        // Reading: seed by passage type tags (DB codes: READ_PASSAGE_1/2/3)
+        for (String code : List.of("READ_PASSAGE_1", "READ_PASSAGE_2", "READ_PASSAGE_3")) {
             seedCriterionMetric(user, code, Skill.READING, readingBand, now);
         }
 
-        // Listening: seed by section type tags
-        for (String code : List.of("SECTION_1", "SECTION_2", "SECTION_3", "SECTION_4")) {
+        // Listening: seed by section type tags (DB codes: LIST_SECTION_1/2/3/4)
+        for (String code : List.of("LIST_SECTION_1", "LIST_SECTION_2", "LIST_SECTION_3", "LIST_SECTION_4")) {
             seedCriterionMetric(user, code, Skill.LISTENING, listeningBand, now);
         }
 
