@@ -133,22 +133,37 @@ public class SimulationController {
     }
 
     /**
-     * Skip 1 day in the simulation.
-     * Brings future slots into "today" by subtracting 1 day from all current plan dates.
+     * Advance 1 day in the simulation.
+     * Shifts the entire weekly plan 1 day into the past so that
+     * "tomorrow's" slots become "today's" slots from the system's perspective.
+     * This simulates time moving forward without changing slot order.
      */
     @PostMapping("/skip-day/{userId}")
-    @Operation(summary = "[Simulation] Bỏ qua 1 ngày (đưa lịch ngày mai về hôm nay)")
+    @Operation(summary = "[Simulation] Tua nhanh 1 ngày (mở task ngày tiếp theo)")
     @Transactional
-    public ResponseEntity<ApiResponse<Map<String, Object>>> skipOneDay(@PathVariable String userId) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> advanceOneDay(@PathVariable String userId) {
         Users user = resolveUser(userId);
         WeeklyPlan currentPlan = getActivePlan(user);
 
-        // Shift weekly plan dates back by 1
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDate planStart = currentPlan.getWeekStartDate();
+        int currentDayIndex = (int) java.time.temporal.ChronoUnit.DAYS.between(planStart, today) + 1;
+        int nextDayIndex = currentDayIndex + 1;
+
+        if (nextDayIndex > 7) {
+            return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
+                    .code(1000)
+                    .message("Đã hết ngày trong tuần này. Dùng 'Evaluate & Next' để sang tuần mới.")
+                    .result(Map.of("success", false, "currentDay", currentDayIndex, "reason", "END_OF_WEEK"))
+                    .build());
+        }
+
+        // Shift plan dates 1 day backward → effectively advances "today" to next day
         currentPlan.setWeekStartDate(currentPlan.getWeekStartDate().minusDays(1));
         currentPlan.setWeekEndDate(currentPlan.getWeekEndDate().minusDays(1));
         weeklyPlanRepository.save(currentPlan);
 
-        // Shift all slot dates back by 1
+        // Shift all slot dates 1 day backward to match
         List<DailySlot> slots = dailySlotRepository.findByWeeklyPlanOrderByDayOfWeekAscIdAsc(currentPlan);
         int shifted = 0;
         for (DailySlot slot : slots) {
@@ -157,12 +172,25 @@ public class SimulationController {
             shifted++;
         }
 
-        log.info("[Simulation] Skipped 1 day for user {}, shifted {} slots", userId, shifted);
+        log.info(
+                "[Simulation] Advanced 1 day for user {}: day {} → day {}, shifted {} slots",
+                userId,
+                currentDayIndex,
+                nextDayIndex,
+                shifted);
 
         return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .code(1000)
-                .message("Đã skip 1 ngày thành công!")
-                .result(Map.of("success", true, "shiftedSlots", shifted))
+                .message("Đã tua nhanh 1 ngày! Bây giờ đang ở ngày " + nextDayIndex + " của tuần.")
+                .result(Map.of(
+                        "success",
+                        true,
+                        "previousDay",
+                        currentDayIndex,
+                        "currentDay",
+                        nextDayIndex,
+                        "shiftedSlots",
+                        shifted))
                 .build());
     }
 
