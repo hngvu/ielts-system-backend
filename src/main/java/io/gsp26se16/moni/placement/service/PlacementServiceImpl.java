@@ -34,6 +34,7 @@ import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
 import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
 import io.gsp26se16.moni.roadmap.service.GoalService;
 import io.gsp26se16.moni.tag.entity.Tag;
+import io.gsp26se16.moni.tag.repository.TagRepository;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
