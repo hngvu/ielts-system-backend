@@ -129,11 +129,24 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
             // ── Phase 6: Rule Engine ──────────────────────────────────────────
             Map<String, Object> finalResult = phase6Calculate(ta, cc, lr, gra);
 
-            // ── Phase 7: Feedback ─────────────────────────────────────────────
-            Map<String, Object> feedback = phase7Feedback(chatClient, chartData, sanitizedEssay, finalResult);
+            // ── Phase 7: Feedback (skip for off-topic/spam — band ≤ 3) ─────
+            double finalBand = (double) finalResult.get("final_band");
+            Map<String, Object> feedback;
+            if (finalBand <= 3.0) {
+                feedback = Map.of(
+                        "skipped",
+                        true,
+                        "reason",
+                        "Bài viết bị đánh giá lạc đề hoặc không hợp lệ nên không có phản hồi cải thiện.",
+                        "improvements",
+                        List.of(),
+                        "overall_strategy",
+                        "Hãy đọc kỹ đề bài và đảm bảo bài viết đúng chủ đề trước khi nộp.");
+            } else {
+                feedback = phase7Feedback(chatClient, chartData, sanitizedEssay, finalResult);
+            }
 
             // ── Lưu AiEvaluation + cập nhật submission COMPLETED ─────────────
-            double finalBand = (double) finalResult.get("final_band");
             persistEvaluation(submission, finalBand, finalResult, feedback);
 
             Map<String, Object> response = new HashMap<>();
