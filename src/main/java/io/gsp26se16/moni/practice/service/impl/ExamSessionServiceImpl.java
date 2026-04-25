@@ -75,9 +75,11 @@ public class ExamSessionServiceImpl implements ExamSessionService {
                 .findById(request.getTestId())
                 .orElseThrow(() -> new AppException(ErrorCode.TEST_NOT_FOUND));
 
-        if (test.getDuration() == null || test.getDuration() <= 0) {
+        Integer rawDuration = test.getDuration();
+        if (rawDuration == null || rawDuration <= 0) {
             throw new AppException(ErrorCode.TEST_NO_DURATION);
         }
+        int durationMinutes = toMinutes(rawDuration);
 
         // Check no active session exists
         testSessionRepository
@@ -94,7 +96,7 @@ public class ExamSessionServiceImpl implements ExamSessionService {
         Stimulus stimulus = structures.get(0).getStimulus();
 
         LocalDateTime now = LocalDateTime.now();
-        int durationSeconds = test.getDuration() * 60;
+        int durationSeconds = durationMinutes * 60;
 
         // Create session
         TestSession session = new TestSession();
@@ -491,6 +493,11 @@ public class ExamSessionServiceImpl implements ExamSessionService {
                 .explanation(explanationText)
                 .evidence(evidenceText)
                 .build();
+    }
+
+    private int toMinutes(Integer duration) {
+        if (duration == null || duration <= 0) return 0;
+        return duration >= 300 ? Math.round(duration / 60.0f) : duration;
     }
 
     private Users getCurrentUser() {
