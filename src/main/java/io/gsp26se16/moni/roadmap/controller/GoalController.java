@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.*;
 import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.roadmap.dto.response.GoalResponse;
 import io.gsp26se16.moni.roadmap.dto.response.LearnerRoadmapInsightsResponse;
+import io.gsp26se16.moni.roadmap.dto.response.MetricSummaryResponse;
 import io.gsp26se16.moni.roadmap.service.GoalService;
+import io.gsp26se16.moni.roadmap.service.MetricAiSummaryService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 
@@ -20,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class GoalController {
 
     private final GoalService goalService;
+    private final MetricAiSummaryService metricAiSummaryService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<GoalResponse>>> getActiveGoals() {
@@ -42,6 +45,19 @@ public class GoalController {
         return ResponseEntity.ok(ApiResponse.<LearnerRoadmapInsightsResponse>builder()
                 .code(1000)
                 .message("Lấy thông tin insights thành công!")
+                .result(result)
+                .build());
+    }
+
+    @GetMapping("/insights/ai-summary")
+    @Operation(summary = "AI phân tích chỉ số học tập và đưa ra khuyến nghị")
+    public ResponseEntity<ApiResponse<MetricSummaryResponse>> getMetricAiSummary() {
+
+        MetricSummaryResponse result = metricAiSummaryService.generateMetricSummary();
+
+        return ResponseEntity.ok(ApiResponse.<MetricSummaryResponse>builder()
+                .code(1000)
+                .message("Tạo phân tích AI thành công!")
                 .result(result)
                 .build());
     }

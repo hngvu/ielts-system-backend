@@ -86,7 +86,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         double difficulty = calculateDifficulty(user, previous);
 
         // Calculate week dates (next Monday → Sunday)
-        LocalDate weekStart = calculateWeekStart();
+        LocalDate weekStart = calculateWeekStart(previous);
         LocalDate weekEnd = weekStart.plusDays(6);
 
         // Create weekly plan
@@ -1198,8 +1198,13 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         return null;
     }
 
-    private LocalDate calculateWeekStart() {
-        // Plan bắt đầu ngay từ hôm nay, không cần đợi đến thứ Hai
+    private LocalDate calculateWeekStart(WeeklyPlan previous) {
+        if (previous != null && previous.getWeekEndDate() != null) {
+            LocalDate nextDay = previous.getWeekEndDate().plusDays(1);
+            LocalDate today = LocalDate.now();
+            return nextDay.isAfter(today) ? nextDay : today;
+        }
+        // Tuần đầu tiên: bắt đầu từ hôm nay
         return LocalDate.now();
     }
 
