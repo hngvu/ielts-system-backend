@@ -53,8 +53,8 @@ public class ExpertServiceImpl implements ExpertService {
             experts = expertProfileRepository.findAll();
         }
 
-        // Auto-set OFFLINE nếu không ping trong 30s (không lọc, chỉ đồng bộ trạng thái hiển thị)
-        java.time.LocalDateTime threshold = java.time.LocalDateTime.now().minusSeconds(30);
+        // Auto-set OFFLINE nếu không ping trong 60s (buffer cho browser tab throttling + network jitter)
+        java.time.LocalDateTime threshold = java.time.LocalDateTime.now().minusSeconds(60);
         for (ExpertProfile ep : experts) {
             if (ep.getStatus() == ExpertStatus.AVAILABLE
                     && (ep.getLastActiveAt() == null || ep.getLastActiveAt().isBefore(threshold))) {
@@ -71,9 +71,9 @@ public class ExpertServiceImpl implements ExpertService {
     public ExpertProfileResponse getExpert(Integer id) {
         ExpertProfile profile =
                 expertProfileRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.EXPERT_NOT_FOUND));
-        // Auto-set OFFLINE nếu không ping trong 30s
+        // Auto-set OFFLINE nếu không ping trong 60s
         if (profile.getStatus() == ExpertStatus.AVAILABLE) {
-            java.time.LocalDateTime threshold = java.time.LocalDateTime.now().minusSeconds(30);
+            java.time.LocalDateTime threshold = java.time.LocalDateTime.now().minusSeconds(60);
             if (profile.getLastActiveAt() == null || profile.getLastActiveAt().isBefore(threshold)) {
                 profile.setStatus(ExpertStatus.OFFLINE);
                 expertProfileRepository.save(profile);
