@@ -30,11 +30,24 @@ public class PlacementSubmitRequest {
     @Valid
     List<AnswerRequest> listeningAnswers;
 
+    // Writing
     @NotNull
-    Double writingBand;
+    Integer writingTestId;
 
     @NotNull
-    Double speakingBand;
+    String writingEssay;
+
+    @NotNull
+    Integer writingTaskType; // 1 = Task 1, 2 = Task 2
+
+    Integer writingStimulusId; // For Task 1 chart analysis
+
+    // Speaking
+    @NotNull
+    Integer speakingTestId;
+
+    @NotNull
+    String speakingAudioBase64;
 
     @NotNull
     Double targetBand;

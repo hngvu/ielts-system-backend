@@ -12,4 +12,6 @@ import lombok.experimental.FieldDefaults;
 public class PlacementTestResponse {
     TestDetailResponse readingTest;
     TestDetailResponse listeningTest;
+    TestDetailResponse writingTest;
+    TestDetailResponse speakingTest;
 }

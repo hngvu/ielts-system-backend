@@ -74,6 +74,11 @@ public enum ErrorCode {
     PLACEMENT_NO_LISTENING_TEST(1051, "Không có bài thi Listening nào được công bố", HttpStatus.NOT_FOUND),
     PLACEMENT_INVALID_BAND(1052, "Điểm band không hợp lệ (0-9, bước 0.5)", HttpStatus.BAD_REQUEST),
     PLACEMENT_NOT_FOUND(1053, "Không tìm thấy kết quả kiểm tra trình độ", HttpStatus.NOT_FOUND),
+    PLACEMENT_CONFIG_NOT_FOUND(1093, "Không tìm thấy cấu hình placement", HttpStatus.NOT_FOUND),
+    PLACEMENT_CONFIG_INVALID_TEST(
+            1094, "Bài thi không hợp lệ: sai kỹ năng hoặc chưa được công bố", HttpStatus.BAD_REQUEST),
+    PLACEMENT_CONFIG_NONE_ACTIVE(1095, "Chưa có cấu hình placement nào được kích hoạt", HttpStatus.NOT_FOUND),
+    PLACEMENT_CONFIG_CANNOT_DELETE_ACTIVE(1096, "Không thể xóa cấu hình đang được kích hoạt", HttpStatus.BAD_REQUEST),
 
     // --- CREDIT & PAYMENT ---
     INSUFFICIENT_CREDIT(1054, "Số dư credit không đủ", HttpStatus.BAD_REQUEST),

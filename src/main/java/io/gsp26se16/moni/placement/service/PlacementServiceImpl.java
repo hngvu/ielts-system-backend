@@ -1,15 +1,26 @@
 package io.gsp26se16.moni.placement.service;
 
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+import io.gsp26se16.moni.ai.speaking.service.ConversationEngine;
+import io.gsp26se16.moni.ai.writing.request.WritingRequest;
+import io.gsp26se16.moni.ai.writing.service.WritingTask1Service;
+import io.gsp26se16.moni.ai.writing.service.WritingTask2Service;
 import io.gsp26se16.moni.authentication.entity.UserCredentials;
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
@@ -18,15 +29,20 @@ import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.entity.Question;
 import io.gsp26se16.moni.content.entity.QuestionOption;
-import io.gsp26se16.moni.content.entity.Test;
+import io.gsp26se16.moni.content.entity.Stimulus;
+import io.gsp26se16.moni.content.entity.TestStructure;
 import io.gsp26se16.moni.content.repository.QuestionRepository;
 import io.gsp26se16.moni.content.repository.TestRepository;
+import io.gsp26se16.moni.content.repository.TestStructureRepository;
 import io.gsp26se16.moni.content.service.TestService;
+import io.gsp26se16.moni.content.service.TranscriptService;
 import io.gsp26se16.moni.placement.dto.request.PlacementSelfAssessRequest;
 import io.gsp26se16.moni.placement.dto.request.PlacementSubmitRequest;
 import io.gsp26se16.moni.placement.dto.response.PlacementResultResponse;
 import io.gsp26se16.moni.placement.dto.response.PlacementTestResponse;
+import io.gsp26se16.moni.placement.entity.PlacementConfig;
 import io.gsp26se16.moni.placement.entity.PlacementResult;
+import io.gsp26se16.moni.placement.repository.PlacementConfigRepository;
 import io.gsp26se16.moni.placement.repository.PlacementResultRepository;
 import io.gsp26se16.moni.placement.util.BandScoreUtil;
 import io.gsp26se16.moni.practice.dto.request.AnswerRequest;
@@ -43,61 +59,76 @@ import lombok.extern.slf4j.Slf4j;
 public class PlacementServiceImpl implements PlacementService {
 
     private final PlacementResultRepository placementResultRepository;
+    private final PlacementConfigRepository placementConfigRepository;
     private final TestRepository testRepository;
     private final TestService testService;
+    private final TestStructureRepository testStructureRepository;
     private final QuestionRepository questionRepository;
     private final UserCredentialsRepository userCredentialsRepository;
     private final GoalService goalService;
     private final LearnerMetricRepository learnerMetricRepository;
     private final TagRepository tagRepository;
+    private final WritingTask1Service writingTask1Service;
+    private final WritingTask2Service writingTask2Service;
+    private final ConversationEngine conversationEngine;
+    private final TranscriptService transcriptService;
+    private final Executor aiExecutor;
 
     public PlacementServiceImpl(
             PlacementResultRepository placementResultRepository,
+            PlacementConfigRepository placementConfigRepository,
             TestRepository testRepository,
             TestService testService,
+            TestStructureRepository testStructureRepository,
             QuestionRepository questionRepository,
             UserCredentialsRepository userCredentialsRepository,
             @Lazy GoalService goalService,
             LearnerMetricRepository learnerMetricRepository,
-            TagRepository tagRepository) {
+            TagRepository tagRepository,
+            WritingTask1Service writingTask1Service,
+            WritingTask2Service writingTask2Service,
+            ConversationEngine conversationEngine,
+            TranscriptService transcriptService,
+            @Qualifier("aiExecutor") Executor aiExecutor) {
         this.placementResultRepository = placementResultRepository;
+        this.placementConfigRepository = placementConfigRepository;
         this.testRepository = testRepository;
         this.testService = testService;
+        this.testStructureRepository = testStructureRepository;
         this.questionRepository = questionRepository;
         this.userCredentialsRepository = userCredentialsRepository;
         this.goalService = goalService;
         this.learnerMetricRepository = learnerMetricRepository;
         this.tagRepository = tagRepository;
+        this.writingTask1Service = writingTask1Service;
+        this.writingTask2Service = writingTask2Service;
+        this.conversationEngine = conversationEngine;
+        this.transcriptService = transcriptService;
+        this.aiExecutor = aiExecutor;
     }
 
     @Override
     @Transactional(readOnly = true)
     public PlacementTestResponse generate() {
-        Test readingTest = testRepository
-                .findRandomPublishedPlacementTest("READING")
-                .or(() -> testRepository.findRandomPublishedFullTest("READING"))
-                .or(() -> testRepository.findRandomPublishedTest("READING"))
-                .orElseThrow(() -> new AppException(ErrorCode.PLACEMENT_NO_READING_TEST));
-
-        Test listeningTest = testRepository
-                .findRandomPublishedPlacementTest("LISTENING")
-                .or(() -> testRepository.findRandomPublishedFullTest("LISTENING"))
-                .or(() -> testRepository.findRandomPublishedTest("LISTENING"))
-                .orElseThrow(() -> new AppException(ErrorCode.PLACEMENT_NO_LISTENING_TEST));
+        PlacementConfig config = placementConfigRepository
+                .findByIsActiveTrue()
+                .orElseThrow(() -> new AppException(ErrorCode.PLACEMENT_CONFIG_NONE_ACTIVE));
 
         return PlacementTestResponse.builder()
-                .readingTest(testService.getTestDetail(readingTest.getId()))
-                .listeningTest(testService.getTestDetail(listeningTest.getId()))
+                .readingTest(testService.getTestDetail(config.getReadingTest().getId()))
+                .listeningTest(
+                        testService.getTestDetail(config.getListeningTest().getId()))
+                .writingTest(testService.getTestDetail(config.getWritingTest().getId()))
+                .speakingTest(testService.getTestDetail(config.getSpeakingTest().getId()))
                 .build();
     }
 
     @Override
     public PlacementResultResponse submit(PlacementSubmitRequest request) {
         Users user = getCurrentUser();
-        validateBand(request.getWritingBand());
-        validateBand(request.getSpeakingBand());
         validateBand(request.getTargetBand());
 
+        // 1. Grade Reading & Listening (instant)
         int readingTotal = testRepository.countQuestionsByTestId(request.getReadingTestId());
         int listeningTotal = testRepository.countQuestionsByTestId(request.getListeningTestId());
 
@@ -106,15 +137,31 @@ public class PlacementServiceImpl implements PlacementService {
 
         double readingBand = BandScoreUtil.readingBand(readingCorrect, readingTotal);
         double listeningBand = BandScoreUtil.listeningBand(listeningCorrect, listeningTotal);
-        double overallBand = BandScoreUtil.overallBand(
-                readingBand, listeningBand, request.getWritingBand(), request.getSpeakingBand());
 
+        // 2. Grade Writing & Speaking in parallel (AI-based)
+        CompletableFuture<Map<String, Object>> writingFuture =
+                CompletableFuture.supplyAsync(() -> gradeWriting(request), aiExecutor);
+
+        CompletableFuture<Map<String, Object>> speakingFuture =
+                CompletableFuture.supplyAsync(() -> gradeSpeaking(user, request), aiExecutor);
+
+        CompletableFuture.allOf(writingFuture, speakingFuture).join();
+
+        Map<String, Object> writingResult = writingFuture.join();
+        Map<String, Object> speakingResult = speakingFuture.join();
+
+        double writingBand = extractWritingFinalBand(writingResult);
+        double speakingBand = extractSpeakingFinalBand(speakingResult);
+
+        double overallBand = BandScoreUtil.overallBand(readingBand, listeningBand, writingBand, speakingBand);
+
+        // 3. Save PlacementResult
         PlacementResult result = PlacementResult.builder()
                 .user(user)
                 .readingBand(readingBand)
                 .listeningBand(listeningBand)
-                .writingBand(request.getWritingBand())
-                .speakingBand(request.getSpeakingBand())
+                .writingBand(writingBand)
+                .speakingBand(speakingBand)
                 .overallBand(overallBand)
                 .targetBand(request.getTargetBand())
                 .readingCorrect(readingCorrect)
@@ -124,18 +171,17 @@ public class PlacementServiceImpl implements PlacementService {
 
         result = placementResultRepository.save(result);
 
-        // Seed LearnerMetrics for Writing & Speaking from self-assessed bands.
-        // Reading/Listening metrics are already created by gradeAnswers() from actual question tags.
-        seedWritingSpeakingMetrics(user, request.getWritingBand(), request.getSpeakingBand());
+        // 4. Seed Writing & Speaking LearnerMetrics from AI criteria
+        seedWritingSpeakingMetricsFromAI(user, writingResult, speakingResult);
 
-        // Auto-create Goals from placement result
+        // 5. Auto-create Goals
         try {
             goalService.createGoalsFromPlacement(
                     user,
                     readingBand,
                     listeningBand,
-                    request.getWritingBand(),
-                    request.getSpeakingBand(),
+                    writingBand,
+                    speakingBand,
                     user.getTargetReading(),
                     user.getTargetListening(),
                     user.getTargetWriting(),
@@ -145,7 +191,7 @@ public class PlacementServiceImpl implements PlacementService {
             log.warn("Không tạo được Goals từ placement result: {}", e.getMessage());
         }
 
-        return toResponse(result);
+        return toResponseWithAIDetails(result, writingResult, speakingResult);
     }
 
     @Override
@@ -176,7 +222,6 @@ public class PlacementServiceImpl implements PlacementService {
 
         result = placementResultRepository.save(result);
 
-        // Seed LearnerMetrics for ALL 4 skills from self-assessed bands
         seedAllSkillMetrics(
                 user,
                 request.getReadingBand(),
@@ -184,7 +229,6 @@ public class PlacementServiceImpl implements PlacementService {
                 request.getWritingBand(),
                 request.getSpeakingBand());
 
-        // Auto-create Goals from self-assessed placement result
         try {
             goalService.createGoalsFromPlacement(
                     user,
@@ -220,7 +264,304 @@ public class PlacementServiceImpl implements PlacementService {
         placementResultRepository.deleteAllByUser(user);
     }
 
-    // --- Helpers ---
+    // =========================================================================
+    // WRITING & SPEAKING AI GRADING
+    // =========================================================================
+
+    private Map<String, Object> gradeWriting(PlacementSubmitRequest request) {
+        try {
+            String question = extractWritingQuestion(request.getWritingTestId());
+
+            WritingRequest wr = new WritingRequest();
+            wr.setQuestion(question);
+            wr.setAnswer(request.getWritingEssay());
+            wr.setTaskType(request.getWritingTaskType());
+            wr.setStimulusId(request.getWritingStimulusId());
+
+            if (request.getWritingTaskType() == 1) {
+                return writingTask1Service.score(wr);
+            } else {
+                return writingTask2Service.score(wr);
+            }
+        } catch (JsonProcessingException e) {
+            log.error("Writing AI grading failed: {}", e.getMessage());
+            return Map.of();
+        } catch (Exception e) {
+            log.error("Writing AI grading failed: {}", e.getMessage());
+            return Map.of();
+        }
+    }
+
+    private Map<String, Object> gradeSpeaking(Users user, PlacementSubmitRequest request) {
+        try {
+            byte[] audioBytes = Base64.getDecoder().decode(request.getSpeakingAudioBase64());
+            String transcript = transcriptService.transcribeAudioBytes(audioBytes, "audio/webm");
+
+            String question = extractSpeakingQuestion(request.getSpeakingTestId());
+
+            return conversationEngine.evaluatePractice(user.getId().toString(), question, transcript);
+        } catch (Exception e) {
+            log.error("Speaking AI grading failed: {}", e.getMessage());
+            return Map.of();
+        }
+    }
+
+    private String extractWritingQuestion(Integer testId) {
+        List<TestStructure> structures = testStructureRepository.findByTestId(testId);
+        if (structures.isEmpty()) return "Write an essay on the given topic.";
+
+        Stimulus stimulus = structures.get(0).getStimulus();
+        return stimulus.getContent() != null ? stimulus.getContent() : "Write an essay on the given topic.";
+    }
+
+    private String extractSpeakingQuestion(Integer testId) {
+        List<TestStructure> structures = testStructureRepository.findByTestId(testId);
+        if (structures.isEmpty()) return "Describe a topic you are interested in.";
+
+        Stimulus stimulus = structures.get(0).getStimulus();
+        if (stimulus.getContent() != null) return stimulus.getContent();
+
+        // Fallback: get first question from question groups
+        if (stimulus.getQuestionGroups() != null
+                && !stimulus.getQuestionGroups().isEmpty()) {
+            var firstGroup = stimulus.getQuestionGroups().iterator().next();
+            if (firstGroup.getQuestions() != null && !firstGroup.getQuestions().isEmpty()) {
+                var firstQuestion = firstGroup.getQuestions().iterator().next();
+                if (firstQuestion.getContent() != null) return firstQuestion.getContent();
+            }
+        }
+
+        return "Describe a topic you are interested in.";
+    }
+
+    @SuppressWarnings("unchecked")
+    private double extractWritingFinalBand(Map<String, Object> result) {
+        try {
+            if (result == null || result.isEmpty()) return 0.0;
+            Map<String, Object> assessment = (Map<String, Object>) result.get("assessment");
+            if (assessment == null) return 0.0;
+            Object finalBand = assessment.get("final_band");
+            if (finalBand instanceof Number n) return n.doubleValue();
+            return 0.0;
+        } catch (Exception e) {
+            log.warn("Could not extract writing final band: {}", e.getMessage());
+            return 0.0;
+        }
+    }
+
+    private double extractSpeakingFinalBand(Map<String, Object> result) {
+        try {
+            if (result == null || result.isEmpty()) return 0.0;
+            Object score = result.get("overallScore");
+            if (score instanceof Number n) return n.doubleValue();
+            return 0.0;
+        } catch (Exception e) {
+            log.warn("Could not extract speaking final band: {}", e.getMessage());
+            return 0.0;
+        }
+    }
+
+    // =========================================================================
+    // SEED LEARNER METRICS
+    // =========================================================================
+
+    /**
+     * Seed Writing & Speaking LearnerMetrics from AI evaluation criteria.
+     * Uses per-criterion bands from AI (higher accuracy than self-assessment).
+     */
+    @SuppressWarnings("unchecked")
+    private void seedWritingSpeakingMetricsFromAI(
+            Users user, Map<String, Object> writingResult, Map<String, Object> speakingResult) {
+        LocalDateTime now = LocalDateTime.now();
+
+        // Writing criteria from AI
+        Map<String, Double> writingCriteria = extractWritingCriteriaBands(writingResult);
+        seedCriterionMetricFromAI(user, "W_TA", Skill.WRITING, writingCriteria.getOrDefault("TA", 0.0), now);
+        seedCriterionMetricFromAI(user, "W_CC", Skill.WRITING, writingCriteria.getOrDefault("CC", 0.0), now);
+        seedCriterionMetricFromAI(user, "W_LR", Skill.WRITING, writingCriteria.getOrDefault("LR", 0.0), now);
+        seedCriterionMetricFromAI(user, "W_GRA", Skill.WRITING, writingCriteria.getOrDefault("GRA", 0.0), now);
+
+        // Speaking criteria from AI
+        Map<String, Double> speakingCriteria = extractSpeakingCriteriaBands(speakingResult);
+        seedCriterionMetricFromAI(user, "FC", Skill.SPEAKING, speakingCriteria.getOrDefault("FC", 0.0), now);
+        seedCriterionMetricFromAI(user, "LR", Skill.SPEAKING, speakingCriteria.getOrDefault("LR", 0.0), now);
+        seedCriterionMetricFromAI(user, "GRA", Skill.SPEAKING, speakingCriteria.getOrDefault("GRA", 0.0), now);
+        seedCriterionMetricFromAI(user, "PR", Skill.SPEAKING, speakingCriteria.getOrDefault("PR", 0.0), now);
+
+        log.info("Seeded Writing/Speaking LearnerMetrics from AI evaluation");
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Double> extractWritingCriteriaBands(Map<String, Object> result) {
+        try {
+            if (result == null || result.isEmpty()) return Map.of();
+            Map<String, Object> assessment = (Map<String, Object>) result.get("assessment");
+            if (assessment == null) return Map.of();
+            Map<String, Object> criteria = (Map<String, Object>) assessment.get("criteria");
+            if (criteria == null) return Map.of();
+
+            return Map.of(
+                    "TA", getBandFromCriterion(criteria, "TA", "TR"),
+                    "CC", getBandFromCriterion(criteria, "CC", null),
+                    "LR", getBandFromCriterion(criteria, "LR", null),
+                    "GRA", getBandFromCriterion(criteria, "GRA", null));
+        } catch (Exception e) {
+            log.warn("Could not extract writing criteria bands: {}", e.getMessage());
+            return Map.of();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Double> extractSpeakingCriteriaBands(Map<String, Object> result) {
+        try {
+            if (result == null || result.isEmpty()) return Map.of();
+            Map<String, Object> criteria = (Map<String, Object>) result.get("criteria");
+            if (criteria == null) {
+                // Fallback to top-level keys
+                return Map.of(
+                        "FC", getDoubleOrDefault(result, "fluency", 0.0),
+                        "LR", getDoubleOrDefault(result, "vocabulary", 0.0),
+                        "GRA", getDoubleOrDefault(result, "grammar", 0.0),
+                        "PR", getDoubleOrDefault(result, "pronunciation", 0.0));
+            }
+
+            return Map.of(
+                    "FC", getBandFromCriterion(criteria, "FC", null),
+                    "LR", getBandFromCriterion(criteria, "LR", null),
+                    "GRA", getBandFromCriterion(criteria, "GRA", null),
+                    "PR", getBandFromCriterion(criteria, "PR", null));
+        } catch (Exception e) {
+            log.warn("Could not extract speaking criteria bands: {}", e.getMessage());
+            return Map.of();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private double getBandFromCriterion(Map<String, Object> criteriaMap, String key, String altKey) {
+        Object obj = criteriaMap.get(key);
+        if (obj == null && altKey != null) obj = criteriaMap.get(altKey);
+        if (obj instanceof Map<?, ?> map) {
+            Object adjusted = map.get("adjusted_band");
+            if (adjusted instanceof Number n) return n.doubleValue();
+            Object band = map.get("band");
+            if (band instanceof Number n) return n.doubleValue();
+        }
+        if (obj instanceof Number n) return n.doubleValue();
+        return 0.0;
+    }
+
+    private double getDoubleOrDefault(Map<String, Object> map, String key, double defaultVal) {
+        Object val = map.get(key);
+        if (val instanceof Number n) return n.doubleValue();
+        return defaultVal;
+    }
+
+    /**
+     * Seed a single LearnerMetric from AI-evaluated band.
+     * Higher confidence (0.5) than self-assessed (0.33) since this is from actual test.
+     */
+    private void seedCriterionMetricFromAI(Users user, String tagCode, Skill skill, double band, LocalDateTime now) {
+        if (band <= 0.0) return; // Skip if AI grading failed for this criterion
+
+        Tag tag = tagRepository.findByCode(tagCode).orElse(null);
+        if (tag == null) {
+            log.debug("Tag not found for code={}, skipping metric seed", tagCode);
+            return;
+        }
+
+        LearnerMetric metric = learnerMetricRepository
+                .findByUserAndTagAndSkill(user, tag, skill)
+                .orElseGet(() -> {
+                    LearnerMetric m = new LearnerMetric();
+                    m.setUser(user);
+                    m.setTag(tag);
+                    m.setSkill(skill);
+                    m.setPGuess(0.05);
+                    m.setPSlip(0.15);
+                    m.setPTransit(0.1);
+                    return m;
+                });
+
+        double mastery = Math.max(0.0, Math.min(1.0, band / 9.0));
+        metric.setMasteryLevel(mastery);
+        metric.setAttemptCount(metric.getAttemptCount() == null ? 1 : metric.getAttemptCount() + 1);
+        metric.setConfidenceScore(0.5); // Higher than self-assess (0.33)
+        metric.setUpdatedAt(now);
+
+        learnerMetricRepository.save(metric);
+    }
+
+    // =========================================================================
+    // SELF-ASSESS SEED (unchanged)
+    // =========================================================================
+
+    private void seedWritingSpeakingMetrics(Users user, double writingBand, double speakingBand) {
+        LocalDateTime now = LocalDateTime.now();
+        seedCriterionMetric(user, "W_TA", Skill.WRITING, writingBand, now);
+        seedCriterionMetric(user, "W_CC", Skill.WRITING, writingBand, now);
+        seedCriterionMetric(user, "W_LR", Skill.WRITING, writingBand, now);
+        seedCriterionMetric(user, "W_GRA", Skill.WRITING, writingBand, now);
+        seedCriterionMetric(user, "FC", Skill.SPEAKING, speakingBand, now);
+        seedCriterionMetric(user, "LR", Skill.SPEAKING, speakingBand, now);
+        seedCriterionMetric(user, "GRA", Skill.SPEAKING, speakingBand, now);
+        seedCriterionMetric(user, "PR", Skill.SPEAKING, speakingBand, now);
+    }
+
+    private void seedAllSkillMetrics(
+            Users user, double readingBand, double listeningBand, double writingBand, double speakingBand) {
+        LocalDateTime now = LocalDateTime.now();
+
+        for (String code : List.of(
+                "QT_MCQ", "QT_TFNG", "QT_YNNG", "QT_GAP_FILLING", "QT_MATCH_HEAD", "QT_MATCH_INFO", "QT_SHORT_ANS")) {
+            seedCriterionMetric(user, code, Skill.READING, readingBand, now);
+        }
+
+        for (String code : List.of("QT_MCQ_L", "QT_GAP_FILLING_L", "QT_FORM_COMPLETION", "QT_NOTE_COMPLETION")) {
+            seedCriterionMetric(user, code, Skill.LISTENING, listeningBand, now);
+        }
+
+        seedWritingSpeakingMetrics(user, writingBand, speakingBand);
+
+        log.info(
+                "Seeded ALL LearnerMetrics (self-assess): R={}, L={}, W={}, S={}",
+                readingBand,
+                listeningBand,
+                writingBand,
+                speakingBand);
+    }
+
+    private void seedCriterionMetric(Users user, String tagCode, Skill skill, double band, LocalDateTime now) {
+        Tag tag = tagRepository.findByCode(tagCode).orElse(null);
+        if (tag == null) {
+            log.debug("Tag not found for code={}, skipping metric seed", tagCode);
+            return;
+        }
+
+        LearnerMetric metric = learnerMetricRepository
+                .findByUserAndTagAndSkill(user, tag, skill)
+                .orElseGet(() -> {
+                    LearnerMetric m = new LearnerMetric();
+                    m.setUser(user);
+                    m.setTag(tag);
+                    m.setSkill(skill);
+                    m.setPGuess(0.05);
+                    m.setPSlip(0.15);
+                    m.setPTransit(0.1);
+                    return m;
+                });
+
+        double mastery = Math.max(0.0, Math.min(1.0, band / 9.0));
+        metric.setMasteryLevel(mastery);
+        metric.setAttemptCount(metric.getAttemptCount() == null ? 1 : metric.getAttemptCount() + 1);
+        metric.setConfidenceScore(0.33);
+        metric.setUpdatedAt(now);
+
+        learnerMetricRepository.save(metric);
+    }
+
+    // =========================================================================
+    // GRADING (Reading/Listening MCQ)
+    // =========================================================================
 
     private int gradeAnswers(Users user, Skill skill, List<AnswerRequest> answers) {
         int correctCount = 0;
@@ -255,9 +596,7 @@ public class PlacementServiceImpl implements PlacementService {
 
             if (isCorrect) correctCount++;
 
-            // ============================================================
-            // [AI ENGINE] Cập nhật LearnerMetric ngay từ bài Placement Test
-            // ============================================================
+            // Bayesian LearnerMetric update
             Set<Tag> questionTags = question.getTags();
             if (questionTags != null && !questionTags.isEmpty()) {
                 for (Tag tag : questionTags) {
@@ -268,11 +607,9 @@ public class PlacementServiceImpl implements PlacementService {
                                 newMetric.setUser(user);
                                 newMetric.setTag(tag);
                                 newMetric.setSkill(skill);
-                                newMetric.setMasteryLevel(0.3); // Prior
+                                newMetric.setMasteryLevel(0.3);
                                 newMetric.setConfidenceScore(0.0);
                                 newMetric.setAttemptCount(0);
-
-                                // Placement Test chỉ có Reading và Listening
                                 newMetric.setPGuess(0.25);
                                 newMetric.setPSlip(0.10);
                                 newMetric.setPTransit(0.1);
@@ -284,7 +621,6 @@ public class PlacementServiceImpl implements PlacementService {
                     double pSlip = metric.getPSlip();
                     double pTransit = metric.getPTransit();
 
-                    // Toán học Bayes
                     double pLnew;
                     if (isCorrect) {
                         double pCorrectGivenL = 1.0 - pSlip;
@@ -312,6 +648,10 @@ public class PlacementServiceImpl implements PlacementService {
         }
         return correctCount;
     }
+
+    // =========================================================================
+    // HELPERS
+    // =========================================================================
 
     private QuestionOption findCorrectOption(Question question) {
         if (question.getOptions() == null) return null;
@@ -344,108 +684,6 @@ public class PlacementServiceImpl implements PlacementService {
         return user;
     }
 
-    // =========================================================================
-    // SEED LEARNER METRICS FROM PLACEMENT BANDS
-    // =========================================================================
-
-    /**
-     * Seed LearnerMetric for Writing & Speaking criteria from placement bands.
-     * Called after submit() — Reading/Listening already get metrics from gradeAnswers().
-     *
-     * Writing criteria: W_TA, W_CC, W_LR, W_GRA
-     * Speaking criteria: FC, LR (speaking), GRA (speaking), PR
-     */
-    private void seedWritingSpeakingMetrics(Users user, double writingBand, double speakingBand) {
-        LocalDateTime now = LocalDateTime.now();
-
-        // Writing criteria tags
-        seedCriterionMetric(user, "W_TA", Skill.WRITING, writingBand, now);
-        seedCriterionMetric(user, "W_CC", Skill.WRITING, writingBand, now);
-        seedCriterionMetric(user, "W_LR", Skill.WRITING, writingBand, now);
-        seedCriterionMetric(user, "W_GRA", Skill.WRITING, writingBand, now);
-
-        // Speaking criteria tags
-        seedCriterionMetric(user, "FC", Skill.SPEAKING, speakingBand, now);
-        seedCriterionMetric(user, "LR", Skill.SPEAKING, speakingBand, now);
-        seedCriterionMetric(user, "GRA", Skill.SPEAKING, speakingBand, now);
-        seedCriterionMetric(user, "PR", Skill.SPEAKING, speakingBand, now);
-
-        log.info(
-                "Seeded Writing/Speaking LearnerMetrics from placement: writing={}, speaking={}",
-                writingBand,
-                speakingBand);
-    }
-
-    /**
-     * Seed LearnerMetric for ALL 4 skills from self-assessed bands.
-     * Called after selfAssess() — no gradeAnswers() runs, so all skills need seeding.
-     */
-    /**
-     * Seed LearnerMetric for ALL 4 skills from self-assessed bands.
-     * Used by selfAssess() only — no gradeAnswers() runs, so R/L also need seeding.
-     * Seeds generic question type tags based on band level.
-     */
-    private void seedAllSkillMetrics(
-            Users user, double readingBand, double listeningBand, double writingBand, double speakingBand) {
-        LocalDateTime now = LocalDateTime.now();
-
-        // Reading: seed common question types (no Passage tags — those are structural only)
-        for (String code : List.of(
-                "QT_MCQ", "QT_TFNG", "QT_YNNG", "QT_GAP_FILLING", "QT_MATCH_HEAD", "QT_MATCH_INFO", "QT_SHORT_ANS")) {
-            seedCriterionMetric(user, code, Skill.READING, readingBand, now);
-        }
-
-        // Listening: seed common question types (no Section tags)
-        for (String code : List.of("QT_MCQ_L", "QT_GAP_FILLING_L", "QT_FORM_COMPLETION", "QT_NOTE_COMPLETION")) {
-            seedCriterionMetric(user, code, Skill.LISTENING, listeningBand, now);
-        }
-
-        // Writing & Speaking
-        seedWritingSpeakingMetrics(user, writingBand, speakingBand);
-
-        log.info(
-                "Seeded ALL LearnerMetrics (self-assess): R={}, L={}, W={}, S={}",
-                readingBand,
-                listeningBand,
-                writingBand,
-                speakingBand);
-    }
-
-    /**
-     * Create or update a single LearnerMetric from a placement band score.
-     * mastery = band / 9.0 (normalize to [0,1])
-     * confidence starts low (0.33) since this is self-assessed, not tested.
-     */
-    private void seedCriterionMetric(Users user, String tagCode, Skill skill, double band, LocalDateTime now) {
-        Tag tag = tagRepository.findByCode(tagCode).orElse(null);
-        if (tag == null) {
-            log.debug("Tag not found for code={}, skipping metric seed", tagCode);
-            return;
-        }
-
-        LearnerMetric metric = learnerMetricRepository
-                .findByUserAndTagAndSkill(user, tag, skill)
-                .orElseGet(() -> {
-                    LearnerMetric m = new LearnerMetric();
-                    m.setUser(user);
-                    m.setTag(tag);
-                    m.setSkill(skill);
-                    m.setPGuess(0.05);
-                    m.setPSlip(0.15);
-                    m.setPTransit(0.1);
-                    return m;
-                });
-
-        double mastery = Math.max(0.0, Math.min(1.0, band / 9.0));
-        metric.setMasteryLevel(mastery);
-        metric.setAttemptCount(metric.getAttemptCount() == null ? 1 : metric.getAttemptCount() + 1);
-        // Low confidence for placement (self-assessed) — will increase with real practice
-        metric.setConfidenceScore(0.33);
-        metric.setUpdatedAt(now);
-
-        learnerMetricRepository.save(metric);
-    }
-
     private PlacementResultResponse toResponse(PlacementResult result) {
         return PlacementResultResponse.builder()
                 .id(result.getId())
@@ -460,5 +698,39 @@ public class PlacementServiceImpl implements PlacementService {
                 .isSelfAssessed(result.getIsSelfAssessed())
                 .completedAt(result.getCompletedAt())
                 .build();
+    }
+
+    @SuppressWarnings("unchecked")
+    private PlacementResultResponse toResponseWithAIDetails(
+            PlacementResult result, Map<String, Object> writingResult, Map<String, Object> speakingResult) {
+        PlacementResultResponse response = toResponse(result);
+
+        // Writing criteria
+        response.setWritingCriteria(extractWritingCriteriaBands(writingResult));
+
+        // Writing feedback
+        try {
+            if (writingResult != null && writingResult.containsKey("feedback")) {
+                response.setWritingFeedback((Map<String, Object>) writingResult.get("feedback"));
+            }
+        } catch (Exception e) {
+            log.debug("Could not extract writing feedback");
+        }
+
+        // Speaking criteria
+        response.setSpeakingCriteria(extractSpeakingCriteriaBands(speakingResult));
+
+        // Speaking feedback
+        try {
+            if (speakingResult != null && speakingResult.containsKey("feedback")) {
+                response.setSpeakingFeedback((Map<String, Object>) speakingResult.get("feedback"));
+            } else if (speakingResult != null && speakingResult.containsKey("comments")) {
+                response.setSpeakingFeedback(Map.of("comments", speakingResult.get("comments")));
+            }
+        } catch (Exception e) {
+            log.debug("Could not extract speaking feedback");
+        }
+
+        return response;
     }
 }
