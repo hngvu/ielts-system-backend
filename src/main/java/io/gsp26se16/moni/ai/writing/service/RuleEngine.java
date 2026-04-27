@@ -97,12 +97,12 @@ public class RuleEngine {
     // =====================================================
     //
     // Pipeline (pre-adjust model):
-    //   1. Hard caps (violation-based caps on TA/TR/CC/LR/GRA)
-    //   2. Soft penalties (minor deductions)
-    //   3. Dependency scaling: TA/TR → CC, LR, GRA (strongest)
-    //   4. Dependency scaling: CC → LR, GRA
-    //   5. Cross-effects: LR → CC, GRA → CC (light)
-    //   6. Round all criteria to whole numbers
+    // 1. Hard caps (violation-based caps on TA/TR/CC/LR/GRA)
+    // 2. Soft penalties (minor deductions)
+    // 3. Dependency scaling: TA/TR → CC, LR, GRA (strongest)
+    // 4. Dependency scaling: CC → LR, GRA
+    // 5. Cross-effects: LR → CC, GRA → CC (light)
+    // 6. Round all criteria to whole numbers
     //
 
     public RuleResult applyAllRules(Map<String, Double> originalBands, Map<String, Violation> violations) {
