@@ -241,16 +241,29 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public List<PaymentResponse> searchPayments(
-            Integer userId, String status, LocalDateTime startDate, LocalDateTime endDate) {
+            Integer userId, String status, LocalDateTime startDate, LocalDateTime endDate, boolean isAdmin) {
 
+        // Non-admin users can only see their own payments
         String currentUserId = getCurrentUserIdFromJwt();
 
         Specification<Payment> spec = (root, query, criteriaBuilder) -> {
             Predicate predicate = criteriaBuilder.conjunction();
 
-            if (currentUserId != null) {
-                predicate = criteriaBuilder.and(
-                        predicate, criteriaBuilder.equal(root.get("user").get("id"), currentUserId));
+            if (isAdmin) {
+                // Admin: optionally filter by userId param
+                if (userId != null) {
+                    predicate = criteriaBuilder.and(
+                            predicate, criteriaBuilder.equal(root.get("user").get("id"), userId.toString()));
+                }
+            } else {
+                // Regular user: always scope to own payments
+                if (currentUserId != null) {
+                    predicate = criteriaBuilder.and(
+                            predicate, criteriaBuilder.equal(root.get("user").get("id"), currentUserId));
+                } else {
+                    // No authenticated user found — return nothing
+                    return criteriaBuilder.disjunction();
+                }
             }
 
             if (status != null) {

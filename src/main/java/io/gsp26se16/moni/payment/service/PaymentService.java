@@ -13,5 +13,6 @@ public interface PaymentService {
 
     PaymentResponse handleSePayCallback(SePayWebhookRequest sePayWebhookRequest);
 
-    List<PaymentResponse> searchPayments(Integer userId, String status, LocalDateTime startDate, LocalDateTime endDate);
+    List<PaymentResponse> searchPayments(
+            Integer userId, String status, LocalDateTime startDate, LocalDateTime endDate, boolean isAdmin);
 }
