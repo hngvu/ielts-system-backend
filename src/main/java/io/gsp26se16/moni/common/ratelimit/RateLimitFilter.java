@@ -111,8 +111,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private Policy resolvePolicy(String uri) {
         if (uri.startsWith("/api/v1/ai/")) return Policy.AI;
-        if (uri.startsWith("/auth/") || uri.startsWith("/credentials/") || uri.startsWith("/users/"))
-            return Policy.AUTH;
+        // AUTH chỉ cho login/register/credentials. /users/* đều đã require auth (PreAuthorize)
+        // nên dùng GENERAL (per-token bucket) — tránh trang admin user-detail bắn 7 request
+        // song song bị siết bởi AUTH bucket 10/phút theo IP.
+        if (uri.startsWith("/auth/") || uri.startsWith("/credentials/")) return Policy.AUTH;
         if (uri.startsWith("/api/v1/vocab/") || uri.startsWith("/api/v1/tests") || uri.startsWith("/api/v1/experts"))
             return Policy.PUBLIC;
         return Policy.GENERAL;
