@@ -189,6 +189,104 @@ public class ConversationEngine {
      * Trả format FE expects: { overallScore, fluency, pronunciation, vocabulary,
      * grammar, comments }
      */
+    /**
+     * AI scoring only — no submission, no evaluation record, no metric update.
+     * Used by placement test grading.
+     */
+    public Map<String, Object> evaluateForPlacement(String question, String transcript) {
+        if (transcript == null || transcript.isBlank()) {
+            return Map.of(
+                    "overallScore",
+                    0.0,
+                    "fluency",
+                    0.0,
+                    "pronunciation",
+                    0.0,
+                    "vocabulary",
+                    0.0,
+                    "grammar",
+                    0.0,
+                    "comments",
+                    "Không phát hiện giọng nói.");
+        }
+
+        String formattedTranscript = "Question: " + question + "\nAnswer: " + transcript;
+
+        try {
+            ChatClient chatClient =
+                    chatClientBuilder.defaultAdvisors(new SimpleLoggerAdvisor()).build();
+
+            CompletableFuture<Map<String, Object>> fcFuture = CompletableFuture.supplyAsync(
+                            () -> phase1FC(chatClient, formattedTranscript, question), aiExecutor)
+                    .exceptionally(ex -> {
+                        log.error("FC failed", ex);
+                        return helper.defaultCriterion("FC");
+                    });
+            CompletableFuture<Map<String, Object>> lrFuture = CompletableFuture.supplyAsync(
+                            () -> phase2LR(chatClient, formattedTranscript, question), aiExecutor)
+                    .exceptionally(ex -> {
+                        log.error("LR failed", ex);
+                        return helper.defaultCriterion("LR");
+                    });
+            CompletableFuture<Map<String, Object>> graFuture = CompletableFuture.supplyAsync(
+                            () -> phase3GRA(chatClient, formattedTranscript, question), aiExecutor)
+                    .exceptionally(ex -> {
+                        log.error("GRA failed", ex);
+                        return helper.defaultCriterion("GRA");
+                    });
+            CompletableFuture<Map<String, Object>> prFuture = CompletableFuture.supplyAsync(
+                            () -> phase4PR(chatClient, formattedTranscript, question), aiExecutor)
+                    .exceptionally(ex -> {
+                        log.error("PR failed", ex);
+                        return helper.defaultCriterion("PR");
+                    });
+
+            CompletableFuture.allOf(fcFuture, lrFuture, graFuture, prFuture).join();
+
+            Map<String, Object> assessment = speakingRuleEngine.calculateBands(
+                    fcFuture.join(), lrFuture.join(), graFuture.join(), prFuture.join());
+
+            Map<String, Object> feedback;
+            try {
+                feedback = phase5Feedback(chatClient, formattedTranscript, assessment);
+            } catch (Exception e) {
+                log.error("Feedback failed", e);
+                feedback = Map.of("summary", "Feedback unavailable.");
+            }
+
+            double finalBand = (double) assessment.get("final_band");
+            Map<String, Object> criteriaMap = (Map<String, Object>) assessment.get("criteria");
+            String comments = extractComments(feedback);
+
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("overallScore", finalBand);
+            response.put("fluency", getBandFromCriterion(criteriaMap, "FC"));
+            response.put("pronunciation", getBandFromCriterion(criteriaMap, "PR"));
+            response.put("vocabulary", getBandFromCriterion(criteriaMap, "LR"));
+            response.put("grammar", getBandFromCriterion(criteriaMap, "GRA"));
+            response.put("criteria", criteriaMap);
+            response.put("feedback", feedback);
+            response.put("comments", comments);
+            return response;
+
+        } catch (Exception e) {
+            log.error("Placement speaking scoring failed: {}", e.getMessage(), e);
+            return Map.of(
+                    "overallScore",
+                    0.0,
+                    "fluency",
+                    0.0,
+                    "pronunciation",
+                    0.0,
+                    "vocabulary",
+                    0.0,
+                    "grammar",
+                    0.0,
+                    "comments",
+                    "Evaluation failed.");
+        }
+    }
+
     public Map<String, Object> evaluatePractice(String userId, String question, String transcript) {
         if (transcript == null || transcript.isBlank()) {
             log.warn("Empty transcript for practice scoring, userId={}", userId);

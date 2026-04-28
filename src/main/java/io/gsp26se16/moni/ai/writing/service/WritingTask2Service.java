@@ -9,4 +9,10 @@ import io.gsp26se16.moni.ai.writing.request.WritingRequest;
 public interface WritingTask2Service {
 
     Map<String, Object> score(WritingRequest request) throws JsonProcessingException;
+
+    /**
+     * AI scoring only — no submission, no evaluation record, no metric update.
+     * Used by placement test grading.
+     */
+    Map<String, Object> scoreOnly(WritingRequest request) throws JsonProcessingException;
 }

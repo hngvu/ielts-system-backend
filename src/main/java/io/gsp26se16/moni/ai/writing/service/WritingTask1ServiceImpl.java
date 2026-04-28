@@ -164,6 +164,73 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
         }
     }
 
+    @Override
+    public Map<String, Object> scoreOnly(WritingRequest request) throws JsonProcessingException {
+        ChatClient chatClient = chatClientBuilder.build();
+
+        Map<String, Object> tempChartData = null;
+        if (request.getStimulusId() != null) {
+            tempChartData = getPreComputedVisionAnalysis(request.getStimulusId());
+        }
+        final Map<String, Object> chartData = tempChartData;
+
+        String sanitizedEssay = helper.sanitizeEssay(request.getAnswer());
+        final String question = request.getQuestion() != null ? request.getQuestion() : "";
+
+        Map<String, Object> parsedEssay = phase1Parse(chatClient, question, sanitizedEssay);
+
+        CompletableFuture<Map<String, Object>> taFuture = CompletableFuture.supplyAsync(
+                () -> {
+                    try {
+                        return phase2TaskAchievement(chatClient, question, sanitizedEssay, parsedEssay, chartData);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                aiExecutor);
+        CompletableFuture<Map<String, Object>> ccFuture = CompletableFuture.supplyAsync(
+                () -> {
+                    try {
+                        return phase3Coherence(chatClient, sanitizedEssay, parsedEssay);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                aiExecutor);
+        CompletableFuture<Map<String, Object>> lrFuture =
+                CompletableFuture.supplyAsync(() -> phase4Lexical(chatClient, sanitizedEssay), aiExecutor);
+        CompletableFuture<Map<String, Object>> graFuture =
+                CompletableFuture.supplyAsync(() -> phase5Grammar(chatClient, sanitizedEssay), aiExecutor);
+
+        CompletableFuture.allOf(taFuture, ccFuture, lrFuture, graFuture).join();
+
+        Map<String, Object> finalResult = phase6Calculate(
+                taFuture.join(), ccFuture.join(), lrFuture.join(), graFuture.join());
+
+        double finalBand = (double) finalResult.get("final_band");
+        Map<String, Object> feedback;
+        if (finalBand <= 3.0) {
+            feedback = Map.of(
+                    "skipped", true,
+                    "reason", "Bài viết bị đánh giá lạc đề hoặc không hợp lệ.",
+                    "improvements", List.of(),
+                    "overall_strategy", "Hãy đọc kỹ đề bài và viết đúng chủ đề.");
+        } else {
+            feedback = phase7Feedback(chatClient, chartData, sanitizedEssay, finalResult);
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("assessment", finalResult);
+        response.put("feedback", feedback);
+        response.put("parsed_structure", parsedEssay);
+        return response;
+    }
+
+    // =========================================================================
+    // PHASES
+    // =========================================================================
+    }
+
     // =========================================================================
     // PHASES
     // =========================================================================

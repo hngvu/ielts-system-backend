@@ -278,14 +278,12 @@ public class PlacementServiceImpl implements PlacementService {
             wr.setTaskType(request.getWritingTaskType());
             wr.setStimulusId(request.getWritingStimulusId());
 
+            // Use scoreOnly() — no submission, no evaluation record, no metric update
             if (request.getWritingTaskType() == 1) {
-                return writingTask1Service.score(wr);
+                return writingTask1Service.scoreOnly(wr);
             } else {
-                return writingTask2Service.score(wr);
+                return writingTask2Service.scoreOnly(wr);
             }
-        } catch (JsonProcessingException e) {
-            log.error("Writing AI grading failed: {}", e.getMessage());
-            return Map.of();
         } catch (Exception e) {
             log.error("Writing AI grading failed: {}", e.getMessage());
             return Map.of();
@@ -299,7 +297,8 @@ public class PlacementServiceImpl implements PlacementService {
 
             String question = extractSpeakingQuestion(request.getSpeakingTestId());
 
-            return conversationEngine.evaluatePractice(user.getId().toString(), question, transcript);
+            // Use evaluateForPlacement() — no submission, no evaluation record, no metric update
+            return conversationEngine.evaluateForPlacement(question, transcript);
         } catch (Exception e) {
             log.error("Speaking AI grading failed: {}", e.getMessage());
             return Map.of();
