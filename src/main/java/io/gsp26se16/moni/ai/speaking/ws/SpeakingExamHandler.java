@@ -226,8 +226,15 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
         String text = (String) payload.getOrDefault("text", "[no response]");
         if (text.isBlank()) text = "[no response]";
         String audioUrl = (String) payload.getOrDefault("audioUrl", "");
+        long durationMs = parseDurationMs(payload.get("durationMs"));
 
-        examinerService.handleTranscript(session, questionId, text, audioUrl);
+        examinerService.handleTranscript(session, questionId, text, audioUrl, durationMs);
+    }
+
+    /** Parse durationMs từ payload (có thể là Integer/Long/Number, hoặc null). */
+    private long parseDurationMs(Object raw) {
+        if (raw instanceof Number n) return n.longValue();
+        return 0L;
     }
 
     private void handleStartPart2(WebSocketSession ws) {
@@ -254,7 +261,8 @@ public class SpeakingExamHandler extends TextWebSocketHandler {
 
         String transcript = (String) payload.getOrDefault("text", "");
         String audioUrl = (String) payload.getOrDefault("audioUrl", "");
-        examinerService.stopPart2Speaking(session, transcript, audioUrl);
+        long durationMs = parseDurationMs(payload.get("durationMs"));
+        examinerService.stopPart2Speaking(session, transcript, audioUrl, durationMs);
     }
 
     private void handleEndExam(WebSocketSession ws) {

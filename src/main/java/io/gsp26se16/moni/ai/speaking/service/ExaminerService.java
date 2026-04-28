@@ -108,7 +108,8 @@ public class ExaminerService {
      * Nhận transcript từ client, lưu và hỏi câu tiếp theo.
      * Dùng cho Part 1 và Part 3.
      */
-    public void handleTranscript(ActiveExamSession session, Integer questionId, String transcript, String audioUrl)
+    public void handleTranscript(
+            ActiveExamSession session, Integer questionId, String transcript, String audioUrl, long durationMs)
             throws IOException {
         // Get current question content for AI evaluation context
         String questionContent = "";
@@ -117,9 +118,9 @@ public class ExaminerService {
         }
 
         if (session.getState() == ExamState.PART1_QUESTIONING) {
-            session.addPart1Transcript(questionId, questionContent, transcript, audioUrl);
+            session.addPart1Transcript(questionId, questionContent, transcript, audioUrl, durationMs);
         } else if (session.getState() == ExamState.PART3_QUESTIONING) {
-            session.addPart3Transcript(questionId, questionContent, transcript, audioUrl);
+            session.addPart3Transcript(questionId, questionContent, transcript, audioUrl, durationMs);
         }
         askNextQuestion(session);
     }
@@ -133,9 +134,11 @@ public class ExaminerService {
     /**
      * Client báo xong Part 2 (hết 120s hoặc im lặng).
      */
-    public void stopPart2Speaking(ActiveExamSession session, String transcript, String audioUrl) throws IOException {
+    public void stopPart2Speaking(ActiveExamSession session, String transcript, String audioUrl, long durationMs)
+            throws IOException {
         session.setPart2Transcript(transcript != null ? transcript : "");
         session.setPart2AudioUrl(audioUrl != null ? audioUrl : "");
+        session.setPart2DurationMs(durationMs);
         // Save Part 2 question content for AI evaluation
         if (session.getPart2Question() != null) {
             session.setPart2QuestionContent(session.getPart2Question().getContent());
