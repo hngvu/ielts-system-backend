@@ -44,6 +44,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
     WritingSubmissionRepository writingSubmissionRepository;
     DailyCoService dailyCoService;
     TestRepository testRepository;
+    io.gsp26se16.moni.notification.service.NotificationService notificationService;
 
     @Override
     @Transactional
@@ -236,7 +237,49 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
         session.setRoomUrl(roomUrl);
         session.setRoomName(roomName);
 
-        return toResponse(sessionRepository.save(session));
+        ScoringSession persisted = sessionRepository.save(session);
+        notifyAccepted(persisted);
+        return toResponse(persisted);
+    }
+
+    /** Notify learner — expert accepted their session. Best-effort, never breaks main flow. */
+    private void notifyAccepted(ScoringSession session) {
+        if (session.getUser() == null || session.getExpert() == null) return;
+        String learnerUserId = session.getUser().getId();
+        String expertName = session.getExpert().getUser() != null
+                ? session.getExpert().getUser().getFull_name()
+                : "Giảng viên";
+        String skillLabel = "WRITING".equalsIgnoreCase(session.getSkill()) ? "Writing" : "Speaking";
+        try {
+            notificationService.create(
+                    learnerUserId,
+                    io.gsp26se16.moni.notification.enumeration.NotificationType.EXPERT_ACCEPTED_SESSION,
+                    "Giảng viên đã nhận bài " + skillLabel,
+                    expertName + " đã nhận bài " + skillLabel + " của bạn và đang chuẩn bị chấm.",
+                    "/scoring-history",
+                    session.getId());
+        } catch (Exception ignored) {
+        }
+    }
+
+    /** Notify learner — expert finished scoring. */
+    private void notifyCompleted(ScoringSession session) {
+        if (session.getUser() == null || session.getExpert() == null) return;
+        String learnerUserId = session.getUser().getId();
+        String expertName = session.getExpert().getUser() != null
+                ? session.getExpert().getUser().getFull_name()
+                : "Giảng viên";
+        String skillLabel = "WRITING".equalsIgnoreCase(session.getSkill()) ? "Writing" : "Speaking";
+        try {
+            notificationService.create(
+                    learnerUserId,
+                    io.gsp26se16.moni.notification.enumeration.NotificationType.EXPERT_COMPLETED_SCORING,
+                    "Bài " + skillLabel + " đã được chấm xong",
+                    expertName + " đã hoàn tất chấm bài " + skillLabel + ". Vui lòng xem kết quả.",
+                    "/scoring-history",
+                    session.getId());
+        } catch (Exception ignored) {
+        }
     }
 
     @Override
@@ -320,6 +363,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
             });
         }
 
+        notifyCompleted(saved);
         return toResponse(saved);
     }
 
