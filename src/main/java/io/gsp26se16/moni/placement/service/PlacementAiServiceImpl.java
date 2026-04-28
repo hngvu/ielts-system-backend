@@ -54,24 +54,28 @@ public class PlacementAiServiceImpl implements PlacementAiService {
 
     private String buildPrompt(AiRecommendRequest req, long daysRemaining) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Bạn là chuyên gia tư vấn IELTS. Phân tích trình độ hiện tại và mục tiêu của học viên, ");
-        sb.append("sau đó gợi ý mục tiêu band điểm phù hợp và lộ trình học.\n\n");
+        sb.append("Bạn là chuyên gia tư vấn IELTS có nhiều năm kinh nghiệm luyện thi. ");
+        sb.append("Hãy phân tích trình độ hiện tại của học viên, đối chiếu với mục tiêu họ đặt ra, ");
+        sb.append("sau đó đề xuất mục tiêu band điểm phù hợp và giải thích chi tiết LÝ DO.\n\n");
 
-        sb.append("## Bảng quy đổi band IELTS (Academic)\n");
-        sb.append("Band điểm IELTS là thang 0-9, bước nhảy 0.5.\n");
-        sb.append("- Tăng 0.5 band: cần ~100-200 giờ học tập trung\n");
-        sb.append("- Tăng 1.0 band: cần ~200-400 giờ học tập trung\n");
-        sb.append("- Reading & Listening dễ tăng nhanh hơn Writing & Speaking\n");
-        sb.append("- Overall = trung bình 4 kỹ năng, làm tròn đến 0.5 gần nhất\n\n");
+        sb.append("## Kiến thức nền IELTS (Academic) — bám theo IELTS Band Descriptors chính thức\n");
+        sb.append(
+                "- Band IELTS thang 0-9, bước 0.5. Overall = trung bình 4 kỹ năng, làm tròn .25→.5 và .75→band kế tiếp.\n");
+        sb.append("- Tăng 0.5 band thường cần ~100-200 giờ học tập trung; tăng 1.0 band cần ~200-400 giờ.\n");
+        sb.append("- Reading & Listening (kỹ năng tiếp thụ) tăng nhanh hơn Writing & Speaking (kỹ năng sản sinh).\n");
+        sb.append(
+                "- Writing & Speaking thường bị nghẽn ở band 6.0-6.5 vì yêu cầu lexical resource và grammar range cao.\n");
+        sb.append("- Khoảng cách band > 2.0 trong thời gian < 6 tháng là phi thực tế với đa số học viên.\n");
+        sb.append("- Mục tiêu hợp lý nên cao hơn trình độ hiện tại 0.5-1.5 band tùy thời gian và cường độ học.\n\n");
 
-        sb.append("## Trình độ hiện tại\n");
+        sb.append("## Trình độ hiện tại của học viên (qua placement test)\n");
         sb.append(String.format("- Reading: %.1f\n", req.getCurrentReading()));
         sb.append(String.format("- Listening: %.1f\n", req.getCurrentListening()));
         sb.append(String.format("- Writing: %.1f\n", req.getCurrentWriting()));
         sb.append(String.format("- Speaking: %.1f\n", req.getCurrentSpeaking()));
         sb.append(String.format("- Overall: %.1f\n\n", req.getCurrentOverall()));
 
-        sb.append("## Mục tiêu hiện tại của học viên\n");
+        sb.append("## Mục tiêu học viên đang đặt\n");
         sb.append(String.format("- Reading: %.1f\n", safe(req.getTargetReading())));
         sb.append(String.format("- Listening: %.1f\n", safe(req.getTargetListening())));
         sb.append(String.format("- Writing: %.1f\n", safe(req.getTargetWriting())));
@@ -79,15 +83,24 @@ public class PlacementAiServiceImpl implements PlacementAiService {
         sb.append(String.format("- Overall: %.1f\n\n", safe(req.getTargetOverall())));
 
         if (daysRemaining >= 0) {
-            sb.append(String.format("## Thời gian còn lại: %d ngày (đến %s)\n\n", daysRemaining, req.getExamDate()));
+            sb.append(String.format("## Thời gian còn lại: %d ngày (đến %s)\n", daysRemaining, req.getExamDate()));
+            sb.append("Hãy cân nhắc thời gian này để đánh giá mục tiêu có khả thi không.\n\n");
         } else {
-            sb.append("## Chưa có ngày thi cụ thể\n\n");
+            sb.append("## Học viên CHƯA chốt lịch thi\n");
+            sb.append("Không có ràng buộc thời gian — phân tích DỰA TRÊN BAND GAP (chênh lệch giữa trình độ hiện tại ");
+            sb.append("và mục tiêu) để đưa ra mục tiêu phù hợp với năng lực hiện tại của học viên. ");
+            sb.append("Tự bạn quyết định band hợp lý dựa trên IELTS Band Descriptors.\n\n");
         }
 
-        sb.append("## Yêu cầu\n");
-        sb.append("1. Đánh giá mục tiêu hiện tại có thực tế không dựa trên trình độ và thời gian còn lại\n");
-        sb.append("2. Gợi ý band điểm MỤC TIÊU phù hợp cho từng kỹ năng (bước 0.5)\n");
-        sb.append("3. Đưa ra lộ trình học ngắn gọn, ưu tiên kỹ năng nào trước\n\n");
+        sb.append("## Yêu cầu phân tích\n");
+        sb.append(
+                "1. So sánh từng kỹ năng: trình độ hiện tại vs mục tiêu, chỉ ra kỹ năng nào ĐANG QUÁ XA, kỹ năng nào hợp lý.\n");
+        sb.append(
+                "2. Đề xuất band MỤC TIÊU phù hợp cho từng kỹ năng (bước 0.5) — có thể giữ nguyên nếu mục tiêu đã hợp lý.\n");
+        sb.append("3. Trong phần \"analysis\" GIẢI THÍCH CHI TIẾT lý do tại sao học viên nên chọn band bạn đề xuất, ");
+        sb.append("dẫn chứng cụ thể: gap bao nhiêu band, cần bao nhiêu giờ học, kỹ năng nào nên ưu tiên trước. ");
+        sb.append("Viết tự nhiên, thuyết phục, độ dài 5-8 câu, có thể dùng xuống dòng để tách ý.\n");
+        sb.append("4. Trong \"studyPlan\" tóm tắt lộ trình học 3-5 dòng, ưu tiên kỹ năng nào trước.\n\n");
 
         sb.append("## Trả lời theo JSON format chính xác:\n");
         sb.append("```json\n");
@@ -97,11 +110,11 @@ public class PlacementAiServiceImpl implements PlacementAiService {
         sb.append("  \"recommendedWriting\": 6.0,\n");
         sb.append("  \"recommendedSpeaking\": 6.0,\n");
         sb.append("  \"recommendedOverall\": 6.5,\n");
-        sb.append("  \"analysis\": \"Phân tích ngắn gọn 2-3 câu\",\n");
-        sb.append("  \"studyPlan\": \"Lộ trình học ngắn gọn 3-5 dòng\"\n");
+        sb.append("  \"analysis\": \"Phân tích chi tiết 5-8 câu, giải thích rõ lý do chọn band đề xuất\",\n");
+        sb.append("  \"studyPlan\": \"Lộ trình học 3-5 dòng\"\n");
         sb.append("}\n");
         sb.append("```\n");
-        sb.append("CHỈ trả về JSON, không thêm text khác.");
+        sb.append("CHỈ trả về JSON, không thêm text khác. Toàn bộ nội dung text bằng tiếng Việt.");
 
         return sb.toString();
     }
