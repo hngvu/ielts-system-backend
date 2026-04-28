@@ -350,12 +350,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .build();
 
         creditTransactionRepository.save(creditTransaction);
-        log.info(
-                "Credit topped up: user={}, amount=+{}, newBalance={}, late={}",
-                user.getId(),
-                creditAmount,
-                newBalance,
-                isLatePayment);
+        log.info("Package payment processed: user={}, amount=+{}, late={}", user.getId(), creditAmount, isLatePayment);
     }
 
     private Users getCurrentUser() {

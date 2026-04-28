@@ -204,17 +204,21 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
 
         CompletableFuture.allOf(taFuture, ccFuture, lrFuture, graFuture).join();
 
-        Map<String, Object> finalResult = phase6Calculate(
-                taFuture.join(), ccFuture.join(), lrFuture.join(), graFuture.join());
+        Map<String, Object> finalResult =
+                phase6Calculate(taFuture.join(), ccFuture.join(), lrFuture.join(), graFuture.join());
 
         double finalBand = (double) finalResult.get("final_band");
         Map<String, Object> feedback;
         if (finalBand <= 3.0) {
             feedback = Map.of(
-                    "skipped", true,
-                    "reason", "Bài viết bị đánh giá lạc đề hoặc không hợp lệ.",
-                    "improvements", List.of(),
-                    "overall_strategy", "Hãy đọc kỹ đề bài và viết đúng chủ đề.");
+                    "skipped",
+                    true,
+                    "reason",
+                    "Bài viết bị đánh giá lạc đề hoặc không hợp lệ.",
+                    "improvements",
+                    List.of(),
+                    "overall_strategy",
+                    "Hãy đọc kỹ đề bài và viết đúng chủ đề.");
         } else {
             feedback = phase7Feedback(chatClient, chartData, sanitizedEssay, finalResult);
         }
@@ -224,11 +228,6 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
         response.put("feedback", feedback);
         response.put("parsed_structure", parsedEssay);
         return response;
-    }
-
-    // =========================================================================
-    // PHASES
-    // =========================================================================
     }
 
     // =========================================================================

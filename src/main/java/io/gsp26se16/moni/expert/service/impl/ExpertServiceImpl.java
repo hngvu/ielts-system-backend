@@ -92,7 +92,6 @@ public class ExpertServiceImpl implements ExpertService {
         Users user = Users.builder()
                 .full_name(request.getDisplayName())
                 .avatar_url(request.getAvatarUrl())
-                .credit(0.0)
                 .build();
         Users savedUser = usersRepository.save(user);
 

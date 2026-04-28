@@ -15,8 +15,6 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import io.gsp26se16.moni.ai.speaking.service.ConversationEngine;
 import io.gsp26se16.moni.ai.writing.request.WritingRequest;
 import io.gsp26se16.moni.ai.writing.service.WritingTask1Service;
