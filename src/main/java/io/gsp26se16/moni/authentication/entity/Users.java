@@ -32,8 +32,6 @@ public class Users {
 
     LocalDate dateOfBirth;
 
-    Double credit;
-
     // IELTS target scores
     Double targetReading;
     Double targetListening;

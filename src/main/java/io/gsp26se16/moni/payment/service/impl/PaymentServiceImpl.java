@@ -216,10 +216,7 @@ public class PaymentServiceImpl implements PaymentService {
             createCreditTransaction(payment, true);
 
             if (payment.getUser() != null) {
-                double newBalance = payment.getUser().getCredit() != null
-                        ? payment.getUser().getCredit()
-                        : 0;
-                notificationService.notifyPaymentSuccess(payment.getUser().getId(), payment.getId(), newBalance);
+                notificationService.notifyPaymentSuccess(payment.getUser().getId(), payment.getId(), 0);
             }
 
             return toResponse(payment);
@@ -236,9 +233,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         // Push realtime notification to frontend
         if (payment.getUser() != null) {
-            double newBalance =
-                    payment.getUser().getCredit() != null ? payment.getUser().getCredit() : 0;
-            notificationService.notifyPaymentSuccess(payment.getUser().getId(), payment.getId(), newBalance);
+            notificationService.notifyPaymentSuccess(payment.getUser().getId(), payment.getId(), 0);
         }
 
         return toResponse(payment);
@@ -301,11 +296,10 @@ public class PaymentServiceImpl implements PaymentService {
             subscriptionService.activateSubscription(
                     subUser.getId(), payment.getSubscriptionPlan().getId());
 
-            int currentBal = subUser.getCredit() != null ? subUser.getCredit().intValue() : 0;
             CreditTransaction subTx = CreditTransaction.builder()
-                    .delta(0) // balance không đổi — đây chỉ là record purchase
-                    .balanceBefore(currentBal)
-                    .balanceAfter(currentBal)
+                    .delta(0)
+                    .balanceBefore(0)
+                    .balanceAfter(0)
                     .paymentType(PaymentType.SUBSCRIPTION_PURCHASE)
                     .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                     .user(subUser)
@@ -333,24 +327,17 @@ public class PaymentServiceImpl implements PaymentService {
 
         int creditAmount = payment.getPackagePricing().getCreditAmount();
         Users user = payment.getUser();
-        int currentBalance = user.getCredit() != null ? user.getCredit().intValue() : 0;
-        int newBalance = currentBalance + creditAmount;
 
         log.info(
-                "Updating user credit: userId={}, oldBalance={}, creditAmount={}, newBalance={}, isLate={}",
+                "Processing package payment: userId={}, creditAmount={}, isLate={}",
                 user.getId(),
-                currentBalance,
                 creditAmount,
-                newBalance,
                 isLatePayment);
-
-        user.setCredit((double) newBalance);
-        usersRepository.save(user);
 
         CreditTransaction creditTransaction = CreditTransaction.builder()
                 .delta(creditAmount)
-                .balanceBefore(currentBalance)
-                .balanceAfter(newBalance)
+                .balanceBefore(0)
+                .balanceAfter(0)
                 .paymentType(isLatePayment ? PaymentType.LATE_PAYMENT_TOPUP : PaymentType.TOPUP)
                 .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                 .user(user)

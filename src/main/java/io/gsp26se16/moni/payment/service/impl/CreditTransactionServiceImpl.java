@@ -90,17 +90,12 @@ public class CreditTransactionServiceImpl implements CreditTransactionService {
     public CreditTransactionResponse adjustCredit(String userId, CreditAdjustmentRequest request) {
         Users user = usersRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        int currentBalance = user.getCredit() != null ? user.getCredit().intValue() : 0;
         int adjustmentAmount = request.amount();
-        int newBalance = currentBalance + adjustmentAmount;
-
-        user.setCredit((double) newBalance);
-        usersRepository.save(user);
 
         CreditTransaction creditTransaction = CreditTransaction.builder()
                 .delta(adjustmentAmount)
-                .balanceBefore(currentBalance)
-                .balanceAfter(newBalance)
+                .balanceBefore(0)
+                .balanceAfter(0)
                 .paymentType(PaymentType.CREDIT_ADJUSTMENT)
                 .createdAt(LocalDateTime.now())
                 .user(user)
