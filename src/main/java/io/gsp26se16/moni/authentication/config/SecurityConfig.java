@@ -56,6 +56,9 @@ public class SecurityConfig {
                 .permitAll()
                 .requestMatchers(HttpMethod.GET, "/payments/subscribe")
                 .permitAll()
+                // SSE notifications — token via query param (EventSource doesn't support headers)
+                .requestMatchers(HttpMethod.GET, "/api/v1/notifications/stream")
+                .permitAll()
                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS)
                 .permitAll()
                 .requestMatchers(

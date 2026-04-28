@@ -143,6 +143,11 @@ public class AdminUserDetailController {
                                 }
                             }
 
+                            String scoringSessionStatus = scoringSessionRepository
+                                    .findByWritingSubmissionId(s.getId())
+                                    .map(sess -> sess.getStatus().name())
+                                    .orElse(null);
+
                             return new WritingSubmissionSummary(
                                     s.getId(),
                                     s.getTestId(),
@@ -153,7 +158,8 @@ public class AdminUserDetailController {
                                     s.getWordCount(),
                                     s.getEvaluationStatus(),
                                     s.getSubmittedAt(),
-                                    overallBand);
+                                    overallBand,
+                                    scoringSessionStatus);
                         })
                         .toList();
 

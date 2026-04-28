@@ -145,6 +145,13 @@ public class WritingSubmissionController {
                                 }
                             }
 
+                            // Trả thêm trạng thái ScoringSession để FE biết hiện nút "Huỷ" hay không
+                            // (chỉ huỷ được khi QUEUED — expert chưa nhận)
+                            String scoringSessionStatus = scoringSessionRepository
+                                    .findByWritingSubmissionId(s.getId())
+                                    .map(sess -> sess.getStatus().name())
+                                    .orElse(null);
+
                             return new WritingSubmissionSummary(
                                     s.getId(),
                                     s.getTestId(),
@@ -155,7 +162,8 @@ public class WritingSubmissionController {
                                     s.getWordCount(),
                                     s.getEvaluationStatus(),
                                     s.getSubmittedAt(),
-                                    overallBand);
+                                    overallBand,
+                                    scoringSessionStatus);
                         })
                         .toList();
 
@@ -364,7 +372,7 @@ public class WritingSubmissionController {
     /** Response DTO khi nộp bài thành công */
     public record SubmitWritingResponse(Long submissionId, String evaluationStatus, LocalDateTime submittedAt) {}
 
-    /** DTO tóm tắt cho lịch sử nộp bài — kèm overallBand nếu đã chấm */
+    /** DTO tóm tắt cho lịch sử nộp bài — kèm overallBand và trạng thái scoring session (nếu có) */
     public record WritingSubmissionSummary(
             Long submissionId,
             Integer testId,
@@ -375,7 +383,8 @@ public class WritingSubmissionController {
             Integer wordCount,
             EvaluationStatus evaluationStatus,
             LocalDateTime submittedAt,
-            Double overallBand) {}
+            Double overallBand,
+            String scoringSessionStatus) {}
 
     /** DTO kết quả chấm điểm AI */
     public record WritingEvaluationDetail(
