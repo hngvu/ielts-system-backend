@@ -58,6 +58,7 @@ public class ActiveExamSession {
     private final List<TranscriptEntry> part1Transcripts = new CopyOnWriteArrayList<>();
     private volatile String part2Transcript = "";
     private volatile String part2AudioUrl = "";
+    private volatile long part2DurationMs = 0L;
     private volatile String part2QuestionContent = "";
     private final List<TranscriptEntry> part3Transcripts = new CopyOnWriteArrayList<>();
 
@@ -70,12 +71,14 @@ public class ActiveExamSession {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    public void addPart1Transcript(Integer questionId, String questionContent, String text, String audioUrl) {
-        part1Transcripts.add(new TranscriptEntry(questionId, questionContent, text, audioUrl));
+    public void addPart1Transcript(
+            Integer questionId, String questionContent, String text, String audioUrl, long durationMs) {
+        part1Transcripts.add(new TranscriptEntry(questionId, questionContent, text, audioUrl, durationMs));
     }
 
-    public void addPart3Transcript(Integer questionId, String questionContent, String text, String audioUrl) {
-        part3Transcripts.add(new TranscriptEntry(questionId, questionContent, text, audioUrl));
+    public void addPart3Transcript(
+            Integer questionId, String questionContent, String text, String audioUrl, long durationMs) {
+        part3Transcripts.add(new TranscriptEntry(questionId, questionContent, text, audioUrl, durationMs));
     }
 
     public List<TranscriptEntry> getPart1Transcripts() {
@@ -133,9 +136,19 @@ public class ActiveExamSession {
         return urls;
     }
 
+    /** Per-question speaking duration (ms), song song với {@link #getAudioUrls()}. */
+    public List<Long> getAudioDurationsMs() {
+        List<Long> durations = new ArrayList<>();
+        for (TranscriptEntry e : part1Transcripts) durations.add(e.durationMs());
+        durations.add(part2DurationMs);
+        for (TranscriptEntry e : part3Transcripts) durations.add(e.durationMs());
+        return durations;
+    }
+
     public boolean isOpen() {
         return wsSession != null && wsSession.isOpen();
     }
 
-    public record TranscriptEntry(Integer questionId, String questionContent, String text, String audioUrl) {}
+    public record TranscriptEntry(
+            Integer questionId, String questionContent, String text, String audioUrl, long durationMs) {}
 }

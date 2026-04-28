@@ -72,6 +72,13 @@ public class SpeakingSubmission {
     @Column(name = "audio_transcript", columnDefinition = "TEXT")
     String audioTranscript;
 
+    /**
+     * JSON array thời gian nói (ms) của từng câu trả lời, song song với {@link #audioUrl}.
+     * Dùng để tính tổng thời gian user nói khi mở lại trang kết quả.
+     */
+    @Column(name = "audio_durations_ms", columnDefinition = "TEXT")
+    String audioDurationsMs;
+
     /** Trạng thái đánh giá hiện tại */
     @Enumerated(EnumType.STRING)
     @Column(name = "evaluation_status", nullable = false, length = 20)

@@ -153,6 +153,7 @@ public class SpeakingSubmissionController {
                         : null);
         dto.put("audioTranscript", submission.getAudioTranscript());
         dto.put("audioUrl", submission.getAudioUrl()); // JSON array of per-question audio URLs
+        dto.put("audioDurationsMs", submission.getAudioDurationsMs()); // JSON array (ms) song song với audioUrl
         dto.put("test", resolveTestInfo(submission));
 
         if (eval != null) {

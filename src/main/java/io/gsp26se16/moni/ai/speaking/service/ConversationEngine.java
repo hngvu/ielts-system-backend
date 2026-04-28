@@ -95,7 +95,8 @@ public class ConversationEngine {
 
         log.info("Bắt đầu đánh giá exam session {} — {} chars", examSessionId, fullTranscript.length());
 
-        SpeakingSubmission submission = createExamSubmission(session, fullTranscript, audioUrls);
+        List<Long> audioDurationsMs = session.getAudioDurationsMs();
+        SpeakingSubmission submission = createExamSubmission(session, fullTranscript, audioUrls, audioDurationsMs);
 
         try {
             ChatClient chatClient = chatClientBuilder.build();
@@ -320,7 +321,7 @@ public class ConversationEngine {
     // ─────────────────────────────── Private ─────────────────────────────────
 
     private SpeakingSubmission createExamSubmission(
-            ActiveExamSession session, String transcript, List<String> audioUrls) {
+            ActiveExamSession session, String transcript, List<String> audioUrls, List<Long> audioDurationsMs) {
         String credentialId = session.getUserId();
         // userId from JWT is credential ID, need to resolve to Users entity
         Users user = null;
@@ -340,6 +341,15 @@ public class ConversationEngine {
             }
         } catch (Exception e) {
             log.warn("Failed to serialize audioUrls", e);
+        }
+
+        String audioDurationsJson = null;
+        try {
+            if (audioDurationsMs != null && !audioDurationsMs.isEmpty()) {
+                audioDurationsJson = objectMapper.writeValueAsString(audioDurationsMs);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to serialize audioDurationsMs", e);
         }
 
         // Resolve Test entity
@@ -362,6 +372,7 @@ public class ConversationEngine {
                 .speakingSession(speakingSession)
                 .audioTranscript(transcript)
                 .audioUrl(audioUrlsJson)
+                .audioDurationsMs(audioDurationsJson)
                 .evaluationStatus(EvaluationStatus.PROCESSING)
                 .build();
 
