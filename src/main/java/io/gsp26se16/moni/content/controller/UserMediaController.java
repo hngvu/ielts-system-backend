@@ -13,7 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@PreAuthorize("hasRole('LEARNER')")
+@PreAuthorize("hasAnyRole('LEARNER','EXPERT')")
 @RequestMapping("/api/v1/user/media")
 @RequiredArgsConstructor
 @Tag(name = "User Media Management", description = "Upload file Audio/Image for regular users")
