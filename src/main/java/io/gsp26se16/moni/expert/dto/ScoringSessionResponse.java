@@ -35,4 +35,6 @@ public class ScoringSessionResponse {
     String expertRecordingUrl;
     Integer userRating;
     String userComment;
+    /** Overall band from ExpertEvaluation when session is COMPLETED; null otherwise. */
+    Double overallBand;
 }
