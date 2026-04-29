@@ -2,6 +2,7 @@ package io.gsp26se16.moni.payment.service.impl;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,7 +69,7 @@ public class CreditServiceImpl implements CreditService {
 
         // Deduct from subscription quota
         var activeSubOpt = userSubscriptionRepository.findFirstByUser_IdAndIsActiveTrueAndEndAtAfterOrderByEndAtDesc(
-                user.getId(), LocalDateTime.now());
+                user.getId(), LocalDateTime.now(ZoneOffset.UTC));
         if (activeSubOpt.isPresent()) {
             UserSubscription sub = activeSubOpt.get();
             if (isAi && canDeductAiFromSub(sub)) {
@@ -106,7 +107,7 @@ public class CreditServiceImpl implements CreditService {
                 .balanceBefore(0)
                 .balanceAfter(0)
                 .paymentType(PaymentType.CONSUME)
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                 .user(user)
                 .servicePricing(pricing)
                 .remark(pricing.getName() + " (miễn phí)")
@@ -122,7 +123,7 @@ public class CreditServiceImpl implements CreditService {
                 .balanceBefore(0)
                 .balanceAfter(0)
                 .paymentType(PaymentType.CONSUME)
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                 .user(user)
                 .servicePricing(pricing)
                 .quotaType(quotaType)
@@ -175,7 +176,7 @@ public class CreditServiceImpl implements CreditService {
     /** Hoàn 1 lượt vào subscription active. */
     private void refundToSubscription(Users user, ServicePricing pricing, String quotaType) {
         var activeSubOpt = userSubscriptionRepository.findFirstByUser_IdAndIsActiveTrueAndEndAtAfterOrderByEndAtDesc(
-                user.getId(), LocalDateTime.now());
+                user.getId(), LocalDateTime.now(ZoneOffset.UTC));
         if (activeSubOpt.isEmpty()) return;
 
         UserSubscription sub = activeSubOpt.get();
@@ -201,7 +202,7 @@ public class CreditServiceImpl implements CreditService {
                 .balanceBefore(0)
                 .balanceAfter(0)
                 .paymentType(PaymentType.REFUND)
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                 .user(user)
                 .servicePricing(pricing)
                 .quotaType(quotaType)
