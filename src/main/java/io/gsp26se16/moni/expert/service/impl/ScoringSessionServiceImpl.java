@@ -310,7 +310,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
         // Without this guard a late evaluation submit would set status COMPLETED on top of a
         // refunded session — learner sees a graded result yet keeps the refunded credit.
         if (session.getStatus() != SessionStatus.IN_PROGRESS && session.getStatus() != SessionStatus.QUEUED) {
-            throw new AppException(ErrorCode.SESSION_NOT_CANCELLABLE);
+            throw new AppException(ErrorCode.SESSION_NOT_GRADABLE);
         }
 
         // Auto-calculate overall from criteria scores
