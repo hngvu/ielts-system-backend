@@ -45,6 +45,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
     DailyCoService dailyCoService;
     TestRepository testRepository;
     io.gsp26se16.moni.notification.service.NotificationService notificationService;
+    io.gsp26se16.moni.expert.service.ExpertLearnerMetricService expertLearnerMetricService;
 
     @Override
     @Transactional
@@ -371,6 +372,32 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                 sub.setEvaluationStatus(io.gsp26se16.moni.common.enumeration.EvaluationStatus.COMPLETED);
                 writingSubmissionRepository.save(sub);
             });
+        }
+
+        // Update LearnerMetric + auto-complete weekly plan slot — mirror AI flow
+        // để roadmap tuần kế cập nhật dựa trên điểm expert chấm.
+        try {
+            if ("SPEAKING".equalsIgnoreCase(saved.getSkill())) {
+                expertLearnerMetricService.updateSpeakingFromExpert(
+                        saved.getUser(),
+                        saved.getTestId(),
+                        req.getFluency(),
+                        req.getVocabulary(),
+                        req.getGrammar(),
+                        req.getPronunciation(),
+                        overallScore);
+            } else if ("WRITING".equalsIgnoreCase(saved.getSkill())) {
+                expertLearnerMetricService.updateWritingFromExpert(
+                        saved.getUser(),
+                        saved.getWritingSubmissionId(),
+                        req.getTaskResponse(),
+                        req.getCoherence(),
+                        req.getLexicalResource(),
+                        req.getGrammaticalRange(),
+                        overallScore);
+            }
+        } catch (Exception e) {
+            // Non-fatal: lỗi update metric không ảnh hưởng evaluation đã save
         }
 
         notifyCompleted(saved);
