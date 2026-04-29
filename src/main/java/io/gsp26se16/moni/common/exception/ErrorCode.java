@@ -102,6 +102,10 @@ public enum ErrorCode {
     EXPERT_NOT_FOUND(1055, "Không tìm thấy chuyên gia", HttpStatus.NOT_FOUND),
     SCORING_SESSION_NOT_FOUND(1056, "Không tìm thấy phiên chấm điểm", HttpStatus.NOT_FOUND),
     SESSION_NOT_CANCELLABLE(1057, "Phiên này không thể huỷ", HttpStatus.BAD_REQUEST),
+    SESSION_NOT_GRADABLE(
+            1097,
+            "Phiên này đã bị huỷ tự động và không thể chấm điểm. Vui lòng đề nghị học viên đặt phiên mới.",
+            HttpStatus.BAD_REQUEST),
     EXPERT_NOT_AVAILABLE(1066, "Giảng viên hiện không sẵn sàng", HttpStatus.BAD_REQUEST),
 
     // --- EXAM SESSION MODULE ---
