@@ -6,4 +6,12 @@ import lombok.Builder;
 
 @Builder
 public record PaymentResponse(
-        Integer id, Integer packageId, String txnCode, Integer amount, LocalDateTime updatedAt, String status) {}
+        Integer id,
+        Integer packageId,
+        String packageName,
+        Integer subscriptionPlanId,
+        String subscriptionPlanName,
+        String txnCode,
+        Integer amount,
+        LocalDateTime updatedAt,
+        String status) {}

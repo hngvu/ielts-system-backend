@@ -3,6 +3,7 @@ package io.gsp26se16.moni.payment.service.impl;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -112,6 +113,32 @@ public class PaymentServiceImpl implements PaymentService {
                 paymentInitRequest.amount());
 
         LocalDateTime nowUtc = LocalDateTime.now(ZoneOffset.UTC);
+
+        // Try to reuse existing pending payment
+        Optional<Payment> existingPayment;
+        if (hasPackage) {
+            existingPayment =
+                    paymentRepository.findFirstByUserAndPackagePricingAndStatusAndExpiredAtAfterOrderByCreatedAtDesc(
+                            currentUser, packagePricing, PaymentStatus.PENDING, nowUtc.plusMinutes(1));
+        } else {
+            existingPayment =
+                    paymentRepository.findFirstByUserAndSubscriptionPlanAndStatusAndExpiredAtAfterOrderByCreatedAtDesc(
+                            currentUser, subscriptionPlan, PaymentStatus.PENDING, nowUtc.plusMinutes(1));
+        }
+
+        if (existingPayment.isPresent() && existingPayment.get().getAmount() == paymentInitRequest.amount()) {
+            Payment payment = existingPayment.get();
+            log.info("Reusing existing pending payment: id={}, txnCode={}", payment.getId(), payment.getTxnCode());
+            return PaymentInitResponse.builder()
+                    .id(payment.getId())
+                    .amount(payment.getAmount())
+                    .txnCode(payment.getTxnCode())
+                    .qrCodeUrl("https://qr.sepay.vn/img?" + "acc=" + sepayAcc + "&bank=" + sepayBank + "&amount="
+                            + payment.getAmount() + "&des=" + payment.getTxnCode())
+                    .expiredAt(payment.getExpiredAt())
+                    .build();
+        }
+
         var payment = paymentRepository.save(Payment.builder()
                 .packagePricing(packagePricing)
                 .subscriptionPlan(subscriptionPlan)
@@ -400,6 +427,18 @@ public class PaymentServiceImpl implements PaymentService {
                 .packageId(
                         payment.getPackagePricing() != null
                                 ? payment.getPackagePricing().getId()
+                                : null)
+                .packageName(
+                        payment.getPackagePricing() != null
+                                ? payment.getPackagePricing().getName()
+                                : null)
+                .subscriptionPlanId(
+                        payment.getSubscriptionPlan() != null
+                                ? payment.getSubscriptionPlan().getId()
+                                : null)
+                .subscriptionPlanName(
+                        payment.getSubscriptionPlan() != null
+                                ? payment.getSubscriptionPlan().getName()
                                 : null)
                 .txnCode(payment.getTxnCode())
                 .amount(payment.getAmount())
