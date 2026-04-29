@@ -70,8 +70,14 @@ public class SessionExpiryScheduler {
             // Writing IN_PROGRESS: bỏ qua — để expert chấm xong
             if (!isSpeaking) continue;
 
-            if (s.getCreatedAt() == null || s.getCreatedAt().toLocalDateTime().isAfter(speakingInProgressCutoff))
-                continue;
+            // BUG fix: dùng startedAt (lúc expert accept) thay vì createdAt (lúc book).
+            // Trước đây session ngồi trong queue lâu rồi expert mới accept thì
+            // ngay sau accept đã bị scheduler huỷ vì createdAt > 35 phút,
+            // dù call mới bắt đầu — gây refund kèm complete-after-cancel.
+            LocalDateTime referenceTime = s.getStartedAt() != null
+                    ? s.getStartedAt()
+                    : (s.getCreatedAt() != null ? s.getCreatedAt().toLocalDateTime() : null);
+            if (referenceTime == null || referenceTime.isAfter(speakingInProgressCutoff)) continue;
 
             cancelAndRefund(s, now);
             cancelled++;
