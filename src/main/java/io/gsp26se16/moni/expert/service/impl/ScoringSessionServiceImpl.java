@@ -249,13 +249,15 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
         String expertName = session.getExpert().getUser() != null
                 ? session.getExpert().getUser().getFull_name()
                 : "Giảng viên";
-        String skillLabel = "WRITING".equalsIgnoreCase(session.getSkill()) ? "Writing" : "Speaking";
+        boolean isWriting = "WRITING".equalsIgnoreCase(session.getSkill());
+        // "phiên Speaking" (live call) vs "bài Writing" (essay submission)
+        String subject = isWriting ? "bài Writing" : "phiên Speaking";
         try {
             notificationService.create(
                     learnerUserId,
                     io.gsp26se16.moni.notification.enumeration.NotificationType.EXPERT_ACCEPTED_SESSION,
-                    "Giảng viên đã nhận bài " + skillLabel,
-                    expertName + " đã nhận bài " + skillLabel + " của bạn và đang chuẩn bị chấm.",
+                    expertName + " đã nhận " + subject + " của bạn",
+                    expertName + " đã nhận " + subject + " của bạn và đang chuẩn bị chấm.",
                     "/scoring-history",
                     session.getId());
         } catch (Exception ignored) {
@@ -269,13 +271,14 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
         String expertName = session.getExpert().getUser() != null
                 ? session.getExpert().getUser().getFull_name()
                 : "Giảng viên";
-        String skillLabel = "WRITING".equalsIgnoreCase(session.getSkill()) ? "Writing" : "Speaking";
+        boolean isWriting = "WRITING".equalsIgnoreCase(session.getSkill());
+        String subject = isWriting ? "bài Writing" : "phiên Speaking";
         try {
             notificationService.create(
                     learnerUserId,
                     io.gsp26se16.moni.notification.enumeration.NotificationType.EXPERT_COMPLETED_SCORING,
-                    "Bài " + skillLabel + " đã được chấm xong",
-                    expertName + " đã hoàn tất chấm bài " + skillLabel + ". Vui lòng xem kết quả.",
+                    expertName + " đã chấm xong " + subject + " của bạn",
+                    expertName + " đã hoàn tất chấm " + subject + ". Vui lòng xem kết quả.",
                     "/scoring-history",
                     session.getId());
         } catch (Exception ignored) {
