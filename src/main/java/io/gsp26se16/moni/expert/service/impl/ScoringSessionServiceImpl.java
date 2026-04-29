@@ -588,6 +588,15 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
             }
         }
 
+        // Pull overall band from ExpertEvaluation when session is graded.
+        Double overallBand = null;
+        if (s.getStatus() == SessionStatus.COMPLETED) {
+            overallBand = evaluationRepository
+                    .findByScoringSession_Id(s.getId())
+                    .map(ExpertEvaluation::getOverallScore)
+                    .orElse(null);
+        }
+
         return ScoringSessionResponse.builder()
                 .id(s.getId())
                 .expertId(s.getExpert() != null ? s.getExpert().getId() : null)
@@ -611,6 +620,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                 .expertRecordingUrl(s.getExpertRecordingUrl())
                 .userRating(s.getUserRating())
                 .userComment(s.getUserComment())
+                .overallBand(overallBand)
                 .build();
     }
 
