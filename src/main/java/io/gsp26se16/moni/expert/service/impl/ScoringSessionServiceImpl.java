@@ -306,6 +306,13 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
 
+        // Reject completion if session was already cancelled / refunded by the scheduler.
+        // Without this guard a late evaluation submit would set status COMPLETED on top of a
+        // refunded session — learner sees a graded result yet keeps the refunded credit.
+        if (session.getStatus() != SessionStatus.IN_PROGRESS && session.getStatus() != SessionStatus.QUEUED) {
+            throw new AppException(ErrorCode.SESSION_NOT_CANCELLABLE);
+        }
+
         // Auto-calculate overall from criteria scores
         double overall = 0;
         int count = 0;
