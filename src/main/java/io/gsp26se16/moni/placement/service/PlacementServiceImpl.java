@@ -268,11 +268,24 @@ public class PlacementServiceImpl implements PlacementService {
 
     private Map<String, Object> gradeWriting(PlacementSubmitRequest request) {
         try {
+            String essay = request.getWritingEssay();
+            // Return 0.0 immediately if essay is empty or too short (no meaningful content)
+            if (essay == null || essay.trim().isEmpty()) {
+                log.info("Writing essay is empty — returning band 0.0");
+                return Map.of("assessment", Map.of("final_band", 0.0));
+            }
+
+            int wordCount = essay.trim().split("\\s+").length;
+            if (wordCount < 10) {
+                log.info("Writing essay too short ({} words) — returning band 0.0", wordCount);
+                return Map.of("assessment", Map.of("final_band", 0.0));
+            }
+
             String question = extractWritingQuestion(request.getWritingTestId());
 
             WritingRequest wr = new WritingRequest();
             wr.setQuestion(question);
-            wr.setAnswer(request.getWritingEssay());
+            wr.setAnswer(essay);
             wr.setTaskType(request.getWritingTaskType());
             wr.setStimulusId(request.getWritingStimulusId());
 
@@ -290,7 +303,18 @@ public class PlacementServiceImpl implements PlacementService {
 
     private Map<String, Object> gradeSpeaking(Users user, PlacementSubmitRequest request) {
         try {
-            byte[] audioBytes = Base64.getDecoder().decode(request.getSpeakingAudioBase64());
+            String audioBase64 = request.getSpeakingAudioBase64();
+            if (audioBase64 == null || audioBase64.trim().isEmpty()) {
+                log.info("Speaking audio is empty — returning band 0.0");
+                return Map.of("overallScore", 0.0, "comments", "Không có bài nói.");
+            }
+
+            byte[] audioBytes = Base64.getDecoder().decode(audioBase64);
+            if (audioBytes.length < 1000) {
+                log.info("Speaking audio too short ({} bytes) — returning band 0.0", audioBytes.length);
+                return Map.of("overallScore", 0.0, "comments", "Bài nói quá ngắn.");
+            }
+
             String transcript = transcriptService.transcribeAudioBytes(audioBytes, "audio/webm");
 
             String question = extractSpeakingQuestion(request.getSpeakingTestId());

@@ -106,16 +106,21 @@ public class UserServiceImpl implements UserService {
         return userMapper.toUserProfileResponse(usersRepository.save(user));
     }
 
+    private static double roundToIeltsBand(double val) {
+        return Math.round(Math.min(9.0, Math.max(0.0, val)) * 2.0) / 2.0;
+    }
+
     private void updateUserInfo(Users user, UpdateProfileRequest request) {
         if (request.getFullName() != null) user.setFull_name(request.getFullName());
         if (request.getAvatarUrl() != null) user.setAvatar_url(request.getAvatarUrl());
         if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
         if (request.getDateOfBirth() != null) user.setDateOfBirth(request.getDateOfBirth());
-        if (request.getTargetReading() != null) user.setTargetReading(request.getTargetReading());
-        if (request.getTargetListening() != null) user.setTargetListening(request.getTargetListening());
-        if (request.getTargetWriting() != null) user.setTargetWriting(request.getTargetWriting());
-        if (request.getTargetSpeaking() != null) user.setTargetSpeaking(request.getTargetSpeaking());
-        if (request.getTargetBand() != null) user.setTargetBand(request.getTargetBand());
+        if (request.getTargetReading() != null) user.setTargetReading(roundToIeltsBand(request.getTargetReading()));
+        if (request.getTargetListening() != null)
+            user.setTargetListening(roundToIeltsBand(request.getTargetListening()));
+        if (request.getTargetWriting() != null) user.setTargetWriting(roundToIeltsBand(request.getTargetWriting()));
+        if (request.getTargetSpeaking() != null) user.setTargetSpeaking(roundToIeltsBand(request.getTargetSpeaking()));
+        if (request.getTargetBand() != null) user.setTargetBand(roundToIeltsBand(request.getTargetBand()));
         if (request.getExamDate() != null) user.setExamDate(request.getExamDate());
     }
 }
