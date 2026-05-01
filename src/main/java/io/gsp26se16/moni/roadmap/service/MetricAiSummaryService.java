@@ -3,15 +3,21 @@ package io.gsp26se16.moni.roadmap.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import io.gsp26se16.moni.ai.writing.service.PromptLoader;
+import io.gsp26se16.moni.common.exception.AppException;
+import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.roadmap.dto.response.LearnerRoadmapInsightsResponse;
 import io.gsp26se16.moni.roadmap.dto.response.LearnerRoadmapInsightsResponse.TagMetricResponse;
 import io.gsp26se16.moni.roadmap.dto.response.MetricSummaryResponse;
+import io.gsp26se16.moni.roadmap.entity.MetricAiSummaryCache;
+import io.gsp26se16.moni.roadmap.repository.MetricAiSummaryCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,24 +29,58 @@ public class MetricAiSummaryService {
     private final ChatClient.Builder chatClientBuilder;
     private final GoalService goalService;
     private final PromptLoader promptLoader;
+    private final MetricAiSummaryCacheRepository metricAiSummaryCacheRepository;
 
     public MetricSummaryResponse generateMetricSummary() {
+        String userId = getCurrentUserId();
         LearnerRoadmapInsightsResponse insights = goalService.getRoadmapInsights();
+
+        Optional<MetricAiSummaryCache> cacheOpt = metricAiSummaryCacheRepository.findById(userId);
+        LocalDateTime lastMetricUpdate = insights.getLastMetricUpdatedAt();
+
+        if (cacheOpt.isPresent()) {
+            MetricAiSummaryCache cache = cacheOpt.get();
+            boolean isCacheValid = false;
+            if (lastMetricUpdate != null) {
+                // Buffer by 1 minute to avoid edge cases where metric is updated in the same transaction
+                isCacheValid = cache.getGeneratedAt().plusMinutes(1).isAfter(lastMetricUpdate)
+                        || cache.getGeneratedAt().isEqual(lastMetricUpdate);
+            } else {
+                isCacheValid =
+                        cache.getGeneratedAt().isAfter(LocalDateTime.now().minusDays(7));
+            }
+
+            if (isCacheValid) {
+                log.info("Returning cached AI summary for user {}", userId);
+                return MetricSummaryResponse.builder()
+                        .summary(cache.getSummary())
+                        .generatedAt(cache.getGeneratedAt())
+                        .build();
+            }
+        }
+
         String prompt = buildPrompt(insights);
 
         try {
             ChatClient chatClient = chatClientBuilder.build();
             String response = chatClient.prompt().user(prompt).call().content();
-            log.info("Metric AI summary generated successfully");
+            log.info("Metric AI summary generated successfully for user {}", userId);
 
             if (response == null || response.isBlank()) {
                 log.error("AI returned empty response for metric summary");
                 return fallbackResponse();
             }
 
-            return MetricSummaryResponse.builder()
+            MetricAiSummaryCache newCache = MetricAiSummaryCache.builder()
+                    .userId(userId)
                     .summary(response.trim())
                     .generatedAt(LocalDateTime.now())
+                    .build();
+            metricAiSummaryCacheRepository.save(newCache);
+
+            return MetricSummaryResponse.builder()
+                    .summary(response.trim())
+                    .generatedAt(newCache.getGeneratedAt())
                     .build();
         } catch (Exception e) {
             log.error("AI metric summary call failed", e);
@@ -136,5 +176,16 @@ public class MetricAiSummaryService {
 
     private double safe(Double val) {
         return val != null ? val : 0.0;
+    }
+
+    private String getCurrentUserId() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+        if (authentication.getPrincipal() instanceof org.springframework.security.oauth2.jwt.Jwt jwt) {
+            return jwt.getClaimAsString("userId");
+        }
+        throw new AppException(ErrorCode.UNAUTHENTICATED);
     }
 }
