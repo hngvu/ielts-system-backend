@@ -156,7 +156,7 @@ public class ExaminerService {
             Question q = session.getPart3Queue().poll();
             session.setCurrentQuestion(q);
             loadFollowUps(session, q);
-            sendQuestionEvent(ws, 3, q.getId(), q.getContent(), false);
+            sendQuestionEvent(ws, 3, q.getId(), q.getContent(), false, 0);
         } else {
             endExam(session);
         }
@@ -168,11 +168,12 @@ public class ExaminerService {
         WebSocketSession ws = session.getWsSession();
 
         if (session.getState() == ExamState.PART1_QUESTIONING) {
+            int index = session.getPart1Transcripts().size();
             // Còn follow-up của câu hiện tại?
             if (!session.getFollowUpQueue().isEmpty()) {
                 Question q = session.getFollowUpQueue().poll();
                 session.setCurrentQuestion(q);
-                sendQuestionEvent(ws, 1, q.getId(), q.getContent(), true);
+                sendQuestionEvent(ws, 1, q.getId(), q.getContent(), true, index);
                 return;
             }
             // Còn MAIN question?
@@ -180,7 +181,7 @@ public class ExaminerService {
                 Question q = session.getPart1Queue().poll();
                 session.setCurrentQuestion(q);
                 loadFollowUps(session, q);
-                sendQuestionEvent(ws, 1, q.getId(), q.getContent(), false);
+                sendQuestionEvent(ws, 1, q.getId(), q.getContent(), false, index);
                 return;
             }
             // Hết Part 1 → chuyển Part 2
@@ -189,17 +190,18 @@ public class ExaminerService {
         }
 
         if (session.getState() == ExamState.PART3_QUESTIONING) {
+            int index = session.getPart3Transcripts().size();
             if (!session.getFollowUpQueue().isEmpty()) {
                 Question q = session.getFollowUpQueue().poll();
                 session.setCurrentQuestion(q);
-                sendQuestionEvent(ws, 3, q.getId(), q.getContent(), true);
+                sendQuestionEvent(ws, 3, q.getId(), q.getContent(), true, index);
                 return;
             }
             if (!session.getPart3Queue().isEmpty()) {
                 Question q = session.getPart3Queue().poll();
                 session.setCurrentQuestion(q);
                 loadFollowUps(session, q);
-                sendQuestionEvent(ws, 3, q.getId(), q.getContent(), false);
+                sendQuestionEvent(ws, 3, q.getId(), q.getContent(), false, index);
                 return;
             }
             // Hết Part 3 → kết thúc
@@ -283,14 +285,16 @@ public class ExaminerService {
         }
     }
 
-    private void sendQuestionEvent(WebSocketSession ws, int part, Integer questionId, String text, boolean isFollowUp)
+    private void sendQuestionEvent(
+            WebSocketSession ws, int part, Integer questionId, String text, boolean isFollowUp, int questionIndex)
             throws IOException {
         String event = objectMapper.writeValueAsString(Map.of(
                 "type", "question",
                 "partNumber", part,
                 "questionId", questionId,
                 "text", text,
-                "isFollowUp", isFollowUp));
+                "isFollowUp", isFollowUp,
+                "questionIndex", questionIndex));
         ws.sendMessage(new TextMessage(event));
     }
 }

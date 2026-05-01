@@ -322,14 +322,16 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                     incorrectWords != null ? incorrectWords : List.of());
 
             if (quizData != null && !quizData.isEmpty()) {
-                io.gsp26se16.moni.vocab.entity.VocabQuizHistory history =
-                        io.gsp26se16.moni.vocab.entity.VocabQuizHistory.builder()
+                io.gsp26se16.moni.vocab.entity.VocabQuizHistory history = vocabQuizHistoryRepository
+                        .findTopBySlotAndUserOrderByCreatedAtDesc(slot, user)
+                        .orElse(io.gsp26se16.moni.vocab.entity.VocabQuizHistory.builder()
                                 .user(user)
                                 .slot(slot)
-                                .score(score)
-                                .totalQuestions(totalQuestions)
-                                .quizData(quizData)
-                                .build();
+                                .build());
+
+                history.setScore(score);
+                history.setTotalQuestions(totalQuestions);
+                history.setQuizData(quizData);
                 vocabQuizHistoryRepository.save(history);
             }
         }
@@ -467,7 +469,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public QuizResponse getVocabQuiz(Integer slotId) {
         Users user = getCurrentUser();
         DailySlot slot =
@@ -481,31 +483,49 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
 
-        if ("DONE".equals(slot.getStatus())) {
-            return vocabQuizHistoryRepository
-                    .findTopBySlotAndUserOrderByCreatedAtDesc(slot, user)
-                    .map(history -> {
-                        try {
-                            com.fasterxml.jackson.databind.ObjectMapper mapper =
-                                    new com.fasterxml.jackson.databind.ObjectMapper();
-                            QuizResponse response = mapper.convertValue(history.getQuizData(), QuizResponse.class);
-                            response.setIsHistory(true);
-                            response.setScore(history.getScore());
-                            return response;
-                        } catch (Exception e) {
-                            return QuizResponse.builder()
-                                    .questions(List.of())
-                                    .isHistory(true)
-                                    .build();
-                        }
-                    })
-                    .orElseGet(() -> QuizResponse.builder()
-                            .questions(List.of())
-                            .isHistory(true)
-                            .build());
+        var historyOpt = vocabQuizHistoryRepository.findTopBySlotAndUserOrderByCreatedAtDesc(slot, user);
+        if (historyOpt.isPresent()) {
+            var history = historyOpt.get();
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                QuizResponse response = mapper.convertValue(history.getQuizData(), QuizResponse.class);
+                if ("DONE".equals(slot.getStatus())) {
+                    response.setIsHistory(true);
+                    response.setScore(history.getScore());
+                } else {
+                    response.setIsHistory(false);
+                }
+                return response;
+            } catch (Exception e) {
+                // fallthrough to default
+            }
         }
 
-        return vocabLearningService.generateRoadmapQuiz(user);
+        if ("DONE".equals(slot.getStatus())) {
+            return QuizResponse.builder().questions(List.of()).isHistory(true).build();
+        }
+
+        QuizResponse generatedQuiz = vocabLearningService.generateRoadmapQuiz(user);
+        if (generatedQuiz.getQuestions() != null
+                && !generatedQuiz.getQuestions().isEmpty()) {
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                java.util.Map<String, Object> quizData =
+                        mapper.convertValue(generatedQuiz, new com.fasterxml.jackson.core.type.TypeReference<>() {});
+
+                io.gsp26se16.moni.vocab.entity.VocabQuizHistory newHistory =
+                        io.gsp26se16.moni.vocab.entity.VocabQuizHistory.builder()
+                                .user(user)
+                                .slot(slot)
+                                .quizData(quizData)
+                                .build();
+                vocabQuizHistoryRepository.save(newHistory);
+            } catch (Exception e) {
+                log.error("Failed to save generated vocab quiz to history", e);
+            }
+        }
+
+        return generatedQuiz;
     }
 
     private String formatBandRange(double band) {
