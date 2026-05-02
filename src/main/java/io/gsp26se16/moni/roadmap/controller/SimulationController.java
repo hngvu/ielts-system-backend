@@ -480,9 +480,9 @@ public class SimulationController {
     // HELPERS
     // =====================================================================
 
-    private Users resolveUser(String credentialId) {
+    private Users resolveUser(String email) {
         UserCredentials credentials = userCredentialsRepository
-                .findById(credentialId)
+                .findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         if (credentials.getUser() == null) {
             throw new AppException(ErrorCode.USER_NOT_EXISTED);
