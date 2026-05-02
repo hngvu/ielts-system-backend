@@ -89,13 +89,6 @@ public class ExpertLearnerMetricServiceImpl implements ExpertLearnerMetricServic
                         }
                     }
                 }
-
-                // Auto-complete weekly plan slot (giống AI: score = (int) finalBand, totalQ = 9)
-                try {
-                    weeklyPlanService.autoCompleteTestSlot(user, testId, (int) Math.round(finalBand), 9);
-                } catch (Exception ex) {
-                    log.warn("autoCompleteTestSlot Speaking failed: {}", ex.getMessage());
-                }
             }
         } catch (Exception e) {
             log.error("updateSpeakingFromExpert failed: {}", e.getMessage(), e);
@@ -148,14 +141,6 @@ public class ExpertLearnerMetricServiceImpl implements ExpertLearnerMetricServic
                 }
             }
 
-            if (testId != null) {
-                try {
-                    // Giống AI Writing: score = band*10 (preserve decimal), totalQ = 90
-                    weeklyPlanService.autoCompleteTestSlot(user, testId, (int) Math.round(finalBand * 10), 90);
-                } catch (Exception ex) {
-                    log.warn("autoCompleteTestSlot Writing failed: {}", ex.getMessage());
-                }
-            }
         } catch (Exception e) {
             log.error("updateWritingFromExpert failed: {}", e.getMessage(), e);
         }

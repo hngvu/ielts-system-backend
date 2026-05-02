@@ -153,16 +153,18 @@ public class VocabLookupServiceImpl implements VocabLookupService {
 
     private void saveToDictionary(VocabLookupResponse r) {
         try {
-            Dictionary entry = new Dictionary();
-            entry.setWord(r.getWord());
-            entry.setPhonetic(r.getPhonetic());
-            entry.setPos(r.getPos());
-            entry.setMeaning(r.getMeaning());
-            entry.setExplanation(r.getExplanation());
-            entry.setCollocation(r.getCollocation());
-            entry.setAudioUrl(r.getAudioUrl());
-            entry.setExamples(objectMapper.writeValueAsString(r.getExamples()));
-            dictionaryRepository.save(entry);
+            String examplesJson = r.getExamples() != null ? objectMapper.writeValueAsString(r.getExamples()) : null;
+            dictionaryRepository.upsert(
+                    r.getWord(),
+                    r.getPhonetic(),
+                    r.getPos(),
+                    r.getMeaning(),
+                    r.getExplanation(),
+                    r.getCollocation(),
+                    r.getAudioUrl(),
+                    examplesJson,
+                    null,
+                    null);
         } catch (Exception e) {
             log.warn("Failed to cache for '{}': {}", r.getWord(), e.getMessage());
         }

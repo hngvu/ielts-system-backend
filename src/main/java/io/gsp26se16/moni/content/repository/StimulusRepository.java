@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.content.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +31,9 @@ public interface StimulusRepository extends JpaRepository<Stimulus, Integer> {
     List<Stimulus> findBySkillAndStatus(Skill skill, PublishStatus status);
 
     boolean existsByTagsId(Integer tagId);
+
+    @Query("SELECT s FROM Stimulus s LEFT JOIN FETCH s.tags WHERE s.id = :id")
+    Optional<Stimulus> findByIdWithTags(@Param("id") Integer id);
 
     @Query("SELECT count(q) FROM Question q WHERE q.questionGroup.stimulus.id = :stimulusId")
     int countQuestionsByStimulusId(@Param("stimulusId") Integer stimulusId);

@@ -279,20 +279,36 @@ public class VocabServiceImpl implements VocabService {
         return dictionaryRepository.findFirstByWordIgnoreCase(word).orElseGet(() -> {
             try {
                 var lookup = vocabLookupService.lookupWord(word);
-                // lookupWord already saves to DB; refetch
+                // lookupWord already saves to DB via upsert; refetch
                 return dictionaryRepository.findFirstByWordIgnoreCase(word).orElseGet(() -> {
-                    Dictionary d = new Dictionary();
-                    d.setWord(word);
-                    d.setMeaning(lookup.getMeaning());
-                    d.setPhonetic(lookup.getPhonetic());
-                    d.setPos(lookup.getPos());
-                    return dictionaryRepository.save(d);
+                    // Fallback: use upsert to avoid duplicate key on race condition
+                    dictionaryRepository.upsert(
+                            word,
+                            lookup.getPhonetic(),
+                            lookup.getPos(),
+                            lookup.getMeaning(),
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null);
+                    return dictionaryRepository.findFirstByWordIgnoreCase(word).orElseGet(() -> {
+                        Dictionary d = new Dictionary();
+                        d.setWord(word);
+                        d.setMeaning(lookup.getMeaning());
+                        return d;
+                    });
                 });
             } catch (Exception e) {
                 log.warn("Dictionary lookup failed for '{}': {}", word, e.getMessage());
-                Dictionary d = new Dictionary();
-                d.setWord(word);
-                return dictionaryRepository.save(d);
+                // Use upsert to avoid duplicate key violation
+                dictionaryRepository.upsert(word, null, null, null, null, null, null, null, null, null);
+                return dictionaryRepository.findFirstByWordIgnoreCase(word).orElseGet(() -> {
+                    Dictionary d = new Dictionary();
+                    d.setWord(word);
+                    return d;
+                });
             }
         });
     }

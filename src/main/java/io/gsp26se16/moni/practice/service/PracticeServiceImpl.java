@@ -242,17 +242,6 @@ public class PracticeServiceImpl implements PracticeService {
         attempt.setScore(correctCount);
         attemptRepository.save(attempt);
 
-        // Auto-complete weekly plan slot if matches
-        try {
-            weeklyPlanService.autoCompleteSlot(
-                    user,
-                    request.getStimulusId(),
-                    correctCount,
-                    request.getAnswers().size());
-        } catch (Exception e) {
-            log.warn("Failed to auto-complete weekly slot: {}", e.getMessage());
-        }
-
         return SubmitAttemptResponse.builder()
                 .attemptId(attempt.getId())
                 .testSessionId(testSession.getId())

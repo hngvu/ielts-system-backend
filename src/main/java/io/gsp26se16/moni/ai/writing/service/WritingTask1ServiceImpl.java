@@ -393,13 +393,6 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
             if (user != null) {
                 updateMetricsFromWritingEval(submission, finalBand, analysisResult);
                 log.info("Writing metrics updated for user={}, finalBand={}", user.getId(), finalBand);
-
-                // [NEW] Auto-complete weekly plan test slot
-                if (submission.getTestId() != null) {
-                    // Store band*10 in score to preserve decimal (e.g. 7.5 → 75, totalQuestions=90)
-                    weeklyPlanService.autoCompleteTestSlot(
-                            user, submission.getTestId(), (int) Math.round(finalBand * 10), 90);
-                }
             }
         } catch (Exception e) {
             log.error("Failed to update writing metrics or weekly plan: {}", e.getMessage(), e);
@@ -470,11 +463,17 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
         }
 
         // Update metric for tags specifically attached to the Stimulus (like WRITING_TYPE or TOPIC)
-        if (submission.getStimulus() != null && submission.getStimulus().getTags() != null) {
+        // Re-fetch stimulus from DB to avoid LazyInitializationException (session may be closed after AI phases)
+        Stimulus freshStimulus = submission.getStimulus() != null
+                ? stimulusRepository
+                        .findByIdWithTags(submission.getStimulus().getId())
+                        .orElse(null)
+                : null;
+        if (freshStimulus != null && freshStimulus.getTags() != null) {
             double finalS = finalBand / 9.0;
             boolean finalIsCorrect = finalS >= 0.6;
 
-            for (io.gsp26se16.moni.tag.entity.Tag tag : submission.getStimulus().getTags()) {
+            for (io.gsp26se16.moni.tag.entity.Tag tag : freshStimulus.getTags()) {
                 if (tag.getType() == io.gsp26se16.moni.tag.entity.TagType.WRITING_TYPE
                         || tag.getType() == io.gsp26se16.moni.tag.entity.TagType.TOPIC) {
                     updateMetricBKT(user, tag, finalIsCorrect, finalS);
