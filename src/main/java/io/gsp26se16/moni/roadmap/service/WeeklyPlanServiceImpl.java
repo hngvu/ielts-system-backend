@@ -82,9 +82,6 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
             monthCycle = previous.getMonthCycle() + 1;
         }
 
-        // Calculate difficulty
-        double difficulty = calculateDifficulty(user, previous);
-
         // Calculate week dates (next Monday → Sunday)
         LocalDate weekStart = calculateWeekStart(previous);
         LocalDate weekEnd = weekStart.plusDays(6);
@@ -98,7 +95,6 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                 .weekStartDate(weekStart)
                 .weekEndDate(weekEnd)
                 .status("ACTIVE")
-                .difficultyLevel(difficulty)
                 .createdAt(LocalDateTime.now())
                 .build();
         plan = weeklyPlanRepository.save(plan);
@@ -158,7 +154,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                     }
                 } else {
                     // [PHASE 1 & 2] Practice mode: assign single Stimulus
-                    Stimulus stimulus = selectStimulus(skill, user, difficulty, doneStimulusIds);
+                    Stimulus stimulus = selectStimulus(skill, user, doneStimulusIds);
 
                     DailySlot slot = DailySlot.builder()
                             .weeklyPlan(plan)
@@ -235,12 +231,11 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         }
 
         log.info(
-                "[WeeklyPlan] Generated week {} (month {}, weekInMonth {}) for user {}. Difficulty: {}",
+                "[WeeklyPlan] Generated week {} (month {}, weekInMonth {}) for user {}",
                 weekNumber,
                 monthCycle,
                 weekInMonth,
-                user.getId(),
-                difficulty);
+                user.getId());
     }
 
     @Override
@@ -688,7 +683,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     // PRIVATE HELPERS — Stimulus Selection
     // =====================================================================
 
-    private Stimulus selectStimulus(Skill skill, Users user, double targetDifficulty, Set<Integer> excludeIds) {
+    private Stimulus selectStimulus(Skill skill, Users user, Set<Integer> excludeIds) {
         List<LearnerMetric> metrics = learnerMetricRepository.findByUser(user);
 
         io.gsp26se16.moni.tag.entity.TagType structType = getStructType(skill);
@@ -709,7 +704,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         List<Stimulus> pool = unseen.isEmpty() ? candidates : unseen;
 
         return pool.stream()
-                .min(Comparator.comparingDouble(s -> scoreStimulusV4(s, targetDifficulty, weakStructs, weakSubTypes)))
+                .min(Comparator.comparingDouble(s -> scoreStimulus(s, weakStructs, weakSubTypes)))
                 .orElse(pool.get(0));
     }
 
@@ -733,40 +728,14 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                 candidates.stream().filter(s -> !excludeIds.contains(s.getId())).toList();
         List<Stimulus> pool = unseen.isEmpty() ? candidates : unseen;
 
-        double baseDifficulty = getTargetBandFromUser(user, skill) / 9.0;
-        final double targetDifficulty = Math.max(0.2, Math.min(0.9, baseDifficulty));
-
         return pool.stream()
-                .min(Comparator.comparingDouble(s -> scoreStimulusV4(s, targetDifficulty, weakStructs, weakSubTypes)))
+                .min(Comparator.comparingDouble(s -> scoreStimulus(s, weakStructs, weakSubTypes)))
                 .orElse(pool.get(0));
     }
 
     // =====================================================================
-    // PRIVATE HELPERS — Difficulty & Evaluation
+    // PRIVATE HELPERS — Evaluation
     // =====================================================================
-
-    private double calculateDifficulty(Users user, WeeklyPlan previous) {
-        if (previous == null) {
-            // First week: estimate from placement
-            PlacementResult placement = placementResultRepository
-                    .findFirstByUserOrderByCompletedAtDesc(user)
-                    .orElse(null);
-            if (placement != null && placement.getOverallBand() != null) {
-                return Math.max(0.1, Math.min(0.95, placement.getOverallBand() / 9.0));
-            }
-            return 0.5; // Default
-        }
-
-        double prevDifficulty = previous.getDifficultyLevel() != null ? previous.getDifficultyLevel() : 0.5;
-        String verdict = previous.getPerformanceVerdict();
-
-        if ("IMPROVED".equals(verdict)) {
-            return Math.min(0.95, prevDifficulty + 0.05);
-        } else if ("DECLINED".equals(verdict)) {
-            return Math.max(0.1, prevDifficulty - 0.05);
-        }
-        return prevDifficulty; // STABLE
-    }
 
     // =====================================================================
     // PRIVATE HELPERS — Task Distribution Logic
@@ -1120,9 +1089,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         return result.stream().limit(limit).toList();
     }
 
-    private double scoreStimulusV4(Stimulus s, double targetDifficulty, List<Tag> weakStructs, List<Tag> weakSubTypes) {
-        double difficultyPenalty = Math.abs(estimateDifficulty(s) - targetDifficulty);
-
+    private double scoreStimulus(Stimulus s, List<Tag> weakStructs, List<Tag> weakSubTypes) {
         double structBonus = 0.0;
         if (weakStructs != null && !weakStructs.isEmpty() && s.getTags() != null) {
             boolean hasWeakStruct = s.getTags().stream().anyMatch(t -> weakStructs.stream()
@@ -1147,66 +1114,13 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
             subTypeBonus = Math.min(0.5, (double) matchCount / weakSubTypes.size() * 0.5);
         }
 
-        return 1.0 + (difficultyPenalty * 0.5) - structBonus - subTypeBonus;
+        return 1.0 - structBonus - subTypeBonus;
     }
 
     private double weakAreaScore(LearnerMetric metric) {
         double mastery = metric.getMasteryLevel() != null ? metric.getMasteryLevel() : 0.5;
         double confidence = metric.getConfidenceScore() != null ? metric.getConfidenceScore() : 0.0;
         return mastery + ((1.0 - confidence) * 0.5);
-    }
-
-    private double estimateDifficulty(Stimulus stimulus) {
-        // 1. Try to get difficulty from Stimulus directly
-        if (stimulus.getTags() != null) {
-            Optional<Tag> diffTag = stimulus.getTags().stream()
-                    .filter(t -> t.getType() == io.gsp26se16.moni.tag.entity.TagType.DIFFICULTY)
-                    .findFirst();
-            if (diffTag.isPresent()) {
-                String code = diffTag.get().getCode();
-                if ("DIF_HARD".equals(code)) return 0.75;
-                if ("DIF_MEDIUM".equals(code)) return 0.55;
-                if ("DIF_EASY".equals(code)) return 0.35;
-            }
-        }
-
-        // 2. Fallback to average of Question tags
-        if (stimulus.getQuestionGroups() == null || stimulus.getQuestionGroups().isEmpty()) {
-            return 0.5;
-        }
-        return stimulus.getQuestionGroups().stream()
-                .flatMap(qg -> qg.getQuestions().stream())
-                .mapToDouble(q -> {
-                    if (q.getTags() == null || q.getTags().isEmpty()) return 0.5;
-                    return q.getTags().stream()
-                            .mapToDouble(tag -> {
-                                String code = tag.getCode() != null ? tag.getCode() : "";
-                                String name =
-                                        tag.getName() != null ? tag.getName().toUpperCase() : "";
-
-                                // Strict code matching
-                                if ("DIF_HARD".equals(code)) return 0.75;
-                                if ("DIF_MEDIUM".equals(code)) return 0.55;
-                                if ("DIF_EASY".equals(code)) return 0.35;
-
-                                // Legacy text matching as fallback
-                                if (name.contains("HARD") || name.contains("KHÓ")) return 0.75;
-                                if (name.contains("MEDIUM") || name.contains("TRUNG BÌNH")) return 0.55;
-                                if (name.contains("EASY") || name.contains("DỄ")) return 0.35;
-
-                                // Legacy band matching
-                                if (name.contains("BAND_8") || name.contains("8")) return 0.8;
-                                if (name.contains("BAND_7") || name.contains("7")) return 0.7;
-                                if (name.contains("BAND_6") || name.contains("6")) return 0.6;
-                                if (name.contains("BAND_5") || name.contains("5")) return 0.5;
-
-                                return 0.5;
-                            })
-                            .average()
-                            .orElse(0.5);
-                })
-                .average()
-                .orElse(0.5);
     }
 
     private io.gsp26se16.moni.content.entity.Test findTestForStimulus(Stimulus stimulus) {
@@ -1301,7 +1215,6 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                 .weekStartDate(plan.getWeekStartDate().toString())
                 .weekEndDate(plan.getWeekEndDate().toString())
                 .status(plan.getStatus())
-                .difficultyLevel(plan.getDifficultyLevel())
                 .weeklyAccuracy(plan.getWeeklyAccuracy())
                 .completionRate(plan.getCompletionRate())
                 .performanceVerdict(plan.getPerformanceVerdict())

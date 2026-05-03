@@ -18,7 +18,6 @@ public class WeeklyPlanDetailResponse {
     String weekStartDate;
     String weekEndDate;
     String status;
-    Double difficultyLevel;
     Double weeklyAccuracy;
     Double completionRate;
     String performanceVerdict;

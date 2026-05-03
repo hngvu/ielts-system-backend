@@ -28,12 +28,7 @@ public class TagDataInitializer implements CommandLineRunner {
         createTagIfNotExists("Writing", "SKILL_WRITING", TagType.SKILL, "Kỹ năng Viết IELTS");
         createTagIfNotExists("Speaking", "SKILL_SPEAKING", TagType.SKILL, "Kỹ năng Nói IELTS");
 
-        // 2. Tạo DIFFICULTY Tags (Độ khó)
-        createTagIfNotExists("Easy", "DIFF_EASY", TagType.DIFFICULTY, "Dành cho người mới bắt đầu (Band 0-4.0)");
-        createTagIfNotExists("Medium", "DIFF_MEDIUM", TagType.DIFFICULTY, "Trung bình (Band 4.5-6.0)");
-        createTagIfNotExists("Hard", "DIFF_HARD", TagType.DIFFICULTY, "Nâng cao (Band 6.5+)");
-
-        // 3. Tạo QUESTION TYPE Tags (Dạng bài phổ biến mapped từ QuestionTypeCode)
+        // 2. Tạo QUESTION TYPE Tags (Dạng bài phổ biến mapped từ QuestionTypeCode)
         // Cần phải có tag code chuẩn "QT_" + QuestionTypeCode
         createTagIfNotExists("Multiple Choice", "QT_MCQ", TagType.QUESTION_TYPE, "Trắc nghiệm 1 lựa chọn");
         createTagIfNotExists(

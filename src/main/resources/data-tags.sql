@@ -9,16 +9,7 @@ DELETE FROM learner_metric;
 DELETE FROM tags;
 
 -- ==========================================================
--- 2. ĐỘ KHÓ IELTS (DIF_)
--- ==========================================================
-INSERT INTO tags (name, code, tag_type, description, created_at, updated_at) 
-VALUES 
-('Easy (Band 0 - 4.5)', 'DIF_EASY', 'DIFFICULTY', 'Dành cho người mới bắt đầu', NOW(), NOW()),
-('Medium (Band 5.0 - 6.0)', 'DIF_MEDIUM', 'DIFFICULTY', 'Mức độ trung bình khá', NOW(), NOW()),
-('Hard (Band 6.5+)', 'DIF_HARD', 'DIFFICULTY', 'Mức độ nâng cao', NOW(), NOW());
-
--- ==========================================================
--- 3. ĐỘ KHÓ CEFR CHO VOCABULARY (CEFR_)
+-- 2. ĐỘ KHÓ CEFR CHO VOCABULARY (CEFR_)
 -- ==========================================================
 INSERT INTO tags (name, code, tag_type, description, created_at, updated_at) 
 VALUES 

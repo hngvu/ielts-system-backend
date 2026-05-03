@@ -44,10 +44,6 @@ public class WeeklyPlan {
     @Builder.Default
     private String status = "ACTIVE"; // ACTIVE / COMPLETED
 
-    @Column(name = "difficulty_level")
-    @Builder.Default
-    private Double difficultyLevel = 0.5;
-
     @Column(name = "weekly_accuracy")
     private Double weeklyAccuracy;
 
