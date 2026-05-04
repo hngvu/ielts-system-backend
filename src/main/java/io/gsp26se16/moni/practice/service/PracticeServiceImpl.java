@@ -92,7 +92,10 @@ public class PracticeServiceImpl implements PracticeService {
         attempt.setStartedAt(startedAt);
         attempt.setSubmittedAt(now);
         attempt.setScore(0);
-        attempt.setTotalQuestions(request.getAnswers().size());
+        int actualTotalQuestions = stimulus.getQuestionGroups().stream()
+                .mapToInt(qg -> qg.getQuestions().size())
+                .sum();
+        attempt.setTotalQuestions(actualTotalQuestions);
         attempt = attemptRepository.save(attempt);
 
         int correctCount = 0;

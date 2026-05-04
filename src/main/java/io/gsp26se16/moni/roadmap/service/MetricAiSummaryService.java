@@ -17,6 +17,7 @@ import io.gsp26se16.moni.roadmap.dto.response.LearnerRoadmapInsightsResponse;
 import io.gsp26se16.moni.roadmap.dto.response.LearnerRoadmapInsightsResponse.TagMetricResponse;
 import io.gsp26se16.moni.roadmap.dto.response.MetricSummaryResponse;
 import io.gsp26se16.moni.roadmap.entity.MetricAiSummaryCache;
+import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
 import io.gsp26se16.moni.roadmap.repository.MetricAiSummaryCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,9 +31,18 @@ public class MetricAiSummaryService {
     private final GoalService goalService;
     private final PromptLoader promptLoader;
     private final MetricAiSummaryCacheRepository metricAiSummaryCacheRepository;
+    private final LearnerMetricRepository learnerMetricRepository;
+    private final io.gsp26se16.moni.authentication.repository.UsersRepository userRepository;
 
     public MetricSummaryResponse generateMetricSummary() {
         String userId = getCurrentUserId();
+
+        // Guard: don't generate AI analysis if user has no learning data
+        var user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        if (learnerMetricRepository.findByUser(user).isEmpty()) {
+            return null;
+        }
+
         LearnerRoadmapInsightsResponse insights = goalService.getRoadmapInsights();
 
         Optional<MetricAiSummaryCache> cacheOpt = metricAiSummaryCacheRepository.findById(userId);
