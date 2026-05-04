@@ -43,8 +43,11 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         LocalDateTime safeEnd = endDate != null ? endDate : LocalDateTime.now();
 
         long topupRevenue =
-                paymentRepository.sumAmountByStatusAndCreatedAtBetween(PaymentStatus.SUCCESS, safeStart, safeEnd);
-        long topupCount = paymentRepository.countByStatusAndCreatedAtBetween(PaymentStatus.SUCCESS, safeStart, safeEnd);
+                paymentRepository.sumAmountByStatusAndCreatedAtBetween(PaymentStatus.SUCCESS, safeStart, safeEnd)
+                        + paymentRepository.sumAmountByStatusAndCreatedAtBetween(
+                                PaymentStatus.LATE_SUCCESS, safeStart, safeEnd);
+        long topupCount = paymentRepository.countByStatusAndCreatedAtBetween(PaymentStatus.SUCCESS, safeStart, safeEnd)
+                + paymentRepository.countByStatusAndCreatedAtBetween(PaymentStatus.LATE_SUCCESS, safeStart, safeEnd);
 
         long expertWritingCredits = creditTransactionRepository.sumConsumedCreditsByServiceCodeAndCreatedAtBetween(
                 PaymentType.CONSUME, EXPERT_WRITING_SERVICE_CODE, safeStart, safeEnd);
@@ -72,8 +75,11 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         long totalUsers = testSessionRepository.countDistinctUserByStartedAtBetween(safeStart, safeEnd);
 
         // Build daily revenue data
-        List<Object[]> dailyRevenueData =
-                paymentRepository.getDailyRevenueByStatusAndCreatedAtBetween(PaymentStatus.SUCCESS, safeStart, safeEnd);
+        List<Object[]> dailyRevenueData = new ArrayList<>();
+        dailyRevenueData.addAll(paymentRepository.getDailyRevenueByStatusAndCreatedAtBetween(
+                PaymentStatus.SUCCESS, safeStart, safeEnd));
+        dailyRevenueData.addAll(paymentRepository.getDailyRevenueByStatusAndCreatedAtBetween(
+                PaymentStatus.LATE_SUCCESS, safeStart, safeEnd));
         List<AdminRevenueDashboardResponse.DailyRevenue> dailyRevenue = new ArrayList<>();
         for (Object[] row : dailyRevenueData) {
             LocalDate date = convertToLocalDate(row[0]);

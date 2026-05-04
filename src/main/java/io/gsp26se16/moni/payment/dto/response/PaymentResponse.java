@@ -13,5 +13,11 @@ public record PaymentResponse(
         String subscriptionPlanName,
         String txnCode,
         Integer amount,
+        LocalDateTime createdAt,
         LocalDateTime updatedAt,
-        String status) {}
+        String status,
+        String userId,
+        String userEmail,
+        String userFullName,
+        LocalDateTime reviewedAt,
+        String reviewedBy) {}

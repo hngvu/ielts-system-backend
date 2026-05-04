@@ -192,19 +192,31 @@ public class PaymentServiceImpl implements PaymentService {
                 payment.getUser() != null ? payment.getUser().getId() : "null",
                 payment.getStatus());
 
-        // Already finalized by a previous webhook (SUCCESS, FAILED, LATE_PAYMENT)
-        if (payment.getStatus() == PaymentStatus.SUCCESS
-                || payment.getStatus() == PaymentStatus.FAILED
-                || payment.getStatus() == PaymentStatus.LATE_PAYMENT) {
+        if (payment.getGatewayTxnId() != null && payment.getGatewayTxnId().equals(sePayWebhookRequest.code())) {
+            log.warn("Duplicate webhook with same gatewayTxnId: {}", payment.getGatewayTxnId());
+            return toResponse(payment);
+        }
+
+        if (payment.getStatus() == PaymentStatus.REFUNDED || payment.getStatus() == PaymentStatus.DUPLICATE) {
             log.warn(
-                    "Duplicate webhook received for already-finalized payment: id={}, status={}",
+                    "Webhook received for already-reviewed payment: id={}, status={}",
                     payment.getId(),
                     payment.getStatus());
             return toResponse(payment);
         }
 
-        if (payment.getGatewayTxnId() != null && payment.getGatewayTxnId().equals(sePayWebhookRequest.code())) {
-            log.warn("Duplicate webhook with same gatewayTxnId: {}", payment.getGatewayTxnId());
+        if (payment.getStatus() == PaymentStatus.SUCCESS || payment.getStatus() == PaymentStatus.LATE_SUCCESS) {
+            log.warn(
+                    "Duplicate transfer received for already-finalized payment: id={}, status={}",
+                    payment.getId(),
+                    payment.getStatus());
+            payment.setStatus(PaymentStatus.DUPLICATE);
+            payment.setGatewayTxnId(sePayWebhookRequest.code());
+            payment.setWebhookResponse(sePayWebhookRequest.toString());
+            payment.setUpdatedAt(LocalDateTime.now(ZoneOffset.UTC));
+            payment.setReviewedAt(null);
+            payment.setReviewedBy(null);
+            paymentRepository.save(payment);
             return toResponse(payment);
         }
 
@@ -238,13 +250,9 @@ public class PaymentServiceImpl implements PaymentService {
             payment.setGatewayTxnId(sePayWebhookRequest.code());
             payment.setWebhookResponse(sePayWebhookRequest.toString());
             payment.setUpdatedAt(LocalDateTime.now(ZoneOffset.UTC));
+            payment.setReviewedAt(null);
+            payment.setReviewedBy(null);
             paymentRepository.save(payment);
-
-            createCreditTransaction(payment, true);
-
-            if (payment.getUser() != null) {
-                notificationService.notifyPaymentSuccess(payment.getUser().getId(), payment.getId(), 0);
-            }
 
             return toResponse(payment);
         }
@@ -254,6 +262,8 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setWebhookResponse(sePayWebhookRequest.toString());
         payment.setStatus(PaymentStatus.SUCCESS);
         payment.setUpdatedAt(LocalDateTime.now(ZoneOffset.UTC));
+        payment.setReviewedAt(null);
+        payment.setReviewedBy(null);
         paymentRepository.save(payment);
 
         createCreditTransaction(payment, false);
@@ -267,6 +277,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<PaymentResponse> searchPayments(
             Integer userId, String status, LocalDateTime startDate, LocalDateTime endDate, boolean isAdmin) {
 
@@ -442,8 +453,72 @@ public class PaymentServiceImpl implements PaymentService {
                                 : null)
                 .txnCode(payment.getTxnCode())
                 .amount(payment.getAmount())
+                .createdAt(payment.getCreatedAt())
                 .updatedAt(payment.getUpdatedAt())
                 .status(payment.getStatus().toString())
+                .userId(payment.getUser() != null ? payment.getUser().getId() : null)
+                .userEmail(
+                        payment.getUser() != null && payment.getUser().getCredential() != null
+                                ? payment.getUser().getCredential().getEmail()
+                                : null)
+                .userFullName(payment.getUser() != null ? payment.getUser().getFull_name() : null)
+                .reviewedAt(payment.getReviewedAt())
+                .reviewedBy(payment.getReviewedBy())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public PaymentResponse approveLatePayment(Integer paymentId) {
+        Payment payment = paymentRepository
+                .findById(paymentId)
+                .orElseThrow(() -> new AppException(ErrorCode.CREDIT_TRANSACTION_NOT_FOUND));
+
+        if (payment.getStatus() == PaymentStatus.SUCCESS || payment.getStatus() == PaymentStatus.LATE_SUCCESS) {
+            return toResponse(payment);
+        }
+
+        if (payment.getStatus() != PaymentStatus.LATE_PAYMENT) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+
+        LocalDateTime nowUtc = LocalDateTime.now(ZoneOffset.UTC);
+        payment.setStatus(PaymentStatus.LATE_SUCCESS);
+        payment.setReviewedAt(nowUtc);
+        payment.setReviewedBy(getCurrentUserIdFromJwt());
+        payment.setUpdatedAt(nowUtc);
+        paymentRepository.save(payment);
+
+        createCreditTransaction(payment, true);
+
+        if (payment.getUser() != null) {
+            notificationService.notifyPaymentSuccess(payment.getUser().getId(), payment.getId(), 0);
+        }
+
+        return toResponse(payment);
+    }
+
+    @Override
+    @Transactional
+    public PaymentResponse refundDuplicatePayment(Integer paymentId) {
+        Payment payment = paymentRepository
+                .findById(paymentId)
+                .orElseThrow(() -> new AppException(ErrorCode.CREDIT_TRANSACTION_NOT_FOUND));
+
+        if (payment.getStatus() == PaymentStatus.REFUNDED) {
+            return toResponse(payment);
+        }
+
+        if (payment.getStatus() != PaymentStatus.DUPLICATE) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+
+        LocalDateTime nowUtc = LocalDateTime.now(ZoneOffset.UTC);
+        payment.setStatus(PaymentStatus.REFUNDED);
+        payment.setReviewedAt(nowUtc);
+        payment.setReviewedBy(getCurrentUserIdFromJwt());
+        payment.setUpdatedAt(nowUtc);
+        paymentRepository.save(payment);
+        return toResponse(payment);
     }
 }

@@ -36,6 +36,9 @@ public class Payment {
     @Enumerated(EnumType.STRING)
     PaymentStatus status;
 
+    LocalDateTime reviewedAt;
+    String reviewedBy;
+
     @ManyToOne
     @JoinColumn(name = "package_id")
     PackagePricing packagePricing;

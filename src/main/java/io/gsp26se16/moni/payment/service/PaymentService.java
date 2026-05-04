@@ -15,4 +15,8 @@ public interface PaymentService {
 
     List<PaymentResponse> searchPayments(
             Integer userId, String status, LocalDateTime startDate, LocalDateTime endDate, boolean isAdmin);
+
+    PaymentResponse approveLatePayment(Integer paymentId);
+
+    PaymentResponse refundDuplicatePayment(Integer paymentId);
 }
