@@ -183,10 +183,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     public void addQuotaFromPackage(String userId, int quotaAi, int quotaExpert) {
         Users user = usersRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        // Ưu tiên cộng vào subscription có plan (SCORING), sau đó package-based (plan=null).
+        // Cộng lượt vào bất kỳ subscription active nào (SCORING → ROADMAP → package-based).
         var activeSub = userSubRepository
                 .findFirstByUser_IdAndIsActiveTrueAndEndAtAfterAndPlan_CategoryOrderByEndAtDesc(
                         userId, LocalDateTime.now(), "SCORING")
+                .or(() ->
+                        userSubRepository
+                                .findFirstByUser_IdAndIsActiveTrueAndEndAtAfterAndPlan_CategoryOrderByEndAtDesc(
+                                        userId, LocalDateTime.now(), "ROADMAP"))
                 .or(() -> userSubRepository.findFirstByUser_IdAndIsActiveTrueAndEndAtAfterAndPlanIsNullOrderByEndAtDesc(
                         userId, LocalDateTime.now()));
 
