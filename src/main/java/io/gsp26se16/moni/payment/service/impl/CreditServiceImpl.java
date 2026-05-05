@@ -72,12 +72,14 @@ public class CreditServiceImpl implements CreditService {
                 user.getId(), LocalDateTime.now(ZoneOffset.UTC));
         if (activeSubOpt.isPresent()) {
             UserSubscription sub = activeSubOpt.get();
+            boolean isUnlimitedAi = sub.getPlan() != null && sub.getPlan().getQuotaAi() == -1;
+            String planName = sub.getPlan() != null ? sub.getPlan().getName() : "Gói lẻ";
+
             if (isAi && canDeductAiFromSub(sub)) {
-                int before = sub.getPlan().getQuotaAi() == -1 ? -1 : sub.getRemainAi();
+                int before = isUnlimitedAi ? -1 : sub.getRemainAi();
                 deductAiFromSub(sub);
-                int after = sub.getPlan().getQuotaAi() == -1 ? -1 : sub.getRemainAi();
-                logQuotaConsume(
-                        user, pricing, "AI", before, after, sub.getPlan().getName());
+                int after = isUnlimitedAi ? -1 : sub.getRemainAi();
+                logQuotaConsume(user, pricing, "AI", before, after, planName);
                 return;
             }
             if (isExpert && sub.getRemainExpert() > 0) {
@@ -85,13 +87,7 @@ public class CreditServiceImpl implements CreditService {
                 sub.setRemainExpert(before - 1);
                 sub.setUsedExpert(sub.getUsedExpert() + 1);
                 userSubscriptionRepository.save(sub);
-                logQuotaConsume(
-                        user,
-                        pricing,
-                        "EXPERT",
-                        before,
-                        sub.getRemainExpert(),
-                        sub.getPlan().getName());
+                logQuotaConsume(user, pricing, "EXPERT", before, sub.getRemainExpert(), planName);
                 return;
             }
         }
@@ -136,14 +132,16 @@ public class CreditServiceImpl implements CreditService {
 
     /** AI deductible từ sub: nếu unlimited (quotaAi=-1) và chưa vượt soft cap, HOẶC remainAi>0. */
     private boolean canDeductAiFromSub(UserSubscription sub) {
-        if (sub.getPlan().getQuotaAi() == -1) {
+        boolean isUnlimited = sub.getPlan() != null && sub.getPlan().getQuotaAi() == -1;
+        if (isUnlimited) {
             return sub.getUsedAi() < UNLIMITED_AI_SOFT_CAP;
         }
         return sub.getRemainAi() > 0;
     }
 
     private void deductAiFromSub(UserSubscription sub) {
-        if (sub.getPlan().getQuotaAi() != -1) {
+        boolean isUnlimited = sub.getPlan() != null && sub.getPlan().getQuotaAi() == -1;
+        if (!isUnlimited) {
             sub.setRemainAi(sub.getRemainAi() - 1);
         }
         sub.setUsedAi(sub.getUsedAi() + 1);
@@ -180,15 +178,17 @@ public class CreditServiceImpl implements CreditService {
         if (activeSubOpt.isEmpty()) return;
 
         UserSubscription sub = activeSubOpt.get();
+        boolean isUnlimitedAi = sub.getPlan() != null && sub.getPlan().getQuotaAi() == -1;
+        String planName = sub.getPlan() != null ? sub.getPlan().getName() : "Gói lẻ";
         int before;
         int after;
         if ("AI".equals(quotaType)) {
-            before = sub.getPlan().getQuotaAi() == -1 ? -1 : sub.getRemainAi();
-            if (sub.getPlan().getQuotaAi() != -1) {
+            before = isUnlimitedAi ? -1 : sub.getRemainAi();
+            if (!isUnlimitedAi) {
                 sub.setRemainAi(sub.getRemainAi() + 1);
             }
             sub.setUsedAi(Math.max(0, sub.getUsedAi() - 1));
-            after = sub.getPlan().getQuotaAi() == -1 ? -1 : sub.getRemainAi();
+            after = isUnlimitedAi ? -1 : sub.getRemainAi();
         } else {
             before = sub.getRemainExpert();
             sub.setRemainExpert(before + 1);
@@ -208,7 +208,7 @@ public class CreditServiceImpl implements CreditService {
                 .quotaType(quotaType)
                 .quotaBefore(before)
                 .quotaAfter(after)
-                .remark("Hoàn " + pricing.getName() + " (gói " + sub.getPlan().getName() + ")")
+                .remark("Hoàn " + pricing.getName() + " (gói " + planName + ")")
                 .build();
         creditTransactionRepository.save(tx);
     }

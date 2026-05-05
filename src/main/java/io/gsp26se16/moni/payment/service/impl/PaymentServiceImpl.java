@@ -376,32 +376,37 @@ public class PaymentServiceImpl implements PaymentService {
             return;
         }
 
-        int creditAmount = payment.getPackagePricing().getCreditAmount();
+        var pkg = payment.getPackagePricing();
         Users user = payment.getUser();
 
         log.info(
-                "Processing package payment: userId={}, creditAmount={}, isLate={}",
+                "Processing package payment: userId={}, quotaAi={}, quotaExpert={}, isLate={}",
                 user.getId(),
-                creditAmount,
+                pkg.getQuotaAi(),
+                pkg.getQuotaExpert(),
                 isLatePayment);
 
+        // Cộng quota từ package vào subscription hiện tại (hoặc tạo mới).
+        subscriptionService.addQuotaFromPackage(user.getId(), pkg.getQuotaAi(), pkg.getQuotaExpert());
+
         CreditTransaction creditTransaction = CreditTransaction.builder()
-                .delta(creditAmount)
+                .delta(0)
                 .balanceBefore(0)
                 .balanceAfter(0)
-                .paymentType(isLatePayment ? PaymentType.LATE_PAYMENT_TOPUP : PaymentType.TOPUP)
+                .paymentType(PaymentType.SUBSCRIPTION_PURCHASE)
                 .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                 .user(user)
                 .payment(payment)
-                .remark(
-                        isLatePayment
-                                ? "Late payment after expiry - admin review may be needed. txnCode: "
-                                        + payment.getTxnCode()
-                                : null)
+                .remark("Mua " + pkg.getName() + " · " + String.format("%,d", payment.getAmount()) + "đ")
                 .build();
 
         creditTransactionRepository.save(creditTransaction);
-        log.info("Package payment processed: user={}, amount=+{}, late={}", user.getId(), creditAmount, isLatePayment);
+        log.info(
+                "Package payment processed: user={}, quotaAi=+{}, quotaExpert=+{}, late={}",
+                user.getId(),
+                pkg.getQuotaAi(),
+                pkg.getQuotaExpert(),
+                isLatePayment);
     }
 
     private Users getCurrentUser() {

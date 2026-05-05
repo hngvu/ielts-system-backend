@@ -32,6 +32,12 @@ public interface SubscriptionService {
      */
     void activateSubscription(String userId, Integer planId);
 
+    /**
+     * Cộng quota từ PackagePricing vào subscription hiện tại.
+     * Nếu chưa có subscription active → tạo mới (plan=null, không hết hạn).
+     */
+    void addQuotaFromPackage(String userId, int quotaAi, int quotaExpert);
+
     /** Kiểm tra user có gói ROADMAP đang active không. */
     boolean hasActiveRoadmapSubscription(String userId);
 

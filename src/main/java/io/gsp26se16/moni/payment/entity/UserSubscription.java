@@ -31,7 +31,7 @@ public class UserSubscription {
     @JoinColumn(name = "user_id")
     Users user;
 
-    @ManyToOne(optional = false)
+    @ManyToOne
     @JoinColumn(name = "plan_id")
     SubscriptionPlan plan;
 

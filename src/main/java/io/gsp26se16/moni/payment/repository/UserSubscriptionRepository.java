@@ -23,4 +23,8 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
     /** Gói đang active của user theo category (SCORING hoặc ROADMAP). */
     Optional<UserSubscription> findFirstByUser_IdAndIsActiveTrueAndEndAtAfterAndPlan_CategoryOrderByEndAtDesc(
             String userId, LocalDateTime now, String category);
+
+    /** Gói đang active tạo từ PackagePricing (plan is null). */
+    Optional<UserSubscription> findFirstByUser_IdAndIsActiveTrueAndEndAtAfterAndPlanIsNullOrderByEndAtDesc(
+            String userId, LocalDateTime now);
 }

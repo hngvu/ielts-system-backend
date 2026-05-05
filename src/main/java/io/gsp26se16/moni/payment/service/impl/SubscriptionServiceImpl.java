@@ -113,19 +113,46 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .findById(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.PACKAGE_PRICING_NOT_FOUND));
 
-        // Deactivate sub cũ cùng category (nếu có) — mua mới sẽ ghi đè, không rollover quota.
         String category = plan.getCategory() != null ? plan.getCategory() : "SCORING";
-        userSubRepository
-                .findFirstByUser_IdAndIsActiveTrueAndEndAtAfterAndPlan_CategoryOrderByEndAtDesc(
-                        userId, LocalDateTime.now(), category)
-                .ifPresent(old -> {
-                    old.setActive(false);
-                    userSubRepository.save(old);
-                    log.info(
-                            "Replaced existing active sub id={} (category={}) when user buys new plan",
-                            old.getId(),
-                            category);
-                });
+        int rolloverAi = 0;
+        int rolloverExpert = 0;
+
+        // Deactivate sub cũ cùng category + rollover quota còn lại.
+        var oldPlanSub =
+                userSubRepository.findFirstByUser_IdAndIsActiveTrueAndEndAtAfterAndPlan_CategoryOrderByEndAtDesc(
+                        userId, LocalDateTime.now(), category);
+        if (oldPlanSub.isPresent()) {
+            UserSubscription old = oldPlanSub.get();
+            rolloverAi = old.getRemainAi() > 0 ? old.getRemainAi() : 0;
+            rolloverExpert = old.getRemainExpert() > 0 ? old.getRemainExpert() : 0;
+            old.setActive(false);
+            userSubRepository.save(old);
+            log.info(
+                    "Deactivated old sub id={} (category={}), rollover ai={} expert={}",
+                    old.getId(),
+                    category,
+                    rolloverAi,
+                    rolloverExpert);
+        }
+
+        // Cũng deactivate + rollover sub tạo từ package (plan=null) nếu có.
+        var oldPkgSub = userSubRepository.findFirstByUser_IdAndIsActiveTrueAndEndAtAfterAndPlanIsNullOrderByEndAtDesc(
+                userId, LocalDateTime.now());
+        if (oldPkgSub.isPresent()) {
+            UserSubscription old = oldPkgSub.get();
+            rolloverAi += old.getRemainAi() > 0 ? old.getRemainAi() : 0;
+            rolloverExpert += old.getRemainExpert() > 0 ? old.getRemainExpert() : 0;
+            old.setActive(false);
+            userSubRepository.save(old);
+            log.info(
+                    "Deactivated package-based sub id={}, rollover ai={} expert={}",
+                    old.getId(),
+                    old.getRemainAi(),
+                    old.getRemainExpert());
+        }
+
+        int newAi = plan.getQuotaAi() == -1 ? -1 : plan.getQuotaAi() + rolloverAi;
+        int newExpert = plan.getQuotaExpert() + rolloverExpert;
 
         LocalDateTime now = LocalDateTime.now();
         UserSubscription fresh = UserSubscription.builder()
@@ -133,20 +160,62 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .plan(plan)
                 .startAt(now)
                 .endAt(now.plusDays(plan.getDurationDays()))
-                .remainAi(plan.getQuotaAi())
-                .remainExpert(plan.getQuotaExpert())
+                .remainAi(newAi)
+                .remainExpert(newExpert)
                 .usedAi(0)
                 .usedExpert(0)
                 .isActive(true)
                 .build();
         userSubRepository.save(fresh);
         log.info(
-                "Activated subscription: user={}, plan={}, endAt={}, quotaAi={}, quotaExpert={}",
+                "Activated subscription: user={}, plan={}, endAt={}, quotaAi={} (rollover={}), quotaExpert={} (rollover={})",
                 userId,
                 plan.getCode(),
                 fresh.getEndAt(),
                 fresh.getRemainAi(),
-                fresh.getRemainExpert());
+                rolloverAi,
+                fresh.getRemainExpert(),
+                rolloverExpert);
+    }
+
+    @Override
+    @Transactional
+    public void addQuotaFromPackage(String userId, int quotaAi, int quotaExpert) {
+        Users user = usersRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        // Ưu tiên cộng vào subscription có plan (SCORING), sau đó package-based (plan=null).
+        var activeSub = userSubRepository
+                .findFirstByUser_IdAndIsActiveTrueAndEndAtAfterAndPlan_CategoryOrderByEndAtDesc(
+                        userId, LocalDateTime.now(), "SCORING")
+                .or(() -> userSubRepository.findFirstByUser_IdAndIsActiveTrueAndEndAtAfterAndPlanIsNullOrderByEndAtDesc(
+                        userId, LocalDateTime.now()));
+
+        if (activeSub.isPresent()) {
+            UserSubscription sub = activeSub.get();
+            if (sub.getRemainAi() != -1) { // Không cộng vào unlimited
+                sub.setRemainAi(sub.getRemainAi() + quotaAi);
+            }
+            sub.setRemainExpert(sub.getRemainExpert() + quotaExpert);
+            userSubRepository.save(sub);
+            log.info(
+                    "Added package quota to existing sub id={}: ai+={}, expert+={}", sub.getId(), quotaAi, quotaExpert);
+        } else {
+            // Chưa có subscription nào → tạo mới (plan=null, không hết hạn).
+            LocalDateTime now = LocalDateTime.now();
+            UserSubscription fresh = UserSubscription.builder()
+                    .user(user)
+                    .plan(null)
+                    .startAt(now)
+                    .endAt(now.plusDays(36500)) // ~100 năm, "không giới hạn thời gian"
+                    .remainAi(quotaAi)
+                    .remainExpert(quotaExpert)
+                    .usedAi(0)
+                    .usedExpert(0)
+                    .isActive(true)
+                    .build();
+            userSubRepository.save(fresh);
+            log.info("Created package-based subscription for user={}: ai={}, expert={}", userId, quotaAi, quotaExpert);
+        }
     }
 
     @Override
@@ -202,9 +271,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private UserSubscriptionResponse toUserSubResponse(UserSubscription s) {
         return new UserSubscriptionResponse(
                 s.getId(),
-                s.getPlan().getId(),
-                s.getPlan().getCode(),
-                s.getPlan().getName(),
+                s.getPlan() != null ? s.getPlan().getId() : null,
+                s.getPlan() != null ? s.getPlan().getCode() : "PACKAGE",
+                s.getPlan() != null ? s.getPlan().getName() : "Gói lẻ",
                 s.getStartAt(),
                 s.getEndAt(),
                 s.getRemainAi(),
