@@ -81,6 +81,7 @@ public class WritingSubmissionController {
                 .taskType(taskType)
                 .essayContent(request.getEssayContent())
                 .wordCount(request.getWordCount())
+                .timeTakenSeconds(request.getTimeTakenSeconds())
                 .evaluationStatus(EvaluationStatus.PENDING)
                 .build();
 
@@ -264,6 +265,7 @@ public class WritingSubmissionController {
                 submission.getTaskType(),
                 submission.getEssayContent(),
                 submission.getWordCount(),
+                submission.getTimeTakenSeconds(),
                 submission.getEvaluationStatus(),
                 submission.getSubmittedAt(),
                 evaluationDetail);
@@ -398,6 +400,7 @@ public class WritingSubmissionController {
             WritingTaskType taskType,
             String essayContent,
             Integer wordCount,
+            Integer timeTakenSeconds,
             EvaluationStatus evaluationStatus,
             LocalDateTime submittedAt,
             WritingEvaluationDetail evaluation) {}

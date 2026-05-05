@@ -65,6 +65,10 @@ public class WritingSubmission {
     @Builder.Default
     EvaluationStatus evaluationStatus = EvaluationStatus.PENDING;
 
+    /** Thời gian làm bài (giây) — FE gửi lên khi nộp bài */
+    @Column(name = "time_taken_seconds")
+    Integer timeTakenSeconds;
+
     @CreationTimestamp
     @Column(name = "submitted_at", updatable = false)
     LocalDateTime submittedAt;

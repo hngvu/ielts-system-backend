@@ -23,4 +23,7 @@ public class SubmitWritingRequest {
     private String essayContent;
 
     private Integer wordCount;
+
+    /** Thời gian làm bài (giây) — optional, FE gửi lên */
+    private Integer timeTakenSeconds;
 }
