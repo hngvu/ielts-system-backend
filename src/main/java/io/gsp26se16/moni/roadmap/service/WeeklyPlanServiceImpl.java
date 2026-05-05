@@ -692,7 +692,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         io.gsp26se16.moni.tag.entity.TagType subType = getSubType(skill);
         List<Tag> weakSubTypes = subType != null ? getWeakTags(metrics, subType, 5) : Collections.emptyList();
 
-        List<Stimulus> candidates = stimulusRepository.findBySkillAndStatus(
+        List<Stimulus> candidates = stimulusRepository.findPublishedBySkillExcludingHiddenTests(
                 skill, io.gsp26se16.moni.common.enumeration.PublishStatus.PUBLISHED);
 
         if (candidates.isEmpty()) {
@@ -717,7 +717,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         io.gsp26se16.moni.tag.entity.TagType subType = getSubType(skill);
         List<Tag> weakSubTypes = subType != null ? getWeakTags(metrics, subType, 3) : Collections.emptyList();
 
-        List<Stimulus> candidates = stimulusRepository.findBySkillAndStatus(
+        List<Stimulus> candidates = stimulusRepository.findPublishedBySkillExcludingHiddenTests(
                 skill, io.gsp26se16.moni.common.enumeration.PublishStatus.PUBLISHED);
 
         if (candidates.isEmpty()) {

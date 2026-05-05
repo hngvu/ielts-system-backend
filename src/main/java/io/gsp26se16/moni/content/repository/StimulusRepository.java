@@ -30,6 +30,11 @@ public interface StimulusRepository extends JpaRepository<Stimulus, Integer> {
 
     List<Stimulus> findBySkillAndStatus(Skill skill, PublishStatus status);
 
+    @Query("SELECT s FROM Stimulus s WHERE s.skill = :skill AND s.status = :status "
+            + "AND NOT EXISTS (SELECT ts FROM TestStructure ts WHERE ts.stimulus = s AND ts.test.status <> :status)")
+    List<Stimulus> findPublishedBySkillExcludingHiddenTests(
+            @Param("skill") Skill skill, @Param("status") PublishStatus status);
+
     boolean existsByTagsId(Integer tagId);
 
     @Query("SELECT s FROM Stimulus s LEFT JOIN FETCH s.tags WHERE s.id = :id")
