@@ -85,6 +85,10 @@ public class SpeakingSubmission {
     @Builder.Default
     EvaluationStatus evaluationStatus = EvaluationStatus.PENDING;
 
+    /** Thời điểm AI bắt đầu xử lý (dùng tính latency) */
+    @Column(name = "processing_started_at")
+    LocalDateTime processingStartedAt;
+
     @CreationTimestamp
     @Column(name = "submitted_at", updatable = false)
     LocalDateTime submittedAt;

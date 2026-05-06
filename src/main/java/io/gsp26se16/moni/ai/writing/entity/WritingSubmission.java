@@ -69,6 +69,10 @@ public class WritingSubmission {
     @Column(name = "time_taken_seconds")
     Integer timeTakenSeconds;
 
+    /** Thời điểm AI bắt đầu xử lý (dùng tính latency) */
+    @Column(name = "processing_started_at")
+    LocalDateTime processingStartedAt;
+
     @CreationTimestamp
     @Column(name = "submitted_at", updatable = false)
     LocalDateTime submittedAt;

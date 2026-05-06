@@ -472,6 +472,7 @@ public class ConversationEngine {
                 .audioUrl(audioUrlsJson)
                 .audioDurationsMs(audioDurationsJson)
                 .evaluationStatus(EvaluationStatus.PROCESSING)
+                .processingStartedAt(LocalDateTime.now())
                 .build();
 
         return speakingSubmissionRepository.save(submission);
@@ -493,6 +494,7 @@ public class ConversationEngine {
                 .user(user)
                 .audioTranscript(transcript)
                 .evaluationStatus(EvaluationStatus.PROCESSING)
+                .processingStartedAt(LocalDateTime.now())
                 .build();
 
         return speakingSubmissionRepository.save(submission);
