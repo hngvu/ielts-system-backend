@@ -73,6 +73,7 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
         } else {
             submission = createSubmission(request, WritingTaskType.TASK_1);
         }
+        submission.setProcessingStartedAt(LocalDateTime.now());
         submission.setEvaluationStatus(EvaluationStatus.PROCESSING);
         writingSubmissionRepository.save(submission);
 

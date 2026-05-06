@@ -68,6 +68,7 @@ public class WritingTask2ServiceImpl implements WritingTask2Service {
         } else {
             submission = createSubmission(request, WritingTaskType.TASK_2);
         }
+        submission.setProcessingStartedAt(LocalDateTime.now());
         submission.setEvaluationStatus(EvaluationStatus.PROCESSING);
         writingSubmissionRepository.save(submission);
 

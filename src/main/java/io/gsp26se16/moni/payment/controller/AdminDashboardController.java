@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.gsp26se16.moni.ai.monitoring.dto.AiHealthResponse;
+import io.gsp26se16.moni.ai.monitoring.service.AiHealthService;
 import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.payment.dto.response.AdminRevenueDashboardResponse;
 import io.gsp26se16.moni.payment.service.AdminDashboardService;
@@ -24,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 public class AdminDashboardController {
 
     private final AdminDashboardService adminDashboardService;
+    private final AiHealthService aiHealthService;
 
     @GetMapping("/revenue")
     public ResponseEntity<ApiResponse<AdminRevenueDashboardResponse>> getRevenueDashboard(
@@ -47,5 +50,12 @@ public class AdminDashboardController {
         return ResponseEntity.ok(ApiResponse.<AdminRevenueDashboardResponse>builder()
                 .result(result)
                 .build());
+    }
+
+    @GetMapping("/ai-health")
+    public ResponseEntity<ApiResponse<AiHealthResponse>> getAiHealthDashboard() {
+        AiHealthResponse result = aiHealthService.getAiHealthDashboard();
+        return ResponseEntity.ok(
+                ApiResponse.<AiHealthResponse>builder().result(result).build());
     }
 }

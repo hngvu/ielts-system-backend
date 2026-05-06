@@ -1,5 +1,6 @@
 package io.gsp26se16.moni.authentication.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,4 +15,6 @@ public interface UserCredentialsRepository extends JpaRepository<UserCredentials
     Optional<UserCredentials> findByEmail(String email);
 
     Optional<UserCredentials> findByUser_Id(String userId);
+
+    List<UserCredentials> findByRole(UserCredentials.Role role);
 }
