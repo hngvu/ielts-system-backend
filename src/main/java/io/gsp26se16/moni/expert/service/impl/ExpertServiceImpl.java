@@ -1,5 +1,6 @@
 package io.gsp26se16.moni.expert.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,14 +48,13 @@ public class ExpertServiceImpl implements ExpertService {
     public List<ExpertProfileResponse> listExperts(ExpertSpecialization filter) {
         List<ExpertProfile> experts;
         if (filter != null) {
-            experts = expertProfileRepository.findBySpecializationIn(
-                    java.util.List.of(filter, ExpertSpecialization.BOTH));
+            experts = expertProfileRepository.findBySpecializationIn(List.of(filter, ExpertSpecialization.BOTH));
         } else {
             experts = expertProfileRepository.findAll();
         }
 
         // Auto-set OFFLINE nếu không ping trong 60s (buffer cho browser tab throttling + network jitter)
-        java.time.LocalDateTime threshold = java.time.LocalDateTime.now().minusSeconds(60);
+        LocalDateTime threshold = LocalDateTime.now().minusSeconds(60);
         for (ExpertProfile ep : experts) {
             if (ep.getStatus() == ExpertStatus.AVAILABLE
                     && (ep.getLastActiveAt() == null || ep.getLastActiveAt().isBefore(threshold))) {
@@ -73,7 +73,7 @@ public class ExpertServiceImpl implements ExpertService {
                 expertProfileRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.EXPERT_NOT_FOUND));
         // Auto-set OFFLINE nếu không ping trong 60s
         if (profile.getStatus() == ExpertStatus.AVAILABLE) {
-            java.time.LocalDateTime threshold = java.time.LocalDateTime.now().minusSeconds(60);
+            LocalDateTime threshold = LocalDateTime.now().minusSeconds(60);
             if (profile.getLastActiveAt() == null || profile.getLastActiveAt().isBefore(threshold)) {
                 profile.setStatus(ExpertStatus.OFFLINE);
                 expertProfileRepository.save(profile);
@@ -224,7 +224,7 @@ public class ExpertServiceImpl implements ExpertService {
                 .orElseThrow(() -> new AppException(ErrorCode.EXPERT_NOT_FOUND));
         profile.setStatus(status);
         if (status == ExpertStatus.AVAILABLE) {
-            profile.setLastActiveAt(java.time.LocalDateTime.now());
+            profile.setLastActiveAt(LocalDateTime.now());
         }
         expertProfileRepository.save(profile);
     }

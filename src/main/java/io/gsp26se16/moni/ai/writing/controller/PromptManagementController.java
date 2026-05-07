@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import io.gsp26se16.moni.ai.writing.service.PromptLoader;
 import io.gsp26se16.moni.ai.writing.service.PromptManagementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PromptManagementController {
 
     private final PromptManagementService promptManagementService;
-    private final io.gsp26se16.moni.ai.writing.service.PromptLoader promptLoader;
+    private final PromptLoader promptLoader;
 
     /** List all prompts with their active version. */
     @GetMapping

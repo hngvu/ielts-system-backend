@@ -1,5 +1,6 @@
 package io.gsp26se16.moni.expert.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,7 +20,7 @@ public interface ExpertProfileRepository extends JpaRepository<ExpertProfile, In
     List<ExpertProfile> findBySpecializationAndStatus(ExpertSpecialization specialization, ExpertStatus status);
 
     List<ExpertProfile> findBySpecializationInAndStatus(
-            java.util.Collection<ExpertSpecialization> specializations, ExpertStatus status);
+            Collection<ExpertSpecialization> specializations, ExpertStatus status);
 
-    List<ExpertProfile> findBySpecializationIn(java.util.Collection<ExpertSpecialization> specializations);
+    List<ExpertProfile> findBySpecializationIn(Collection<ExpertSpecialization> specializations);
 }

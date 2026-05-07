@@ -4,10 +4,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +36,7 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final PaymentNotificationService notificationService;
-    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
 
     @PostMapping("/sepay")
     public ResponseEntity<PaymentResponse> handleSePayWebhook(
@@ -87,7 +89,7 @@ public class PaymentController {
                     return notificationService.subscribe(userId);
                 }
             }
-        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+        } catch (EmptyResultDataAccessException e) {
             throw new AppException(ErrorCode.USER_NOT_EXISTED);
         } catch (AppException e) {
             throw e;

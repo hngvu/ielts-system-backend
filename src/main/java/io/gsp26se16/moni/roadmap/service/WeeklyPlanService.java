@@ -1,12 +1,15 @@
 package io.gsp26se16.moni.roadmap.service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.roadmap.dto.response.MonthlyAssessmentResponse;
 import io.gsp26se16.moni.roadmap.dto.response.WeeklyPlanDetailResponse;
 import io.gsp26se16.moni.roadmap.dto.response.WeeklyPlanSummaryResponse;
+import io.gsp26se16.moni.roadmap.entity.DailySlot;
 import io.gsp26se16.moni.roadmap.entity.WeeklyPlan;
 import io.gsp26se16.moni.vocab.dto.QuizResponse;
 import io.gsp26se16.moni.vocab.dto.VocabResponse;
@@ -32,7 +35,7 @@ public interface WeeklyPlanService {
             Integer totalQuestions,
             List<String> correctWords,
             List<String> incorrectWords,
-            java.util.Map<String, Object> quizData);
+            Map<String, Object> quizData);
 
     /** Auto-detect and complete slot based on stimulus + user + date */
     void autoCompleteSlot(Users user, Integer stimulusId, Integer score, Integer totalQuestions);
@@ -62,11 +65,10 @@ public interface WeeklyPlanService {
     QuizResponse getVocabQuiz(Integer slotId);
 
     /** Assign assessment stimulus for a specific slot (JIT) */
-    void assignAssessmentForSlot(
-            io.gsp26se16.moni.roadmap.entity.DailySlot slot, Users user, java.util.Set<Integer> doneStimulusIds);
+    void assignAssessmentForSlot(DailySlot slot, Users user, Set<Integer> doneStimulusIds);
 
     /** Check if user has existing learn metrics (for returning user flow) */
-    java.util.Map<String, Object> getLearnMetricStatus();
+    Map<String, Object> getLearnMetricStatus();
 
     /** Admin: lấy weekly plan hiện tại của 1 học viên cụ thể qua credentialId. */
     WeeklyPlanDetailResponse getCurrentPlanByCredentialId(String credentialId);

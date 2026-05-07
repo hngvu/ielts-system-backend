@@ -30,12 +30,15 @@ import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
 import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import io.gsp26se16.moni.common.enumeration.EvaluationStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
+import io.gsp26se16.moni.content.entity.Test;
 import io.gsp26se16.moni.content.entity.TestStructure;
+import io.gsp26se16.moni.content.repository.TestRepository;
 import io.gsp26se16.moni.content.repository.TestStructureRepository;
 import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
 import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
 import io.gsp26se16.moni.roadmap.service.WeeklyPlanService;
 import io.gsp26se16.moni.tag.entity.Tag;
+import io.gsp26se16.moni.tag.entity.TagType;
 import io.gsp26se16.moni.tag.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,7 +73,7 @@ public class ConversationEngine {
     private final ObjectMapper objectMapper;
     private final ChatClient.Builder chatClientBuilder;
     private final Executor aiExecutor;
-    private final io.gsp26se16.moni.content.repository.TestRepository testRepository;
+    private final TestRepository testRepository;
     private final TestStructureRepository testStructureRepository;
     private final WeeklyPlanService weeklyPlanService;
 
@@ -400,7 +403,7 @@ public class ConversationEngine {
         if (strategy != null) return strategy.toString();
         // Try improvements array
         Object improvements = feedback.get("improvements");
-        if (improvements instanceof java.util.List<?> list && !list.isEmpty()) {
+        if (improvements instanceof List<?> list && !list.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             for (Object item : list) {
                 if (item instanceof Map<?, ?> map) {
@@ -451,7 +454,7 @@ public class ConversationEngine {
         }
 
         // Resolve Test entity
-        io.gsp26se16.moni.content.entity.Test test = null;
+        Test test = null;
         if (session.getTestId() != null) {
             test = testRepository.findById(session.getTestId()).orElse(null);
         }
@@ -654,8 +657,7 @@ public class ConversationEngine {
             Double band = entry.getValue();
 
             // Find or create tag for this criterion
-            io.gsp26se16.moni.tag.entity.Tag tag =
-                    tagRepository.findByCode(criterion).orElse(null);
+            Tag tag = tagRepository.findByCode(criterion).orElse(null);
             if (tag == null) {
                 log.debug("Tag not found for criterion={}, skipping metric update", criterion);
                 continue;
@@ -682,7 +684,7 @@ public class ConversationEngine {
                     if (structure.getStimulus() != null
                             && structure.getStimulus().getTags() != null) {
                         for (Tag tag : structure.getStimulus().getTags()) {
-                            if (tag.getType() == io.gsp26se16.moni.tag.entity.TagType.TOPIC) {
+                            if (tag.getType() == TagType.TOPIC) {
                                 updateMetricBKT(user, tag, finalIsCorrect, finalS);
                             }
                         }

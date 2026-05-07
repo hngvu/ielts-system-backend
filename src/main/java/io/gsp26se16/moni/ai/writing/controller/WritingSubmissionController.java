@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.ai.writing.controller;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -233,16 +234,16 @@ public class WritingSubmissionController {
                     // Parse compiled feedback into general summary + per-criterion justifications
                     ExpertFeedbackParsed parsed = parseExpertFeedback(ex.getFeedback());
 
-                    java.util.Map<String, Object> criteriaMap = new java.util.LinkedHashMap<>();
+                    Map<String, Object> criteriaMap = new LinkedHashMap<>();
                     criteriaMap.put("TR", buildCriterionEntry(ex.getTaskResponse(), parsed.trJustification));
                     criteriaMap.put("CC", buildCriterionEntry(ex.getCoherence(), parsed.ccJustification));
                     criteriaMap.put("LR", buildCriterionEntry(ex.getLexicalResource(), parsed.lrJustification));
                     criteriaMap.put("GRA", buildCriterionEntry(ex.getGrammaticalRange(), parsed.graJustification));
 
-                    java.util.Map<String, Object> analysis = new java.util.LinkedHashMap<>();
+                    Map<String, Object> analysis = new LinkedHashMap<>();
                     analysis.put("criteria", criteriaMap);
 
-                    java.util.Map<String, Object> feedback = new java.util.LinkedHashMap<>();
+                    Map<String, Object> feedback = new LinkedHashMap<>();
                     if (parsed.generalSummary != null && !parsed.generalSummary.isBlank()) {
                         feedback.put("summary", parsed.generalSummary);
                     }
@@ -280,8 +281,8 @@ public class WritingSubmissionController {
     // --- Helpers ---
 
     /** Build một entry criterion gồm band điểm và justification (nếu có) */
-    private java.util.Map<String, Object> buildCriterionEntry(Double band, String justification) {
-        java.util.Map<String, Object> entry = new java.util.LinkedHashMap<>();
+    private Map<String, Object> buildCriterionEntry(Double band, String justification) {
+        Map<String, Object> entry = new LinkedHashMap<>();
         entry.put("adjusted_band", band != null ? band : 0.0);
         if (justification != null && !justification.isBlank()) {
             entry.put("justification", justification);

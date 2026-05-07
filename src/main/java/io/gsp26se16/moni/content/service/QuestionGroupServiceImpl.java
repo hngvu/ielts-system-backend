@@ -18,6 +18,7 @@ import io.gsp26se16.moni.content.repository.QuestionGroupRepository;
 import io.gsp26se16.moni.content.repository.QuestionRepository;
 import io.gsp26se16.moni.content.repository.QuestionTypeRepository;
 import io.gsp26se16.moni.content.repository.StimulusRepository;
+import io.gsp26se16.moni.tag.entity.Tag;
 import io.gsp26se16.moni.tag.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -185,10 +186,10 @@ public class QuestionGroupServiceImpl implements QuestionGroupService {
         if (group.getQuestions() == null || group.getQuestions().isEmpty()) {
             return;
         }
-        io.gsp26se16.moni.tag.entity.Tag oldTag = oldType != null
+        Tag oldTag = oldType != null
                 ? tagRepository.findByCode("QT_" + oldType.getCode()).orElse(null)
                 : null;
-        io.gsp26se16.moni.tag.entity.Tag newTag = newType != null
+        Tag newTag = newType != null
                 ? tagRepository.findByCode("QT_" + newType.getCode()).orElse(null)
                 : null;
 

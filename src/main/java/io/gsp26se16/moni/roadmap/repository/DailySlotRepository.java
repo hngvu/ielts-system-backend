@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import io.gsp26se16.moni.authentication.entity.Users;
+import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.roadmap.entity.DailySlot;
 import io.gsp26se16.moni.roadmap.entity.WeeklyPlan;
 
@@ -22,8 +23,7 @@ public interface DailySlotRepository extends JpaRepository<DailySlot, Integer> {
 
     List<DailySlot> findByWeeklyPlanAndSlotDate(WeeklyPlan plan, LocalDate date);
 
-    Optional<DailySlot> findByWeeklyPlanAndDayOfWeekAndSkill(
-            WeeklyPlan plan, Integer dayOfWeek, io.gsp26se16.moni.common.enumeration.Skill skill);
+    Optional<DailySlot> findByWeeklyPlanAndDayOfWeekAndSkill(WeeklyPlan plan, Integer dayOfWeek, Skill skill);
 
     long countByWeeklyPlanAndStatus(WeeklyPlan plan, String status);
 
@@ -79,5 +79,5 @@ public interface DailySlotRepository extends JpaRepository<DailySlot, Integer> {
     int deleteByWeeklyPlan(WeeklyPlan plan);
 
     Optional<DailySlot> findFirstByWeeklyPlanUserAndSkillAndTaskTypeAndStatusOrderByCompletedAtDesc(
-            Users user, io.gsp26se16.moni.common.enumeration.Skill skill, String taskType, String status);
+            Users user, Skill skill, String taskType, String status);
 }

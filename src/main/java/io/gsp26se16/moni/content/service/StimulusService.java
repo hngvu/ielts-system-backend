@@ -14,7 +14,7 @@ public interface StimulusService {
     public Integer createStimulus(StimulusCreateRequest request);
 
     public StimulusResponse updateStimulus(
-            Integer id, String content, String mediaUrl, Object transcript, java.util.List<Integer> tagIds);
+            Integer id, String content, String mediaUrl, Object transcript, List<Integer> tagIds);
 
     public Page<StimulusResponse> getAllStimuli(String keyword, Skill skill, Pageable pageable);
 

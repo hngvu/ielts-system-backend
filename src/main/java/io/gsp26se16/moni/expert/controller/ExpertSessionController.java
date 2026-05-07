@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.expert.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -67,7 +68,7 @@ public class ExpertSessionController {
 
     @PostMapping("/{id}/recording")
     public ResponseEntity<ApiResponse<ScoringSessionResponse>> saveExpertRecording(
-            @PathVariable Integer id, @RequestBody java.util.Map<String, String> body) {
+            @PathVariable Integer id, @RequestBody Map<String, String> body) {
         String credentialId = getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.<ScoringSessionResponse>builder()
                 .result(sessionService.saveExpertRecording(id, body.get("expertRecordingUrl"), credentialId))

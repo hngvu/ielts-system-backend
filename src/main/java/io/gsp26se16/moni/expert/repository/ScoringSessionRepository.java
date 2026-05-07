@@ -2,6 +2,7 @@ package io.gsp26se16.moni.expert.repository;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -28,5 +29,5 @@ public interface ScoringSessionRepository extends JpaRepository<ScoringSession, 
 
     List<ScoringSession> findByStatusAndCreatedAtBefore(SessionStatus status, Timestamp cutoff);
 
-    java.util.Optional<ScoringSession> findByWritingSubmissionId(Long writingSubmissionId);
+    Optional<ScoringSession> findByWritingSubmissionId(Long writingSubmissionId);
 }

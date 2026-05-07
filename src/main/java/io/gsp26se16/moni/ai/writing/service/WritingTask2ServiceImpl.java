@@ -2,6 +2,7 @@ package io.gsp26se16.moni.ai.writing.service;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -26,10 +27,13 @@ import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import io.gsp26se16.moni.common.enumeration.EvaluationStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.enumeration.WritingTaskType;
+import io.gsp26se16.moni.content.entity.Stimulus;
 import io.gsp26se16.moni.content.repository.StimulusRepository;
 import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
 import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
 import io.gsp26se16.moni.roadmap.service.WeeklyPlanService;
+import io.gsp26se16.moni.tag.entity.Tag;
+import io.gsp26se16.moni.tag.entity.TagType;
 import io.gsp26se16.moni.tag.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -348,7 +352,7 @@ public class WritingTask2ServiceImpl implements WritingTask2Service {
         if (criteriaMap == null) return;
 
         // Extract final band for each criterion
-        Map<String, Double> criterionBands = new java.util.LinkedHashMap<>();
+        Map<String, Double> criterionBands = new LinkedHashMap<>();
         for (String criterion : new String[] {"TR", "CC", "LR", "GRA"}) {
             Object obj = criteriaMap.get(criterion);
             if (obj instanceof Map<?, ?> map) {
@@ -375,8 +379,7 @@ public class WritingTask2ServiceImpl implements WritingTask2Service {
 
             // Find or create tag for this criterion
             String tagCode = criterionToTagCode.getOrDefault(criterion, criterion);
-            io.gsp26se16.moni.tag.entity.Tag tag =
-                    tagRepository.findByCode(tagCode).orElse(null);
+            Tag tag = tagRepository.findByCode(tagCode).orElse(null);
             if (tag == null) {
                 log.debug("Tag not found for criterion={} (tagCode={}), skipping metric update", criterion, tagCode);
                 continue;
@@ -389,7 +392,7 @@ public class WritingTask2ServiceImpl implements WritingTask2Service {
 
         // Update metric for tags specifically attached to the Stimulus (like WRITING_TYPE or TOPIC)
         // Re-fetch stimulus from DB to avoid LazyInitializationException (session may be closed after AI phases)
-        io.gsp26se16.moni.content.entity.Stimulus freshStimulus = submission.getStimulus() != null
+        Stimulus freshStimulus = submission.getStimulus() != null
                 ? stimulusRepository
                         .findByIdWithTags(submission.getStimulus().getId())
                         .orElse(null)
@@ -398,9 +401,8 @@ public class WritingTask2ServiceImpl implements WritingTask2Service {
             double finalS = finalBand / 9.0;
             boolean finalIsCorrect = finalS >= 0.6;
 
-            for (io.gsp26se16.moni.tag.entity.Tag tag : freshStimulus.getTags()) {
-                if (tag.getType() == io.gsp26se16.moni.tag.entity.TagType.WRITING_TYPE
-                        || tag.getType() == io.gsp26se16.moni.tag.entity.TagType.TOPIC) {
+            for (Tag tag : freshStimulus.getTags()) {
+                if (tag.getType() == TagType.WRITING_TYPE || tag.getType() == TagType.TOPIC) {
                     updateMetricBKT(user, tag, finalIsCorrect, finalS);
                 }
             }
@@ -411,7 +413,7 @@ public class WritingTask2ServiceImpl implements WritingTask2Service {
      * Update criterion metric using band score directly as mastery level.
      * Writing criteria have continuous band scores (0-9), so binary BKT is not appropriate.
      */
-    private void updateCriterionMetric(Users user, io.gsp26se16.moni.tag.entity.Tag tag, double mastery) {
+    private void updateCriterionMetric(Users user, Tag tag, double mastery) {
         LearnerMetric metric = learnerMetricRepository
                 .findByUserAndTagAndSkill(user, tag, Skill.WRITING)
                 .orElseGet(() -> {
@@ -441,8 +443,7 @@ public class WritingTask2ServiceImpl implements WritingTask2Service {
     /**
      * Update single metric using BKT formula (for non-criteria tags like WRITING_TYPE, TOPIC).
      */
-    private void updateMetricBKT(
-            Users user, io.gsp26se16.moni.tag.entity.Tag tag, boolean isCorrect, double scoreNormalized) {
+    private void updateMetricBKT(Users user, Tag tag, boolean isCorrect, double scoreNormalized) {
 
         LearnerMetric metric = learnerMetricRepository
                 .findByUserAndTagAndSkill(user, tag, Skill.WRITING)
