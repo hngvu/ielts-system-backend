@@ -70,6 +70,7 @@ target/
 ### Environment Variables & Secrets (Quan trọng) ###
 .env
 *.env
+.env.bak*
 env
 application-local.properties
 application-local.yml
