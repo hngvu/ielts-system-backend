@@ -30,14 +30,18 @@ import io.gsp26se16.moni.payment.dto.request.SePayWebhookRequest;
 import io.gsp26se16.moni.payment.dto.response.PaymentInitResponse;
 import io.gsp26se16.moni.payment.dto.response.PaymentResponse;
 import io.gsp26se16.moni.payment.entity.CreditTransaction;
+import io.gsp26se16.moni.payment.entity.PackagePricing;
 import io.gsp26se16.moni.payment.entity.Payment;
+import io.gsp26se16.moni.payment.entity.SubscriptionPlan;
 import io.gsp26se16.moni.payment.enumeration.PaymentStatus;
 import io.gsp26se16.moni.payment.enumeration.PaymentType;
 import io.gsp26se16.moni.payment.repository.CreditTransactionRepository;
 import io.gsp26se16.moni.payment.repository.PackagePricingRepository;
 import io.gsp26se16.moni.payment.repository.PaymentRepository;
+import io.gsp26se16.moni.payment.repository.SubscriptionPlanRepository;
 import io.gsp26se16.moni.payment.service.PaymentNotificationService;
 import io.gsp26se16.moni.payment.service.PaymentService;
+import io.gsp26se16.moni.payment.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,12 +51,12 @@ import lombok.extern.slf4j.Slf4j;
 public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final PackagePricingRepository packagePricingRepository;
-    private final io.gsp26se16.moni.payment.repository.SubscriptionPlanRepository subscriptionPlanRepository;
+    private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final CreditTransactionRepository creditTransactionRepository;
     private final UsersRepository usersRepository;
     private final UserCredentialsRepository userCredentialsRepository;
     private final PaymentNotificationService notificationService;
-    private final io.gsp26se16.moni.payment.service.SubscriptionService subscriptionService;
+    private final SubscriptionService subscriptionService;
     private final String txnCodePrefix = "MN";
     private final String txnCodeCharset = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
     private final int txnCodeLength = 6 - txnCodePrefix.length();
@@ -77,8 +81,8 @@ public class PaymentServiceImpl implements PaymentService {
             throw new AppException(ErrorCode.INVALID_KEY);
         }
 
-        io.gsp26se16.moni.payment.entity.PackagePricing packagePricing = null;
-        io.gsp26se16.moni.payment.entity.SubscriptionPlan subscriptionPlan = null;
+        PackagePricing packagePricing = null;
+        SubscriptionPlan subscriptionPlan = null;
         if (hasPackage) {
             packagePricing = packagePricingRepository
                     .findById(paymentInitRequest.packageId())

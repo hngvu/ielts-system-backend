@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -394,7 +395,7 @@ public class ExamSessionServiceImpl implements ExamSessionService {
     }
 
     private void updateMastery(Users user, Skill skill, Question question, boolean isCorrect) {
-        Set<Tag> tags = new java.util.HashSet<>();
+        Set<Tag> tags = new HashSet<>();
         if (question.getTags() != null) {
             tags.addAll(question.getTags());
         }

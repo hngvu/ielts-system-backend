@@ -1,5 +1,7 @@
 package io.gsp26se16.moni.content.service;
 
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,12 +47,12 @@ public class QuestionServiceImpl implements QuestionService {
 
         // Update options in-place to preserve IDs (avoid FK violations from attempt_answer)
         if (request.getOptions() != null) {
-            var existingByLabel = new java.util.LinkedHashMap<String, QuestionOption>();
+            var existingByLabel = new LinkedHashMap<String, QuestionOption>();
             for (var opt : question.getOptions()) {
                 existingByLabel.put(opt.getLabel(), opt);
             }
             // Remove options whose labels are no longer present
-            var requestLabels = new java.util.HashSet<String>();
+            var requestLabels = new HashSet<String>();
             for (var optReq : request.getOptions()) {
                 requestLabels.add(optReq.getLabel());
             }

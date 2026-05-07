@@ -13,7 +13,10 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.gsp26se16.moni.ai.speaking.service.ConversationEngine;
+import io.gsp26se16.moni.ai.writing.repository.AiEvaluationRepository;
+import io.gsp26se16.moni.ai.writing.repository.WritingSubmissionRepository;
 import io.gsp26se16.moni.ai.writing.request.WritingRequest;
+import io.gsp26se16.moni.ai.writing.service.Helper;
 import io.gsp26se16.moni.ai.writing.service.WritingTask1Service;
 import io.gsp26se16.moni.ai.writing.service.WritingTask2Service;
 import io.gsp26se16.moni.common.enumeration.EvaluationStatus;
@@ -35,9 +38,9 @@ public class AiController {
     private final CreditService creditService;
     private final TranscriptService transcriptService;
     private final ConversationEngine conversationEngine;
-    private final io.gsp26se16.moni.ai.writing.service.Helper writingHelper;
-    private final io.gsp26se16.moni.ai.writing.repository.WritingSubmissionRepository writingSubmissionRepository;
-    private final io.gsp26se16.moni.ai.writing.repository.AiEvaluationRepository aiEvaluationRepository;
+    private final Helper writingHelper;
+    private final WritingSubmissionRepository writingSubmissionRepository;
+    private final AiEvaluationRepository aiEvaluationRepository;
 
     @PostMapping(value = "/writing/score", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> scoreWriting(@ModelAttribute WritingRequest request)

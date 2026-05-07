@@ -3,8 +3,10 @@ package io.gsp26se16.moni.notification.controller;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +31,7 @@ public class NotificationController {
     private final NotificationService notificationService;
     private final NotificationSseService sseService;
     private final UserCredentialsRepository userCredentialsRepository;
-    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<NotificationResponse>>> list(
@@ -82,7 +84,7 @@ public class NotificationController {
             if (userId == null) throw new AppException(ErrorCode.UNAUTHENTICATED);
 
             return sseService.subscribe(userId);
-        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+        } catch (EmptyResultDataAccessException e) {
             throw new AppException(ErrorCode.USER_NOT_EXISTED);
         } catch (AppException e) {
             throw e;

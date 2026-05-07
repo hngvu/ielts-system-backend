@@ -1,7 +1,10 @@
 package io.gsp26se16.moni.expert.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Sort;
@@ -11,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import io.gsp26se16.moni.ai.writing.entity.WritingSubmission;
 import io.gsp26se16.moni.ai.writing.repository.WritingSubmissionRepository;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
+import io.gsp26se16.moni.common.enumeration.EvaluationStatus;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.entity.Test;
@@ -20,12 +24,16 @@ import io.gsp26se16.moni.expert.dto.SubmitEvaluationRequest;
 import io.gsp26se16.moni.expert.entity.ExpertEvaluation;
 import io.gsp26se16.moni.expert.entity.ExpertProfile;
 import io.gsp26se16.moni.expert.entity.ScoringSession;
+import io.gsp26se16.moni.expert.enumeration.ExpertStatus;
 import io.gsp26se16.moni.expert.enumeration.SessionStatus;
 import io.gsp26se16.moni.expert.repository.ExpertEvaluationRepository;
 import io.gsp26se16.moni.expert.repository.ExpertProfileRepository;
 import io.gsp26se16.moni.expert.repository.ScoringSessionRepository;
 import io.gsp26se16.moni.expert.service.DailyCoService;
+import io.gsp26se16.moni.expert.service.ExpertLearnerMetricService;
 import io.gsp26se16.moni.expert.service.ScoringSessionService;
+import io.gsp26se16.moni.notification.enumeration.NotificationType;
+import io.gsp26se16.moni.notification.service.NotificationService;
 import io.gsp26se16.moni.payment.service.CreditService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -44,8 +52,8 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
     WritingSubmissionRepository writingSubmissionRepository;
     DailyCoService dailyCoService;
     TestRepository testRepository;
-    io.gsp26se16.moni.notification.service.NotificationService notificationService;
-    io.gsp26se16.moni.expert.service.ExpertLearnerMetricService expertLearnerMetricService;
+    NotificationService notificationService;
+    ExpertLearnerMetricService expertLearnerMetricService;
 
     @Override
     @Transactional
@@ -64,15 +72,14 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
         if (expertId == null) {
             // "Gửi ngẫu nhiên" — ưu tiên expert AVAILABLE. Nếu không có thì pick từ
             // tất cả expert (kể cả OFFLINE) — bài sẽ chấm khi expert online trở lại.
-            java.util.List<ExpertProfile> availableExperts =
-                    expertProfileRepository.findByStatus(io.gsp26se16.moni.expert.enumeration.ExpertStatus.AVAILABLE);
-            java.util.List<ExpertProfile> pool =
+            List<ExpertProfile> availableExperts = expertProfileRepository.findByStatus(ExpertStatus.AVAILABLE);
+            List<ExpertProfile> pool =
                     availableExperts.isEmpty() ? expertProfileRepository.findAll() : availableExperts;
             if (pool.isEmpty()) {
                 throw new AppException(ErrorCode.EXPERT_NOT_AVAILABLE);
             }
             expert = pool.stream()
-                    .min(java.util.Comparator.comparingInt(
+                    .min(Comparator.comparingInt(
                             e -> sessionRepository.countByExpertAndStatus(e, SessionStatus.QUEUED)))
                     .get();
         } else {
@@ -104,7 +111,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
         // Update WritingSubmission status to PROCESSING (sent to expert)
         if (writingSubmissionId != null) {
             writingSubmissionRepository.findById(writingSubmissionId).ifPresent(sub -> {
-                sub.setEvaluationStatus(io.gsp26se16.moni.common.enumeration.EvaluationStatus.PROCESSING);
+                sub.setEvaluationStatus(EvaluationStatus.PROCESSING);
                 writingSubmissionRepository.save(sub);
             });
         }
@@ -141,7 +148,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
             writingSubmissionRepository
                     .findById(session.getWritingSubmissionId())
                     .ifPresent(sub -> {
-                        sub.setEvaluationStatus(io.gsp26se16.moni.common.enumeration.EvaluationStatus.PENDING);
+                        sub.setEvaluationStatus(EvaluationStatus.PENDING);
                         writingSubmissionRepository.save(sub);
                     });
         }
@@ -199,11 +206,11 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
     }
 
     @Override
-    public java.util.Map<String, Object> getQueuePositionWithStatus(Integer sessionId) {
+    public Map<String, Object> getQueuePositionWithStatus(Integer sessionId) {
         ScoringSession session = sessionRepository
                 .findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
-        return java.util.Map.of(
+        return Map.of(
                 "position", session.getQueuePosition() != null ? session.getQueuePosition() : 0,
                 "status", session.getStatus().name(),
                 "roomUrl", session.getRoomUrl() != null ? session.getRoomUrl() : "");
@@ -256,7 +263,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
         try {
             notificationService.create(
                     learnerUserId,
-                    io.gsp26se16.moni.notification.enumeration.NotificationType.EXPERT_ACCEPTED_SESSION,
+                    NotificationType.EXPERT_ACCEPTED_SESSION,
                     expertName + " đã nhận " + subject + " của bạn",
                     expertName + " đã nhận " + subject + " của bạn và đang chuẩn bị chấm.",
                     "/scoring-history",
@@ -277,7 +284,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
         try {
             notificationService.create(
                     learnerUserId,
-                    io.gsp26se16.moni.notification.enumeration.NotificationType.EXPERT_COMPLETED_SCORING,
+                    NotificationType.EXPERT_COMPLETED_SCORING,
                     expertName + " đã chấm xong " + subject + " của bạn",
                     expertName + " đã hoàn tất chấm " + subject + ". Vui lòng xem kết quả.",
                     "/scoring-history",
@@ -369,7 +376,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
         // Update linked WritingSubmission status to COMPLETED
         if (saved.getWritingSubmissionId() != null) {
             writingSubmissionRepository.findById(saved.getWritingSubmissionId()).ifPresent(sub -> {
-                sub.setEvaluationStatus(io.gsp26se16.moni.common.enumeration.EvaluationStatus.COMPLETED);
+                sub.setEvaluationStatus(EvaluationStatus.COMPLETED);
                 writingSubmissionRepository.save(sub);
             });
         }
@@ -526,11 +533,11 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
     }
 
     @Override
-    public java.util.List<java.util.Map<String, Object>> getExpertReviews(Integer expertId) {
+    public List<Map<String, Object>> getExpertReviews(Integer expertId) {
         return sessionRepository.findByExpert_IdAndUserRatingIsNotNullOrderByCreatedAtDesc(expertId).stream()
                 .limit(10)
                 .map(s -> {
-                    java.util.Map<String, Object> map = new java.util.LinkedHashMap<>();
+                    Map<String, Object> map = new LinkedHashMap<>();
                     map.put("rating", s.getUserRating());
                     map.put("comment", s.getUserComment());
                     map.put("createdAt", s.getCreatedAt());
@@ -553,7 +560,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
     }
 
     @Override
-    public java.util.Map<String, Object> getEvaluation(Integer sessionId, String credentialId) {
+    public Map<String, Object> getEvaluation(Integer sessionId, String credentialId) {
         var credential = userCredentialsRepository
                 .findById(credentialId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
@@ -580,7 +587,7 @@ public class ScoringSessionServiceImpl implements ScoringSessionService {
                 .findByScoringSession_Id(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SCORING_SESSION_NOT_FOUND));
 
-        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        Map<String, Object> result = new LinkedHashMap<>();
         result.put("id", eval.getId());
         result.put("skill", eval.getSkill());
         result.put("overallScore", eval.getOverallScore());

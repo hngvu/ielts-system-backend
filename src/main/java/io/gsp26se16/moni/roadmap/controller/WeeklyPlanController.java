@@ -9,6 +9,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.gsp26se16.moni.common.dto.ApiResponse;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
@@ -17,6 +19,7 @@ import io.gsp26se16.moni.roadmap.dto.response.MonthlyAssessmentResponse;
 import io.gsp26se16.moni.roadmap.dto.response.WeeklyPlanDetailResponse;
 import io.gsp26se16.moni.roadmap.dto.response.WeeklyPlanSummaryResponse;
 import io.gsp26se16.moni.roadmap.service.WeeklyPlanService;
+import io.gsp26se16.moni.vocab.dto.QuizResponse;
 import io.gsp26se16.moni.vocab.dto.VocabResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +32,7 @@ public class WeeklyPlanController {
 
     private final WeeklyPlanService weeklyPlanService;
     private final SubscriptionService subscriptionService;
-    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
     private void requireRoadmapSubscription() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -98,11 +101,11 @@ public class WeeklyPlanController {
             incorrectWords = (List<String>) body.get("incorrectWords");
         }
 
-        java.util.Map<String, Object> quizData = null;
+        Map<String, Object> quizData = null;
         if (body.containsKey("quizData")) {
             try {
                 // Extracts the JSON map as is
-                quizData = (java.util.Map<String, Object>) body.get("quizData");
+                quizData = (Map<String, Object>) body.get("quizData");
             } catch (Exception e) {
                 // ignore
             }
@@ -119,10 +122,9 @@ public class WeeklyPlanController {
 
     @PostMapping("/slots/{slotId}/vocab-start")
     @Operation(summary = "Lấy danh sách 15 từ vựng cho bài học (không tự động lưu)")
-    public ResponseEntity<ApiResponse<List<io.gsp26se16.moni.vocab.dto.VocabResponse>>> startVocabLearning(
-            @PathVariable Integer slotId) {
+    public ResponseEntity<ApiResponse<List<VocabResponse>>> startVocabLearning(@PathVariable Integer slotId) {
         requireRoadmapSubscription();
-        List<io.gsp26se16.moni.vocab.dto.VocabResponse> result = weeklyPlanService.startVocabLearning(slotId);
+        List<VocabResponse> result = weeklyPlanService.startVocabLearning(slotId);
 
         return ResponseEntity.ok(ApiResponse.<List<VocabResponse>>builder()
                 .code(1000)
@@ -151,12 +153,11 @@ public class WeeklyPlanController {
 
     @GetMapping("/slots/{slotId}/vocab-test")
     @Operation(summary = "Lấy bài thi Quiz từ vựng cho slot kiểm tra")
-    public ResponseEntity<ApiResponse<io.gsp26se16.moni.vocab.dto.QuizResponse>> getVocabQuiz(
-            @PathVariable Integer slotId) {
+    public ResponseEntity<ApiResponse<QuizResponse>> getVocabQuiz(@PathVariable Integer slotId) {
         requireRoadmapSubscription();
-        io.gsp26se16.moni.vocab.dto.QuizResponse result = weeklyPlanService.getVocabQuiz(slotId);
+        QuizResponse result = weeklyPlanService.getVocabQuiz(slotId);
 
-        return ResponseEntity.ok(ApiResponse.<io.gsp26se16.moni.vocab.dto.QuizResponse>builder()
+        return ResponseEntity.ok(ApiResponse.<QuizResponse>builder()
                 .code(1000)
                 .message("Lấy bài kiểm tra từ vựng thành công")
                 .result(result)

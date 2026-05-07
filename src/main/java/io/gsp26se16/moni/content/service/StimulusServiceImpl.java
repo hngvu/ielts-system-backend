@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.gsp26se16.moni.ai.writing.service.GeminiVisionClient;
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import io.gsp26se16.moni.common.enumeration.PublishStatus;
@@ -37,7 +38,7 @@ public class StimulusServiceImpl implements StimulusService {
     private final TagRepository tagRepository;
     private final UsersRepository userRepository;
     private final TranscriptService transcriptService;
-    private final io.gsp26se16.moni.ai.writing.service.GeminiVisionClient geminiVisionClient;
+    private final GeminiVisionClient geminiVisionClient;
 
     @Override
     @Transactional
@@ -112,7 +113,7 @@ public class StimulusServiceImpl implements StimulusService {
     @Transactional
     @SuppressWarnings("unchecked")
     public StimulusResponse updateStimulus(
-            Integer id, String content, String mediaUrl, Object transcript, java.util.List<Integer> tagIds) {
+            Integer id, String content, String mediaUrl, Object transcript, List<Integer> tagIds) {
         Stimulus stimulus =
                 stimulusRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.STIMULUS_NOT_FOUND));
         // Guard: blob: URL chỉ sống trong RAM browser tạo ra nó → từ chối, không cho dirty data

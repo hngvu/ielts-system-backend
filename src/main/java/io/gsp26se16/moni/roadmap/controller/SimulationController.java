@@ -504,8 +504,7 @@ public class SimulationController {
             // Learning tasks don't have scores
             slot.setScore(null);
             slot.setTotalQuestions(null);
-        } else if (slot.getSkill() == io.gsp26se16.moni.common.enumeration.Skill.WRITING
-                || slot.getSkill() == io.gsp26se16.moni.common.enumeration.Skill.SPEAKING) {
+        } else if (slot.getSkill() == Skill.WRITING || slot.getSkill() == Skill.SPEAKING) {
             // Writing and Speaking use band scores (1-9). Generate firmer scores (5.0 - 8.5)
             // band * 10 then divide by 10 to simulate half band if needed
             double band = 5.0 + rng.nextDouble() * 3.5; // 5.0 to 8.5

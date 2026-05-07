@@ -19,9 +19,11 @@ import io.gsp26se16.moni.placement.repository.PlacementResultRepository;
 import io.gsp26se16.moni.roadmap.dto.response.GoalResponse;
 import io.gsp26se16.moni.roadmap.dto.response.LearnerRoadmapInsightsResponse;
 import io.gsp26se16.moni.roadmap.entity.Goal;
+import io.gsp26se16.moni.roadmap.entity.InsightSnapshot;
 import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
 import io.gsp26se16.moni.roadmap.entity.WeeklyPlan;
 import io.gsp26se16.moni.roadmap.repository.GoalRepository;
+import io.gsp26se16.moni.roadmap.repository.InsightSnapshotRepository;
 import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
 import io.gsp26se16.moni.roadmap.repository.WeeklyPlanRepository;
 import io.gsp26se16.moni.tag.entity.Tag;
@@ -39,7 +41,7 @@ public class GoalServiceImpl implements GoalService {
     private final PlacementResultRepository placementResultRepository;
     private final WeeklyPlanService weeklyPlanService;
     private final WeeklyPlanRepository weeklyPlanRepository;
-    private final io.gsp26se16.moni.roadmap.repository.InsightSnapshotRepository insightSnapshotRepository;
+    private final InsightSnapshotRepository insightSnapshotRepository;
 
     // =====================================================================
     // PUBLIC API
@@ -141,10 +143,10 @@ public class GoalServiceImpl implements GoalService {
     public LearnerRoadmapInsightsResponse getRoadmapInsightsByWeek(Integer weekNumber) {
         Users learner = getCurrentUser();
 
-        java.util.Optional<io.gsp26se16.moni.roadmap.entity.InsightSnapshot> snapshotOpt =
+        Optional<InsightSnapshot> snapshotOpt =
                 insightSnapshotRepository.findFirstByUserAndWeekNumberOrderByCreatedAtDesc(learner, weekNumber);
         if (snapshotOpt.isPresent()) {
-            io.gsp26se16.moni.roadmap.entity.InsightSnapshot snap = snapshotOpt.get();
+            InsightSnapshot snap = snapshotOpt.get();
             LearnerRoadmapInsightsResponse insights = generateInsightsForUser(learner);
 
             insights.setCalibratedReading(snap.getReadingCalibrated());
@@ -179,19 +181,18 @@ public class GoalServiceImpl implements GoalService {
     public void snapshotInsightsForWeek(Users user, Integer weekNumber) {
         LearnerRoadmapInsightsResponse insights = generateInsightsForUser(user);
 
-        io.gsp26se16.moni.roadmap.entity.InsightSnapshot snapshot =
-                io.gsp26se16.moni.roadmap.entity.InsightSnapshot.builder()
-                        .user(user)
-                        .weekNumber(weekNumber)
-                        .overallCalibrated(insights.getCalibratedOverall())
-                        .readingCalibrated(insights.getCalibratedReading())
-                        .listeningCalibrated(insights.getCalibratedListening())
-                        .writingCalibrated(insights.getCalibratedWriting())
-                        .speakingCalibrated(insights.getCalibratedSpeaking())
-                        .masteryIndex(insights.getMasteryIndex())
-                        .confidenceIndex(insights.getConfidenceIndex())
-                        .createdAt(LocalDateTime.now())
-                        .build();
+        InsightSnapshot snapshot = InsightSnapshot.builder()
+                .user(user)
+                .weekNumber(weekNumber)
+                .overallCalibrated(insights.getCalibratedOverall())
+                .readingCalibrated(insights.getCalibratedReading())
+                .listeningCalibrated(insights.getCalibratedListening())
+                .writingCalibrated(insights.getCalibratedWriting())
+                .speakingCalibrated(insights.getCalibratedSpeaking())
+                .masteryIndex(insights.getMasteryIndex())
+                .confidenceIndex(insights.getConfidenceIndex())
+                .createdAt(LocalDateTime.now())
+                .build();
 
         insightSnapshotRepository.save(snapshot);
     }

@@ -3,9 +3,14 @@ package io.gsp26se16.moni.vocab.service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.data.domain.Pageable;
@@ -15,10 +20,12 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.gsp26se16.moni.ai.writing.service.PromptLoader;
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.vocab.dto.*;
+import io.gsp26se16.moni.vocab.entity.CuratedWord;
 import io.gsp26se16.moni.vocab.entity.Vocab;
 import io.gsp26se16.moni.vocab.entity.VocabReview;
 import io.gsp26se16.moni.vocab.enumeration.VocabSourceType;
@@ -44,7 +51,7 @@ public class VocabLearningServiceImpl implements VocabLearningService {
     private final VocabAuthHelper authHelper;
     private final ChatClient.Builder chatClientBuilder;
     private final ObjectMapper objectMapper;
-    private final io.gsp26se16.moni.ai.writing.service.PromptLoader promptLoader;
+    private final PromptLoader promptLoader;
 
     @Transactional(readOnly = true)
     public List<VocabResponse> getDueReview(String credentialId, int limit) {
@@ -102,11 +109,9 @@ public class VocabLearningServiceImpl implements VocabLearningService {
 
         // Total saved: ACTIVE + MASTERED words, EXCLUDING ROADMAP_SYSTEM
         int totalSaved = (int) vocabRepository.countByUserIdAndStatusAndSourceTypeNot(
-                        userId, VocabStatus.ACTIVE, io.gsp26se16.moni.vocab.enumeration.VocabSourceType.ROADMAP_SYSTEM)
+                        userId, VocabStatus.ACTIVE, VocabSourceType.ROADMAP_SYSTEM)
                 + (int) vocabRepository.countByUserIdAndStatusAndSourceTypeNot(
-                        userId,
-                        VocabStatus.MASTERED,
-                        io.gsp26se16.moni.vocab.enumeration.VocabSourceType.ROADMAP_SYSTEM);
+                        userId, VocabStatus.MASTERED, VocabSourceType.ROADMAP_SYSTEM);
 
         // To-learn (Sổ từ biết tuốt): Words in DRAFT status
         int toLearnCount = (int) vocabRepository.countByUserIdAndStatus(userId, VocabStatus.DRAFT);
@@ -149,7 +154,7 @@ public class VocabLearningServiceImpl implements VocabLearningService {
     public List<VocabResponse> generateRoadmapVocabList(
             Users user, List<String> targetLevels, String topic, int count) {
         // Query words matching target CEFR levels (1-2 levels above user)
-        List<io.gsp26se16.moni.vocab.entity.CuratedWord> newWords;
+        List<CuratedWord> newWords;
         int fetchSize = 100;
         String userId = user.getId();
 
@@ -177,8 +182,7 @@ public class VocabLearningServiceImpl implements VocabLearningService {
         }
 
         Collections.shuffle(newWords);
-        List<io.gsp26se16.moni.vocab.entity.CuratedWord> selected =
-                newWords.subList(0, Math.min(count, newWords.size()));
+        List<CuratedWord> selected = newWords.subList(0, Math.min(count, newWords.size()));
 
         // Do NOT save them to the DB yet. Return them as transient DTOs to the user for
         // selection.
@@ -192,7 +196,7 @@ public class VocabLearningServiceImpl implements VocabLearningService {
                         .example(cw.getExample())
                         .audioUrl(cw.getAudioUrl())
                         .meaning(cw.getMeaning())
-                        .sourceType(io.gsp26se16.moni.vocab.enumeration.VocabSourceType.ROADMAP_SYSTEM)
+                        .sourceType(VocabSourceType.ROADMAP_SYSTEM)
                         .status(VocabStatus.DRAFT)
                         .build())
                 .toList();
@@ -201,12 +205,11 @@ public class VocabLearningServiceImpl implements VocabLearningService {
     @Transactional
     public void submitRoadmapVocabList(Users user, List<Integer> notLearnedIds, List<Integer> learnedIds) {
         // Find the curated words that the user marked
-        List<io.gsp26se16.moni.vocab.entity.CuratedWord> allCurated = curatedWordRepository.findAllById(
-                java.util.stream.Stream.concat(notLearnedIds.stream(), learnedIds.stream())
-                        .toList());
+        List<CuratedWord> allCurated = curatedWordRepository.findAllById(
+                Stream.concat(notLearnedIds.stream(), learnedIds.stream()).toList());
 
         List<Vocab> toSave = new ArrayList<>();
-        java.util.Set<String> seenWords = new java.util.HashSet<>();
+        Set<String> seenWords = new HashSet<>();
         for (var cw : allCurated) {
             // Skip words that already exist for this user in DB
             // OR that are duplicated within this same batch
@@ -299,7 +302,7 @@ public class VocabLearningServiceImpl implements VocabLearningService {
                 .stream()
                 .filter(v -> v.getSourceType() == VocabSourceType.ROADMAP_SYSTEM)
                 .filter(v -> v.getStatus() == VocabStatus.DRAFT || v.getStatus() == VocabStatus.ACTIVE)
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
 
         Collections.shuffle(quizWords);
         if (quizWords.size() > 15) {
@@ -367,7 +370,7 @@ public class VocabLearningServiceImpl implements VocabLearningService {
             List<QuizQuestion> questions = new ArrayList<>();
 
             // Build a map for quick status lookup
-            Map<String, String> wordStatusMap = new java.util.HashMap<>();
+            Map<String, String> wordStatusMap = new HashMap<>();
             for (Vocab v : sourceWords) {
                 wordStatusMap.put(v.getWord().toLowerCase(), v.getStatus().name());
             }
@@ -414,7 +417,7 @@ public class VocabLearningServiceImpl implements VocabLearningService {
      */
     private QuizResponse generateStandardQuizFromVocab(List<Vocab> words) {
         // Build a map for status lookup
-        Map<String, String> wordStatusMap = new java.util.HashMap<>();
+        Map<String, String> wordStatusMap = new HashMap<>();
         for (Vocab v : words) {
             wordStatusMap.put(v.getWord(), v.getStatus().name());
         }

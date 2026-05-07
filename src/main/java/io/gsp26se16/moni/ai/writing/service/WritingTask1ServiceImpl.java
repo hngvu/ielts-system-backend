@@ -2,6 +2,7 @@ package io.gsp26se16.moni.ai.writing.service;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -33,6 +34,8 @@ import io.gsp26se16.moni.content.repository.StimulusRepository;
 import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
 import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
 import io.gsp26se16.moni.roadmap.service.WeeklyPlanService;
+import io.gsp26se16.moni.tag.entity.Tag;
+import io.gsp26se16.moni.tag.entity.TagType;
 import io.gsp26se16.moni.tag.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -424,7 +427,7 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
         if (criteriaMap == null) return;
 
         // Extract final band for each criterion
-        Map<String, Double> criterionBands = new java.util.LinkedHashMap<>();
+        Map<String, Double> criterionBands = new LinkedHashMap<>();
         for (String criterion : new String[] {"TA", "CC", "LR", "GRA"}) {
             Object obj = criteriaMap.get(criterion);
             if (obj instanceof Map<?, ?> map) {
@@ -451,8 +454,7 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
 
             // Find or create tag for this criterion
             String tagCode = criterionToTagCode.getOrDefault(criterion, criterion);
-            io.gsp26se16.moni.tag.entity.Tag tag =
-                    tagRepository.findByCode(tagCode).orElse(null);
+            Tag tag = tagRepository.findByCode(tagCode).orElse(null);
             if (tag == null) {
                 log.debug("Tag not found for criterion={} (tagCode={}), skipping metric update", criterion, tagCode);
                 continue;
@@ -474,9 +476,8 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
             double finalS = finalBand / 9.0;
             boolean finalIsCorrect = finalS >= 0.6;
 
-            for (io.gsp26se16.moni.tag.entity.Tag tag : freshStimulus.getTags()) {
-                if (tag.getType() == io.gsp26se16.moni.tag.entity.TagType.WRITING_TYPE
-                        || tag.getType() == io.gsp26se16.moni.tag.entity.TagType.TOPIC) {
+            for (Tag tag : freshStimulus.getTags()) {
+                if (tag.getType() == TagType.WRITING_TYPE || tag.getType() == TagType.TOPIC) {
                     updateMetricBKT(user, tag, finalIsCorrect, finalS);
                 }
             }
@@ -486,7 +487,7 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
     /**
      * Update criterion metric using band score directly as mastery level.
      */
-    private void updateCriterionMetric(Users user, io.gsp26se16.moni.tag.entity.Tag tag, double mastery) {
+    private void updateCriterionMetric(Users user, Tag tag, double mastery) {
         LearnerMetric metric = learnerMetricRepository
                 .findByUserAndTagAndSkill(user, tag, Skill.WRITING)
                 .orElseGet(() -> {
@@ -516,8 +517,7 @@ public class WritingTask1ServiceImpl implements WritingTask1Service {
     /**
      * Update single metric using BKT formula (for non-criteria tags).
      */
-    private void updateMetricBKT(
-            Users user, io.gsp26se16.moni.tag.entity.Tag tag, boolean isCorrect, double scoreNormalized) {
+    private void updateMetricBKT(Users user, Tag tag, boolean isCorrect, double scoreNormalized) {
 
         LearnerMetric metric = learnerMetricRepository
                 .findByUserAndTagAndSkill(user, tag, Skill.WRITING)

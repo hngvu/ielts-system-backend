@@ -11,6 +11,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import io.gsp26se16.moni.ai.writing.service.PromptLoader;
+import io.gsp26se16.moni.authentication.repository.UsersRepository;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.roadmap.dto.response.LearnerRoadmapInsightsResponse;
@@ -32,7 +33,7 @@ public class MetricAiSummaryService {
     private final PromptLoader promptLoader;
     private final MetricAiSummaryCacheRepository metricAiSummaryCacheRepository;
     private final LearnerMetricRepository learnerMetricRepository;
-    private final io.gsp26se16.moni.authentication.repository.UsersRepository userRepository;
+    private final UsersRepository userRepository;
 
     public MetricSummaryResponse generateMetricSummary() {
         String userId = getCurrentUserId();

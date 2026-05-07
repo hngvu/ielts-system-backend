@@ -1,9 +1,11 @@
 package io.gsp26se16.moni.ai.speaking.service;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Component;
+import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 import io.gsp26se16.moni.ai.speaking.entity.SpeakingSession;
@@ -86,14 +88,13 @@ public class ExamSessionManager {
         if (sessions.isEmpty()) return;
 
         String heartbeatMessage = "{\"type\":\"heartbeat\"}";
-        org.springframework.web.socket.TextMessage tm =
-                new org.springframework.web.socket.TextMessage(heartbeatMessage);
+        TextMessage tm = new TextMessage(heartbeatMessage);
 
         for (ActiveExamSession session : sessions.values()) {
             if (session.isOpen()) {
                 try {
                     session.getWsSession().sendMessage(tm);
-                } catch (java.io.IOException e) {
+                } catch (IOException e) {
                     log.error("Failed to send heartbeat to session {}: {}", session.getSessionId(), e.getMessage());
                 }
             }

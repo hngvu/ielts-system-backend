@@ -1,5 +1,6 @@
 package io.gsp26se16.moni.vocab.repository;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -39,14 +40,14 @@ public interface CuratedWordRepository extends JpaRepository<CuratedWord, Intege
     long countByMeaningIsNotNull();
 
     @Query("SELECT COUNT(c) FROM CuratedWord c JOIN c.tags t WHERE t.type = 'DIFFICULTY' AND t.name IN :bands")
-    long countByBandIn(@Param("bands") java.util.Collection<String> bands);
+    long countByBandIn(@Param("bands") Collection<String> bands);
 
     @Query("SELECT c.word FROM CuratedWord c JOIN c.tags t WHERE t.type = 'DIFFICULTY' AND t.name IN :bands")
-    java.util.List<String> findWordByBandIn(@Param("bands") java.util.Collection<String> bands);
+    List<String> findWordByBandIn(@Param("bands") Collection<String> bands);
 
     @Query("SELECT c FROM CuratedWord c WHERE "
             + "EXISTS (SELECT t FROM c.tags t WHERE t.name IN :bands AND t.type = 'DIFFICULTY')")
-    Page<CuratedWord> findByBands(@Param("bands") java.util.Collection<String> bands, Pageable pageable);
+    Page<CuratedWord> findByBands(@Param("bands") Collection<String> bands, Pageable pageable);
 
     @Query("SELECT c FROM CuratedWord c WHERE "
             + "(:band IS NULL OR EXISTS (SELECT t FROM c.tags t WHERE t.name = :band AND t.type = 'DIFFICULTY')) AND "
@@ -62,5 +63,5 @@ public interface CuratedWordRepository extends JpaRepository<CuratedWord, Intege
             + "EXISTS (SELECT t FROM c.tags t WHERE t.name IN :bands AND t.type = 'DIFFICULTY') AND "
             + "NOT EXISTS (SELECT v FROM Vocab v WHERE v.word = c.word AND v.user.id = :userId)")
     Page<CuratedWord> findUnlearnedByBands(
-            @Param("bands") java.util.Collection<String> bands, @Param("userId") String userId, Pageable pageable);
+            @Param("bands") Collection<String> bands, @Param("userId") String userId, Pageable pageable);
 }

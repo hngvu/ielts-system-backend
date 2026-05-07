@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.common.enumeration.EvaluationStatus;
+import io.gsp26se16.moni.content.entity.Test;
 import io.gsp26se16.moni.practice.entity.TestSession;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -55,7 +56,7 @@ public class SpeakingSubmission {
     /** Đề thi Speaking mà bài nộp này thuộc về */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "test_id")
-    io.gsp26se16.moni.content.entity.Test test;
+    Test test;
 
     /**
      * Part 1, 2, hoặc 3 của IELTS Speaking.

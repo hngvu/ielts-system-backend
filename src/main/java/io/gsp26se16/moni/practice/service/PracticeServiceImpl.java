@@ -2,6 +2,7 @@ package io.gsp26se16.moni.practice.service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,6 +39,7 @@ import io.gsp26se16.moni.practice.repository.AttemptRepository;
 import io.gsp26se16.moni.practice.repository.TestSessionRepository;
 import io.gsp26se16.moni.roadmap.entity.LearnerMetric;
 import io.gsp26se16.moni.roadmap.repository.LearnerMetricRepository;
+import io.gsp26se16.moni.roadmap.service.WeeklyPlanService;
 import io.gsp26se16.moni.tag.entity.Tag;
 import io.gsp26se16.moni.tag.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
@@ -59,7 +61,7 @@ public class PracticeServiceImpl implements PracticeService {
     private final UserCredentialsRepository userCredentialsRepository;
     private final LearnerMetricRepository learnerMetricRepository;
     private final TagRepository tagRepository;
-    private final io.gsp26se16.moni.roadmap.service.WeeklyPlanService weeklyPlanService;
+    private final WeeklyPlanService weeklyPlanService;
 
     @Override
     public SubmitAttemptResponse submitAttempt(SubmitAttemptRequest request) {
@@ -144,7 +146,7 @@ public class PracticeServiceImpl implements PracticeService {
             double S = isCorrect ? 1.0 : 0.0; // S: Điểm của câu hỏi này
 
             // Lấy tất cả các Tag đang gắn vào câu hỏi này (Ví dụ: TFNG, BAND_6.0)
-            Set<Tag> questionTags = new java.util.HashSet<>();
+            Set<Tag> questionTags = new HashSet<>();
             if (question.getTags() != null) {
                 questionTags.addAll(question.getTags());
             }

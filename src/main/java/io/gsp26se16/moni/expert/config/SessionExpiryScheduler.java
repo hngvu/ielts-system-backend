@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import io.gsp26se16.moni.ai.writing.repository.WritingSubmissionRepository;
 import io.gsp26se16.moni.authentication.entity.UserCredentials;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
+import io.gsp26se16.moni.common.enumeration.EvaluationStatus;
 import io.gsp26se16.moni.expert.entity.ScoringSession;
 import io.gsp26se16.moni.expert.enumeration.SessionStatus;
 import io.gsp26se16.moni.expert.repository.ScoringSessionRepository;
@@ -100,7 +101,7 @@ public class SessionExpiryScheduler {
             writingSubmissionRepository
                     .findById(session.getWritingSubmissionId())
                     .ifPresent(sub -> {
-                        sub.setEvaluationStatus(io.gsp26se16.moni.common.enumeration.EvaluationStatus.PENDING);
+                        sub.setEvaluationStatus(EvaluationStatus.PENDING);
                         writingSubmissionRepository.save(sub);
                     });
         }

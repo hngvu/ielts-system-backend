@@ -206,7 +206,7 @@ public class PromptLoader {
             activeVersionsCache = objectMapper.readValue(json, new TypeReference<>() {});
         } catch (Exception e) {
             log.warn("No active_versions.json found, using v1 for all: {}", e.getMessage());
-            activeVersionsCache = new java.util.HashMap<>();
+            activeVersionsCache = new HashMap<>();
         }
         return activeVersionsCache;
     }

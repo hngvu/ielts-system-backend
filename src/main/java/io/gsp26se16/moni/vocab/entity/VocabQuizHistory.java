@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.vocab.entity;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 import jakarta.persistence.*;
 
@@ -35,7 +36,7 @@ public class VocabQuizHistory {
 
     @Column(name = "quiz_data", columnDefinition = "jsonb")
     @Type(JsonBinaryType.class)
-    private java.util.Map<String, Object> quizData;
+    private Map<String, Object> quizData;
 
     @Column(name = "score")
     private Integer score;

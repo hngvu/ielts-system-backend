@@ -1,6 +1,7 @@
 package io.gsp26se16.moni.vocab.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -35,17 +36,17 @@ public class VocabController {
     // --- Enrichment ---
 
     @PostMapping("/enrich")
-    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> startEnrichment() {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> startEnrichment() {
         curatedWordEnricher.startEnrichment();
-        return ResponseEntity.ok(ApiResponse.<java.util.Map<String, Object>>builder()
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .result(curatedWordEnricher.getStatus())
                 .message("Enrichment started")
                 .build());
     }
 
     @GetMapping("/enrich/status")
-    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> enrichmentStatus() {
-        return ResponseEntity.ok(ApiResponse.<java.util.Map<String, Object>>builder()
+    public ResponseEntity<ApiResponse<Map<String, Object>>> enrichmentStatus() {
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .result(curatedWordEnricher.getStatus())
                 .build());
     }
@@ -136,13 +137,13 @@ public class VocabController {
     }
 
     @PatchMapping("/{id}/move")
-    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> moveWord(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> moveWord(
             @PathVariable Integer id, @RequestBody MoveVocabRequest request) {
         String credentialId = getCredentialId();
         vocabService.moveWord(credentialId, id, request.getVocabListId());
-        return ResponseEntity.ok(ApiResponse.<java.util.Map<String, Object>>builder()
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .message("Đã chuyển từ vựng")
-                .result(java.util.Map.of("vocabId", id, "targetListId", request.getVocabListId()))
+                .result(Map.of("vocabId", id, "targetListId", request.getVocabListId()))
                 .build());
     }
 
@@ -202,13 +203,13 @@ public class VocabController {
     }
 
     @PatchMapping("/{id}/review")
-    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> submitReview(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> submitReview(
             @PathVariable Integer id, @RequestBody ReviewRequest request) {
         String credentialId = getCredentialId();
         vocabLearningService.submitReview(credentialId, id, request.getQuality());
-        return ResponseEntity.ok(ApiResponse.<java.util.Map<String, Object>>builder()
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
                 .message("Đã lưu kết quả ôn tập")
-                .result(java.util.Map.of("vocabId", id, "quality", request.getQuality()))
+                .result(Map.of("vocabId", id, "quality", request.getQuality()))
                 .build());
     }
 

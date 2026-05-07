@@ -11,7 +11,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import io.gsp26se16.moni.authentication.entity.Users;
+import io.gsp26se16.moni.payment.entity.PackagePricing;
 import io.gsp26se16.moni.payment.entity.Payment;
+import io.gsp26se16.moni.payment.entity.SubscriptionPlan;
 import io.gsp26se16.moni.payment.enumeration.PaymentStatus;
 
 @Repository
@@ -26,16 +29,10 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer>, JpaS
     Optional<Payment> findByTxnCode(String txnCode);
 
     Optional<Payment> findFirstByUserAndPackagePricingAndStatusAndExpiredAtAfterOrderByCreatedAtDesc(
-            io.gsp26se16.moni.authentication.entity.Users user,
-            io.gsp26se16.moni.payment.entity.PackagePricing packagePricing,
-            PaymentStatus status,
-            LocalDateTime time);
+            Users user, PackagePricing packagePricing, PaymentStatus status, LocalDateTime time);
 
     Optional<Payment> findFirstByUserAndSubscriptionPlanAndStatusAndExpiredAtAfterOrderByCreatedAtDesc(
-            io.gsp26se16.moni.authentication.entity.Users user,
-            io.gsp26se16.moni.payment.entity.SubscriptionPlan subscriptionPlan,
-            PaymentStatus status,
-            LocalDateTime time);
+            Users user, SubscriptionPlan subscriptionPlan, PaymentStatus status, LocalDateTime time);
 
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p "
             + "WHERE p.status = :status AND p.createdAt >= :startDate AND p.createdAt <= :endDate")

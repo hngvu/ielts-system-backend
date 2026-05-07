@@ -2,20 +2,30 @@ package io.gsp26se16.moni.roadmap.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.gsp26se16.moni.authentication.entity.UserCredentials;
 import io.gsp26se16.moni.authentication.entity.Users;
 import io.gsp26se16.moni.authentication.repository.UserCredentialsRepository;
+import io.gsp26se16.moni.common.enumeration.PublishStatus;
 import io.gsp26se16.moni.common.enumeration.Skill;
 import io.gsp26se16.moni.common.exception.AppException;
 import io.gsp26se16.moni.common.exception.ErrorCode;
 import io.gsp26se16.moni.content.entity.Stimulus;
+import io.gsp26se16.moni.content.entity.Test;
 import io.gsp26se16.moni.content.entity.TestStructure;
 import io.gsp26se16.moni.content.repository.StimulusRepository;
 import io.gsp26se16.moni.content.repository.TestRepository;
@@ -30,6 +40,8 @@ import io.gsp26se16.moni.tag.entity.TagType;
 import io.gsp26se16.moni.tag.repository.TagRepository;
 import io.gsp26se16.moni.vocab.dto.QuizResponse;
 import io.gsp26se16.moni.vocab.dto.VocabResponse;
+import io.gsp26se16.moni.vocab.entity.VocabQuizHistory;
+import io.gsp26se16.moni.vocab.repository.VocabQuizHistoryRepository;
 import io.gsp26se16.moni.vocab.service.VocabLearningService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,10 +63,10 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     private final TestRepository testRepository;
     private final TagRepository tagRepository;
     private final VocabLearningService vocabLearningService;
-    private final io.gsp26se16.moni.vocab.repository.VocabQuizHistoryRepository vocabQuizHistoryRepository;
+    private final VocabQuizHistoryRepository vocabQuizHistoryRepository;
 
-    @org.springframework.context.annotation.Lazy
-    @org.springframework.beans.factory.annotation.Autowired
+    @Lazy
+    @Autowired
     private GoalService goalService;
 
     // =====================================================================
@@ -104,8 +116,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
 
         // [EXAM ROADMAP LOGIC] Determine Phase based on daysLeft
         LocalDate examDate = user.getExamDate();
-        int daysLeft =
-                examDate != null ? (int) java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), examDate) : -1;
+        int daysLeft = examDate != null ? (int) ChronoUnit.DAYS.between(LocalDate.now(), examDate) : -1;
 
         int phase = 1; // Default: Foundation (> 60 days)
         if (daysLeft != -1 && daysLeft <= 60 && daysLeft > 30) {
@@ -133,7 +144,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                 if (phase == 3) {
                     // [PHASE 3] Intensive mode: assign FULL TEST (mode=FULL_TEST) instead of single
                     // Stimulus
-                    io.gsp26se16.moni.content.entity.Test fullTest = selectFullTest(skill, user, doneStimulusIds);
+                    Test fullTest = selectFullTest(skill, user, doneStimulusIds);
 
                     DailySlot slot = DailySlot.builder()
                             .weeklyPlan(plan)
@@ -291,7 +302,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
             Integer totalQuestions,
             List<String> correctWords,
             List<String> incorrectWords,
-            java.util.Map<String, Object> quizData) {
+            Map<String, Object> quizData) {
         Users user = getCurrentUser();
 
         DailySlot slot =
@@ -317,12 +328,9 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
                     incorrectWords != null ? incorrectWords : List.of());
 
             if (quizData != null && !quizData.isEmpty()) {
-                io.gsp26se16.moni.vocab.entity.VocabQuizHistory history = vocabQuizHistoryRepository
+                VocabQuizHistory history = vocabQuizHistoryRepository
                         .findTopBySlotAndUserOrderByCreatedAtDesc(slot, user)
-                        .orElse(io.gsp26se16.moni.vocab.entity.VocabQuizHistory.builder()
-                                .user(user)
-                                .slot(slot)
-                                .build());
+                        .orElse(VocabQuizHistory.builder().user(user).slot(slot).build());
 
                 history.setScore(score);
                 history.setTotalQuestions(totalQuestions);
@@ -482,7 +490,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         if (historyOpt.isPresent()) {
             var history = historyOpt.get();
             try {
-                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                ObjectMapper mapper = new ObjectMapper();
                 QuizResponse response = mapper.convertValue(history.getQuizData(), QuizResponse.class);
                 if ("DONE".equals(slot.getStatus())) {
                     response.setIsHistory(true);
@@ -504,16 +512,14 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         if (generatedQuiz.getQuestions() != null
                 && !generatedQuiz.getQuestions().isEmpty()) {
             try {
-                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                java.util.Map<String, Object> quizData =
-                        mapper.convertValue(generatedQuiz, new com.fasterxml.jackson.core.type.TypeReference<>() {});
+                ObjectMapper mapper = new ObjectMapper();
+                Map<String, Object> quizData = mapper.convertValue(generatedQuiz, new TypeReference<>() {});
 
-                io.gsp26se16.moni.vocab.entity.VocabQuizHistory newHistory =
-                        io.gsp26se16.moni.vocab.entity.VocabQuizHistory.builder()
-                                .user(user)
-                                .slot(slot)
-                                .quizData(quizData)
-                                .build();
+                VocabQuizHistory newHistory = VocabQuizHistory.builder()
+                        .user(user)
+                        .slot(slot)
+                        .quizData(quizData)
+                        .build();
                 vocabQuizHistoryRepository.save(newHistory);
             } catch (Exception e) {
                 log.error("Failed to save generated vocab quiz to history", e);
@@ -686,14 +692,14 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     private Stimulus selectStimulus(Skill skill, Users user, Set<Integer> excludeIds) {
         List<LearnerMetric> metrics = learnerMetricRepository.findByUser(user);
 
-        io.gsp26se16.moni.tag.entity.TagType structType = getStructType(skill);
+        TagType structType = getStructType(skill);
         List<Tag> weakStructs = structType != null ? getWeakTags(metrics, structType, 2) : Collections.emptyList();
 
-        io.gsp26se16.moni.tag.entity.TagType subType = getSubType(skill);
+        TagType subType = getSubType(skill);
         List<Tag> weakSubTypes = subType != null ? getWeakTags(metrics, subType, 5) : Collections.emptyList();
 
-        List<Stimulus> candidates = stimulusRepository.findPublishedBySkillExcludingHiddenTests(
-                skill, io.gsp26se16.moni.common.enumeration.PublishStatus.PUBLISHED);
+        List<Stimulus> candidates =
+                stimulusRepository.findPublishedBySkillExcludingHiddenTests(skill, PublishStatus.PUBLISHED);
 
         if (candidates.isEmpty()) {
             return null;
@@ -711,14 +717,14 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     private Stimulus selectAssessmentStimulus(Skill skill, Users user, Set<Integer> excludeIds) {
         List<LearnerMetric> metrics = learnerMetricRepository.findByUser(user);
 
-        io.gsp26se16.moni.tag.entity.TagType structType = getStructType(skill);
+        TagType structType = getStructType(skill);
         List<Tag> weakStructs = structType != null ? getWeakTags(metrics, structType, 2) : Collections.emptyList();
 
-        io.gsp26se16.moni.tag.entity.TagType subType = getSubType(skill);
+        TagType subType = getSubType(skill);
         List<Tag> weakSubTypes = subType != null ? getWeakTags(metrics, subType, 3) : Collections.emptyList();
 
-        List<Stimulus> candidates = stimulusRepository.findPublishedBySkillExcludingHiddenTests(
-                skill, io.gsp26se16.moni.common.enumeration.PublishStatus.PUBLISHED);
+        List<Stimulus> candidates =
+                stimulusRepository.findPublishedBySkillExcludingHiddenTests(skill, PublishStatus.PUBLISHED);
 
         if (candidates.isEmpty()) {
             return null;
@@ -989,7 +995,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         return days;
     }
 
-    private io.gsp26se16.moni.content.entity.Test selectFullTest(Skill skill, Users user, Set<Integer> excludeIds) {
+    private Test selectFullTest(Skill skill, Users user, Set<Integer> excludeIds) {
         // Here we ideally search for FULL_TEST with exclude filtering,
         // but testRepository doesn't natively take excludeIds in the random query yet.
         // We will just fetch random. If we had more time we would write a native query.
@@ -1049,18 +1055,18 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
     // PRIVATE HELPERS — Utilities
     // =====================================================================
 
-    private io.gsp26se16.moni.tag.entity.TagType getStructType(Skill skill) {
-        if (skill == Skill.READING) return io.gsp26se16.moni.tag.entity.TagType.PASSAGE;
-        if (skill == Skill.LISTENING) return io.gsp26se16.moni.tag.entity.TagType.SECTION;
-        if (skill == Skill.WRITING) return io.gsp26se16.moni.tag.entity.TagType.TASK;
-        if (skill == Skill.SPEAKING) return io.gsp26se16.moni.tag.entity.TagType.PART;
+    private TagType getStructType(Skill skill) {
+        if (skill == Skill.READING) return TagType.PASSAGE;
+        if (skill == Skill.LISTENING) return TagType.SECTION;
+        if (skill == Skill.WRITING) return TagType.TASK;
+        if (skill == Skill.SPEAKING) return TagType.PART;
         return null;
     }
 
-    private io.gsp26se16.moni.tag.entity.TagType getSubType(Skill skill) {
+    private TagType getSubType(Skill skill) {
         if (skill == Skill.SPEAKING) return TagType.TOPIC;
         if (skill == Skill.WRITING) return TagType.WRITING_TYPE;
-        return io.gsp26se16.moni.tag.entity.TagType.QUESTION_TYPE;
+        return TagType.QUESTION_TYPE;
     }
 
     private List<Tag> getWeakTags(List<LearnerMetric> metrics, TagType type, int limit) {
@@ -1069,7 +1075,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
 
         // Identify which ones the user hasn't attempted yet
         Set<Integer> attemptedTagIds =
-                metrics.stream().map(m -> m.getTag().getId()).collect(java.util.stream.Collectors.toSet());
+                metrics.stream().map(m -> m.getTag().getId()).collect(Collectors.toSet());
 
         List<Tag> unattemptedTags = allTagsOfType.stream()
                 .filter(t -> !attemptedTagIds.contains(t.getId()))
@@ -1123,7 +1129,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         return mastery + ((1.0 - confidence) * 0.5);
     }
 
-    private io.gsp26se16.moni.content.entity.Test findTestForStimulus(Stimulus stimulus) {
+    private Test findTestForStimulus(Stimulus stimulus) {
         if (stimulus == null) return null;
         List<TestStructure> structures = testStructureRepository.findByStimulusId(stimulus.getId());
         if (!structures.isEmpty()) {
@@ -1259,7 +1265,7 @@ public class WeeklyPlanServiceImpl implements WeeklyPlanService {
         }
 
         String credentialId = null;
-        if (authentication.getPrincipal() instanceof org.springframework.security.oauth2.jwt.Jwt jwt) {
+        if (authentication.getPrincipal() instanceof Jwt jwt) {
             credentialId = jwt.getClaimAsString("userId");
         }
 
