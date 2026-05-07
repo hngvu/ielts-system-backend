@@ -92,14 +92,17 @@ public class PlacementAiServiceImpl implements PlacementAiService {
 
     private AiRecommendResponse parseResponse(String raw) {
         try {
+            // Cắt từ '{' đầu tới '}' cuối — loại bỏ markdown fences ```json,
+            // preamble tự nhiên ("Sure, here's..."), và thinking tags <think>...</think>
             String json = raw;
-            if (json.contains("```")) {
-                int start = json.indexOf("{");
-                int end = json.lastIndexOf("}");
-                if (start >= 0 && end > start) {
-                    json = json.substring(start, end + 1);
-                }
+            int start = json.indexOf('{');
+            int end = json.lastIndexOf('}');
+            if (start >= 0 && end > start) {
+                json = json.substring(start, end + 1);
             }
+            // Llama hay xuống dòng raw bên trong string value cho dễ đọc — JSON spec
+            // không cho phép, phải escape thành \n. Sanitize trước khi feed Jackson.
+            json = escapeRawNewlinesInsideStrings(json);
 
             JsonNode node = objectMapper.readTree(json);
             return AiRecommendResponse.builder()
@@ -118,5 +121,40 @@ public class PlacementAiServiceImpl implements PlacementAiService {
                     .studyPlan("")
                     .build();
         }
+    }
+
+    // Replace raw \n / \r với \\n CHỈ khi đang ở giữa cặp dấu nháy kép của JSON string,
+    // không động đến structural newlines giữa các field (vốn không gây lỗi parse).
+    private String escapeRawNewlinesInsideStrings(String s) {
+        StringBuilder out = new StringBuilder(s.length());
+        boolean inString = false;
+        boolean escape = false;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (escape) {
+                out.append(c);
+                escape = false;
+                continue;
+            }
+            if (c == '\\' && inString) {
+                out.append(c);
+                escape = true;
+                continue;
+            }
+            if (c == '"') {
+                inString = !inString;
+                out.append(c);
+                continue;
+            }
+            if (inString && (c == '\n' || c == '\r')) {
+                if (c == '\r' && i + 1 < s.length() && s.charAt(i + 1) == '\n') {
+                    i++; // gộp \r\n thành 1 escape
+                }
+                out.append("\\n");
+                continue;
+            }
+            out.append(c);
+        }
+        return out.toString();
     }
 }
