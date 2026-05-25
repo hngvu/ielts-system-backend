@@ -35,8 +35,6 @@ If you are testing the REST endpoints locally:
 
 ### 3. Smart Adaptive Roadmap & Progress Tracking
 * Analyzes initial placement tests to generate customized study plans.
-* Utilizes an **Exponential Moving Average (EMA)** algorithm to update student mastery scores dynamically:
-  $$\text{New Score} = (\text{Old Score} \times 0.7) + (\text{Current Result} \times 0.3)$$
 * Recommends specific targeted exercises rather than random tasks to improve weak areas.
 
 ### 4. Enterprise-Grade Architecture
